@@ -1,0 +1,580 @@
+// apps/api/prisma/schema.prisma
+
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─────────────────────────────────────────────────────────────────
+// ENUMS
+// ─────────────────────────────────────────────────────────────────
+
+enum UserRole {
+  ADMIN
+  STAFF
+  TECHNICIAN
+  CASHIER
+}
+
+enum CustomerType {
+  NORMAL
+  VIP
+  WHOLESALE
+  PARTNER
+}
+
+enum JobStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  DELIVERED
+  CANCELLED
+}
+
+enum Priority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+// How a service's price is determined
+enum PriceType {
+  FIXED // single flat rate → use Service.defaultPrice
+  CATALOG_BASED // price depends on size range / difficulty → use PriceCatalog entries
+  CUSTOM // price set manually per job
+}
+
+enum DifficultyLevel {
+  NORMAL
+  DIFFICULT
+  SPECIAL
+}
+
+// Shared line-item type for ServiceJobItem and InvoiceItem
+enum ItemType {
+  SERVICE
+  PRODUCT
+  CUSTOM
+}
+
+enum InvoiceStatus {
+  DRAFT
+  ISSUED
+  PARTIAL
+  PAID
+  CANCELLED
+}
+
+enum PaymentMethod {
+  CASH
+  ABA
+  BANK_TRANSFER
+  CARD
+  OTHER
+}
+
+enum SaleStatus {
+  DRAFT
+  COMPLETED
+  CANCELLED
+}
+
+enum ExpenseCategory {
+  SUPPLIES
+  UTILITIES
+  RENT
+  SALARY
+  MAINTENANCE
+  OTHER
+}
+
+// Where the reference data came from
+enum ReferenceSourceType {
+  MOM_NOTEBOOK // handwritten notebook from experience
+  SUPPLIER_INFO // from parts supplier
+  REAL_MEASUREMENT // measured from actual part in shop
+  SERVICE_HISTORY // derived from past service records
+  SERVICE_MANUAL // official service manual
+  OTHER
+}
+
+enum VerificationStatus {
+  DRAFT
+  PENDING_REVIEW
+  VERIFIED
+  OLD_DATA
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  LOGIN
+  LOGOUT
+  CANCEL
+  PAYMENT
+  PRICE_CHANGE
+  STOCK_CHANGE
+  DISCOUNT
+}
+
+// ─────────────────────────────────────────────────────────────────
+// USER
+// ─────────────────────────────────────────────────────────────────
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String
+  role      UserRole @default(STAFF)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  createdJobs     ServiceJob[] @relation("JobCreatedBy")
+  assignedJobs    ServiceJob[] @relation("JobAssignedTo")
+  createdSales    Sale[]
+  createdInvoices Invoice[]
+  payments        Payment[]
+  expenses        Expense[]
+  auditLogs       AuditLog[]
+
+  @@map("users")
+}
+
+// ─────────────────────────────────────────────────────────────────
+// CUSTOMER
+// ─────────────────────────────────────────────────────────────────
+
+model Customer {
+  id           String       @id @default(cuid())
+  code         String       @unique // e.g. C-0001
+  name         String
+  phone        String
+  email        String?
+  address      String?
+  customerType CustomerType @default(NORMAL)
+  notes        String?
+  isActive     Boolean      @default(true)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  deletedAt    DateTime?
+
+  serviceJobs ServiceJob[]
+  invoices    Invoice[]
+  sales       Sale[]
+  payments    Payment[]
+
+  @@index([phone])
+  @@map("customers")
+}
+
+// ─────────────────────────────────────────────────────────────────
+// SERVICE  (workshop service catalog)
+// ─────────────────────────────────────────────────────────────────
+
+model Service {
+  id               String    @id @default(cuid())
+  code             String    @unique // e.g. SRV-001
+  nameEn           String
+  nameKh           String?
+  category         String? // e.g. "Cylinder Work", "Bearing Work"
+  relatedComponent String? // e.g. "Cylinder", "Cylinder Head", "Piston"
+  defaultPrice     Decimal?  @db.Decimal(12, 2) // used when priceType = FIXED
+  priceType        PriceType @default(FIXED)
+  description      String?
+  isActive         Boolean   @default(true)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  deletedAt        DateTime?
+
+  priceCatalog    PriceCatalog[]
+  serviceJobItems ServiceJobItem[]
+  invoiceItems    InvoiceItem[]
+
+  @@map("services")
+}
+
+// ─────────────────────────────────────────────────────────────────
+// PRICE CATALOG
+// One Service → many pricing tiers (by size range, difficulty, customer type)
+// null customerType = applies to all customer types
+// ─────────────────────────────────────────────────────────────────
+
+model PriceCatalog {
+  id              String          @id @default(cuid())
+  serviceId       String
+  label           String // e.g. "Bore 60–70 mm – Difficult"
+  sizeFrom        Decimal?        @db.Decimal(10, 3)
+  sizeTo          Decimal?        @db.Decimal(10, 3)
+  unit            String? // mm, inch, etc.
+  difficultyLevel DifficultyLevel @default(NORMAL)
+  customerType    CustomerType? // null = applies to all customer types
+  unitPrice       Decimal         @db.Decimal(12, 2)
+  currency        String          @default("USD")
+  notes           String?
+  effectiveDate   DateTime        @default(now())
+  expiredDate     DateTime?
+  isActive        Boolean         @default(true)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  service         Service          @relation(fields: [serviceId], references: [id])
+  serviceJobItems ServiceJobItem[]
+
+  @@index([serviceId])
+  @@map("price_catalogs")
+}
+
+// ─────────────────────────────────────────────────────────────────
+// MACHINE MODEL
+// Brand + model of the machine whose parts are brought in
+// ─────────────────────────────────────────────────────────────────
+
+model MachineModel {
+  id          String    @id @default(cuid())
+  brand       String // e.g. Honda, Kubota, Yanmar
+  model       String // e.g. CB150, RT140
+  category    String? // Engine, Generator, Pump, Compressor
+  description String?
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  serviceJobs    ServiceJob[]
+  referenceBooks ReferenceBook[]
+
+  @@unique([brand, model])
+  @@index([brand])
+  @@map("machine_models")
+}
+
+// ─────────────────────────────────────────────────────────────────
+// REFERENCE BOOK
+// Standard measurements for parts — may or may not be tied to a specific machine model
+// ─────────────────────────────────────────────────────────────────
+
+model ReferenceBook {
+  id                 String              @id @default(cuid())
+  machineModelId     String? // optional — generic part specs have no model
+  componentType      String? // e.g. "Cylinder", "Piston", "Crankshaft"
+  partName           String // e.g. "Standard Bore – Honda CB150"
+  partCode           String?
+  standardSize       Decimal?            @db.Decimal(10, 3) // factory spec
+  wearLimit          Decimal?            @db.Decimal(10, 3) // minimum acceptable
+  serviceLimit       Decimal?            @db.Decimal(10, 3) // service threshold
+  unit               String              @default("mm")
+  measurementDetails Json? // flexible extra measurements as JSON
+  sourceType         ReferenceSourceType @default(OTHER)
+  verificationStatus VerificationStatus  @default(DRAFT)
+  notes              String?
+  isActive           Boolean             @default(true)
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+
+  machineModel   MachineModel? @relation(fields: [machineModelId], references: [id])
+  linkedProducts Product[]
+
+  @@index([machineModelId])
+  @@index([componentType])
+  @@map("reference_books")
+}
+
+// ─────────────────────────────────────────────────────────────────
+// PRODUCT  (inventory)
+// ─────────────────────────────────────────────────────────────────
+
+model Product {
+  id                    String    @id @default(cuid())
+  code                  String    @unique // e.g. PRD-001
+  name                  String
+  brand                 String?
+  componentPartType     String? // e.g. "Piston Ring", "Bearing", "Gasket"
+  size                  String? // e.g. "65.00 mm", "1/2 inch"
+  supplier              String?
+  description           String?
+  category              String?
+  unit                  String    @default("piece")
+  costPrice             Decimal   @db.Decimal(12, 2)
+  sellingPrice          Decimal   @db.Decimal(12, 2)
+  stockQuantity         Int       @default(0)
+  reorderLevel          Int       @default(0)
+  linkedReferenceBookId String?
+  isActive              Boolean   @default(true)
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  deletedAt             DateTime?
+
+  linkedReferenceBook ReferenceBook?   @relation(fields: [linkedReferenceBookId], references: [id])
+  serviceJobItems     ServiceJobItem[]
+  saleItems           SaleItem[]
+  invoiceItems        InvoiceItem[]
+
+  @@index([componentPartType])
+  @@map("products")
+}
+
+// ─────────────────────────────────────────────────────────────────
+// SERVICE JOB
+// Work order for parts brought in by a customer
+// ─────────────────────────────────────────────────────────────────
+
+model ServiceJob {
+  id                      String    @id @default(cuid())
+  jobCode                 String    @unique // e.g. JOB-2024-0001
+  customerId              String
+  machineModelId          String?
+  partDescription         String // what the customer brought
+  status                  JobStatus @default(PENDING)
+  priority                Priority  @default(NORMAL)
+  estimatedCompletionDate DateTime?
+  completedAt             DateTime?
+  deliveredAt             DateTime?
+  notes                   String?
+  technicianNotes         String?
+  createdById             String
+  assignedToId            String?
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+  deletedAt               DateTime?
+
+  customer     Customer         @relation(fields: [customerId], references: [id])
+  machineModel MachineModel?    @relation(fields: [machineModelId], references: [id])
+  createdBy    User             @relation("JobCreatedBy", fields: [createdById], references: [id])
+  assignedTo   User?            @relation("JobAssignedTo", fields: [assignedToId], references: [id])
+  items        ServiceJobItem[]
+  invoices     Invoice[]
+
+  @@index([customerId])
+  @@index([status])
+  @@map("service_jobs")
+}
+
+// ─────────────────────────────────────────────────────────────────
+// SERVICE JOB ITEM
+// Line items within a service job (services performed, parts used)
+// ─────────────────────────────────────────────────────────────────
+
+model ServiceJobItem {
+  id             String   @id @default(cuid())
+  serviceJobId   String
+  type           ItemType @default(SERVICE)
+  serviceId      String? // set when type = SERVICE
+  priceCatalogId String? // the specific price tier used (optional)
+  productId      String? // set when type = PRODUCT
+  description    String
+  quantity       Decimal  @default(1) @db.Decimal(10, 3)
+  unitPrice      Decimal  @db.Decimal(12, 2)
+  totalPrice     Decimal  @db.Decimal(12, 2)
+  measurement    String? // actual measurement taken, e.g. "65.50 mm"
+  notes          String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  serviceJob   ServiceJob    @relation(fields: [serviceJobId], references: [id])
+  service      Service?      @relation(fields: [serviceId], references: [id])
+  priceCatalog PriceCatalog? @relation(fields: [priceCatalogId], references: [id])
+  product      Product?      @relation(fields: [productId], references: [id])
+
+  @@index([serviceJobId])
+  @@map("service_job_items")
+}
+
+// ─────────────────────────────────────────────────────────────────
+// INVOICE
+// ─────────────────────────────────────────────────────────────────
+
+model Invoice {
+  id             String        @id @default(cuid())
+  invoiceNumber  String        @unique // e.g. INV-2024-0001
+  customerId     String
+  serviceJobId   String? // linked service job, if any
+  saleId         String? // linked direct sale, if any
+  status         InvoiceStatus @default(DRAFT)
+  subtotal       Decimal       @db.Decimal(12, 2)
+  discountAmount Decimal       @default(0) @db.Decimal(12, 2)
+  taxAmount      Decimal       @default(0) @db.Decimal(12, 2)
+  totalAmount    Decimal       @db.Decimal(12, 2)
+  paidAmount     Decimal       @default(0) @db.Decimal(12, 2)
+  dueAmount      Decimal       @db.Decimal(12, 2)
+  notes          String?
+  issuedAt       DateTime      @default(now())
+  dueDate        DateTime?
+  createdById    String
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  deletedAt      DateTime?
+
+  customer   Customer      @relation(fields: [customerId], references: [id])
+  serviceJob ServiceJob?   @relation(fields: [serviceJobId], references: [id])
+  sale       Sale?         @relation(fields: [saleId], references: [id])
+  createdBy  User          @relation(fields: [createdById], references: [id])
+  items      InvoiceItem[]
+  payments   Payment[]
+
+  @@index([customerId])
+  @@index([status])
+  @@map("invoices")
+}
+
+// ─────────────────────────────────────────────────────────────────
+// INVOICE ITEM
+// ─────────────────────────────────────────────────────────────────
+
+model InvoiceItem {
+  id             String   @id @default(cuid())
+  invoiceId      String
+  type           ItemType @default(SERVICE)
+  serviceId      String?
+  productId      String?
+  description    String
+  quantity       Decimal  @default(1) @db.Decimal(10, 3)
+  unitPrice      Decimal  @db.Decimal(12, 2)
+  discountAmount Decimal  @default(0) @db.Decimal(12, 2)
+  totalPrice     Decimal  @db.Decimal(12, 2)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  invoice Invoice  @relation(fields: [invoiceId], references: [id])
+  service Service? @relation(fields: [serviceId], references: [id])
+  product Product? @relation(fields: [productId], references: [id])
+
+  @@index([invoiceId])
+  @@map("invoice_items")
+}
+
+// ─────────────────────────────────────────────────────────────────
+// PAYMENT
+// ─────────────────────────────────────────────────────────────────
+
+model Payment {
+  id            String        @id @default(cuid())
+  paymentNumber String        @unique // e.g. PAY-2024-0001
+  invoiceId     String
+  customerId    String
+  amount        Decimal       @db.Decimal(12, 2)
+  method        PaymentMethod @default(CASH)
+  referenceNo   String? // ABA ref, bank transfer ref, etc.
+  notes         String?
+  paidAt        DateTime      @default(now())
+  createdById   String
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  invoice   Invoice  @relation(fields: [invoiceId], references: [id])
+  customer  Customer @relation(fields: [customerId], references: [id])
+  createdBy User     @relation(fields: [createdById], references: [id])
+
+  @@index([invoiceId])
+  @@index([customerId])
+  @@map("payments")
+}
+
+// ─────────────────────────────────────────────────────────────────
+// SALE  (direct sales order — products sold without a service job)
+// ─────────────────────────────────────────────────────────────────
+
+model Sale {
+  id             String     @id @default(cuid())
+  saleNumber     String     @unique // e.g. SALE-2024-0001
+  customerId     String? // optional — walk-in sale
+  status         SaleStatus @default(DRAFT)
+  subtotal       Decimal    @db.Decimal(12, 2)
+  discountAmount Decimal    @default(0) @db.Decimal(12, 2)
+  totalAmount    Decimal    @db.Decimal(12, 2)
+  notes          String?
+  soldAt         DateTime   @default(now())
+  createdById    String
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+  deletedAt      DateTime?
+
+  customer  Customer?  @relation(fields: [customerId], references: [id])
+  createdBy User       @relation(fields: [createdById], references: [id])
+  items     SaleItem[]
+  invoices  Invoice[]
+
+  @@index([customerId])
+  @@map("sales")
+}
+
+// ─────────────────────────────────────────────────────────────────
+// SALE ITEM
+// ─────────────────────────────────────────────────────────────────
+
+model SaleItem {
+  id             String   @id @default(cuid())
+  saleId         String
+  productId      String
+  description    String?
+  quantity       Decimal  @default(1) @db.Decimal(10, 3)
+  unitPrice      Decimal  @db.Decimal(12, 2)
+  discountAmount Decimal  @default(0) @db.Decimal(12, 2)
+  totalPrice     Decimal  @db.Decimal(12, 2)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  sale    Sale    @relation(fields: [saleId], references: [id])
+  product Product @relation(fields: [productId], references: [id])
+
+  @@index([saleId])
+  @@map("sale_items")
+}
+
+// ─────────────────────────────────────────────────────────────────
+// EXPENSE
+// ─────────────────────────────────────────────────────────────────
+
+model Expense {
+  id            String          @id @default(cuid())
+  expenseNumber String          @unique // e.g. EXP-2024-0001
+  category      ExpenseCategory @default(OTHER)
+  description   String
+  amount        Decimal         @db.Decimal(12, 2)
+  method        PaymentMethod   @default(CASH)
+  referenceNo   String?
+  notes         String?
+  expenseDate   DateTime        @default(now())
+  createdById   String
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  deletedAt     DateTime?
+
+  createdBy User @relation(fields: [createdById], references: [id])
+
+  @@index([category])
+  @@index([expenseDate])
+  @@map("expenses")
+}
+
+// ─────────────────────────────────────────────────────────────────
+// AUDIT LOG  (immutable — no updatedAt)
+// ─────────────────────────────────────────────────────────────────
+
+model AuditLog {
+  id         String      @id @default(cuid())
+  userId     String?
+  action     AuditAction
+  entityType String // "Customer", "ServiceJob", "Invoice", etc.
+  entityId   String?
+  oldValue   Json?
+  newValue   Json?
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime    @default(now())
+
+  user User? @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([entityType, entityId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}

@@ -1,0 +1,11 @@
+.DS_Store
+node_modules
+dist
+.next
+.env
+.env.local
+apps/api/dist
+apps/api/node_modules
+apps/api/src/generated
+apps/web/.next
+apps/web/node_modules
