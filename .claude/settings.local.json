@@ -2,7 +2,11 @@
   "permissions": {
     "allow": [
       "Bash(npx tsc *)",
-      "Bash(echo \"exit: $?\")"
+      "Bash(echo \"exit: $?\")",
+      "Bash(echo \"exit:$?\")",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\(d.get\\('version','?'\\)\\); exp = d.get\\('exports',{}\\); [print\\(k\\) for k in list\\(exp.keys\\(\\)\\)[:10]]\")",
+      "Bash(python3 *)",
+      "Bash(node *)"
     ]
   }
 }
