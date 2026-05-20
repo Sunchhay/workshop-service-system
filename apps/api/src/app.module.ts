@@ -14,6 +14,7 @@ import { MachineModelsModule } from './modules/machine-models/machine-models.mod
 import { PriceCatalogModule } from './modules/price-catalog/price-catalog.module';
 import { ReferenceBookModule } from './modules/reference-book/reference-book.module';
 import { InvoicesModule } from './modules/invoices/invoices.module';
+import { PaymentsModule } from './modules/payments/payments.module';
 import { ProductsModule } from './modules/products/products.module';
 import { ServiceJobsModule } from './modules/service-jobs/service-jobs.module';
 import { ServicesModule } from './modules/services/services.module';
@@ -34,6 +35,7 @@ import { UsersModule } from './modules/users/users.module';
     MachineModelsModule,
     ReferenceBookModule,
     InvoicesModule,
+    PaymentsModule,
     ProductsModule,
     ServiceJobsModule,
   ],
