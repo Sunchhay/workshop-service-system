@@ -10,6 +10,7 @@ import { RolesGuard } from './common/guards/roles.guard';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { CustomersModule } from './modules/customers/customers.module';
+import { MachineModelsModule } from './modules/machine-models/machine-models.module';
 import { PriceCatalogModule } from './modules/price-catalog/price-catalog.module';
 import { ServicesModule } from './modules/services/services.module';
 import { UsersModule } from './modules/users/users.module';
@@ -26,6 +27,7 @@ import { UsersModule } from './modules/users/users.module';
     CustomersModule,
     ServicesModule,
     PriceCatalogModule,
+    MachineModelsModule,
   ],
   controllers: [AppController],
   providers: [
