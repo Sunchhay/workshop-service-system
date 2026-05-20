@@ -13,6 +13,7 @@ import { CustomersModule } from './modules/customers/customers.module';
 import { MachineModelsModule } from './modules/machine-models/machine-models.module';
 import { PriceCatalogModule } from './modules/price-catalog/price-catalog.module';
 import { ReferenceBookModule } from './modules/reference-book/reference-book.module';
+import { ProductsModule } from './modules/products/products.module';
 import { ServiceJobsModule } from './modules/service-jobs/service-jobs.module';
 import { ServicesModule } from './modules/services/services.module';
 import { UsersModule } from './modules/users/users.module';
@@ -31,6 +32,7 @@ import { UsersModule } from './modules/users/users.module';
     PriceCatalogModule,
     MachineModelsModule,
     ReferenceBookModule,
+    ProductsModule,
     ServiceJobsModule,
   ],
   controllers: [AppController],

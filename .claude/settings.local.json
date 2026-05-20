@@ -9,7 +9,8 @@
       "Bash(node *)",
       "Bash(npx prisma *)",
       "Bash(pnpm -F api build)",
-      "Bash(pnpm -F web build)"
+      "Bash(pnpm -F web build)",
+      "Bash(echo \"Exit: $?\")"
     ]
   }
 }
