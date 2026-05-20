@@ -9,6 +9,7 @@ const USER_SAFE_SELECT = {
   name: true,
   role: true,
   isActive: true,
+  avatarUrl: true,
   createdAt: true,
   updatedAt: true,
 } as const;
@@ -35,6 +36,28 @@ export class AuthRepository {
   findById(id: string) {
     return this.prisma.user.findUnique({
       where: { id },
+      select: USER_SAFE_SELECT,
+    });
+  }
+
+  findByIdWithPassword(id: string) {
+    return this.prisma.user.findUnique({
+      where: { id },
+      select: { id: true, password: true },
+    });
+  }
+
+  findByEmail(email: string) {
+    return this.prisma.user.findUnique({
+      where: { email },
+      select: USER_SAFE_SELECT,
+    });
+  }
+
+  update(id: string, data: { name?: string; email?: string; password?: string; avatarUrl?: string | null }) {
+    return this.prisma.user.update({
+      where: { id },
+      data,
       select: USER_SAFE_SELECT,
     });
   }

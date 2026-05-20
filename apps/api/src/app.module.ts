@@ -10,6 +10,7 @@ import { RolesGuard } from './common/guards/roles.guard';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { CustomersModule } from './modules/customers/customers.module';
+import { ServicesModule } from './modules/services/services.module';
 import { UsersModule } from './modules/users/users.module';
 
 @Module({
@@ -22,6 +23,7 @@ import { UsersModule } from './modules/users/users.module';
     AuthModule,
     UsersModule,
     CustomersModule,
+    ServicesModule,
   ],
   controllers: [AppController],
   providers: [

@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -37,10 +38,10 @@ export class UsersService {
     });
   }
 
-  async findAll(dto: QueryUserDto) {
+  async findAll(dto: QueryUserDto, currentUserId: string) {
     const page = dto.page ?? 1;
     const limit = dto.limit ?? 20;
-    const { data, total } = await this.usersRepository.findAll(dto);
+    const { data, total } = await this.usersRepository.findAll(dto, currentUserId);
     return createPaginatedResponse(data, total, page, limit);
   }
 
@@ -79,7 +80,10 @@ export class UsersService {
     return this.usersRepository.update(id, updateData);
   }
 
-  async updateStatus(id: string, dto: UpdateUserStatusDto) {
+  async updateStatus(id: string, dto: UpdateUserStatusDto, currentUserId: string) {
+    if (id === currentUserId) {
+      throw new ForbiddenException('You cannot disable your own account');
+    }
     await this.findOne(id);
     return this.usersRepository.updateStatus(id, dto.isActive);
   }

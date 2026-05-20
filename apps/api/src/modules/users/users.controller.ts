@@ -8,8 +8,10 @@ import {
   Query,
 } from '@nestjs/common';
 
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { createResponse } from '../../common/types/api-response.type';
+import type { RequestUser } from '../../common/types/jwt-payload.type';
 import { UserRole } from '../../generated/prisma/enums';
 import { CreateUserDto } from './dto/create-user.dto';
 import { QueryUserDto } from './dto/query-user.dto';
@@ -30,8 +32,8 @@ export class UsersController {
 
   // GET /api/users?role=STAFF&search=john&page=1&limit=20
   @Get()
-  findAll(@Query() query: QueryUserDto) {
-    return this.usersService.findAll(query);
+  findAll(@Query() query: QueryUserDto, @CurrentUser() currentUser: RequestUser) {
+    return this.usersService.findAll(query, currentUser.id);
   }
 
   // GET /api/users/:id
@@ -53,8 +55,9 @@ export class UsersController {
   async updateStatus(
     @Param('id') id: string,
     @Body() dto: UpdateUserStatusDto,
+    @CurrentUser() currentUser: RequestUser,
   ) {
-    const user = await this.usersService.updateStatus(id, dto);
+    const user = await this.usersService.updateStatus(id, dto, currentUser.id);
     return createResponse(user, 'User status updated');
   }
 }

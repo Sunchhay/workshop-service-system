@@ -11,6 +11,7 @@ const USER_SELECT = {
   name: true,
   role: true,
   isActive: true,
+  avatarUrl: true,
   createdAt: true,
   updatedAt: true,
 } as const;
@@ -40,11 +41,12 @@ export class UsersRepository {
     });
   }
 
-  async findAll(dto: QueryUserDto) {
+  async findAll(dto: QueryUserDto, excludeId?: string) {
     const { role, search, page = 1, limit = 20 } = dto;
     const skip = (page - 1) * limit;
 
     const where = {
+      ...(excludeId !== undefined && { id: { not: excludeId } }),
       ...(role !== undefined && { role }),
       ...(search !== undefined && {
         OR: [
