@@ -97,6 +97,22 @@ export class SalesService {
     return createResponse(updated, 'Sale cancelled');
   }
 
+  async complete(id: string) {
+    const sale = await this.findOne(id);
+
+    if (sale.status !== SaleStatus.DRAFT) {
+      throw new BadRequestException('Only draft sales can be completed');
+    }
+
+    try {
+      const updated = await this.salesRepository.completeDraft(id, sale.items);
+      return createResponse(updated, 'Sale completed');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to complete sale';
+      throw new BadRequestException(message);
+    }
+  }
+
   async remove(id: string) {
     await this.findOne(id);
     await this.salesRepository.softDelete(id);

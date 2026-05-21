@@ -268,6 +268,43 @@ export class SalesRepository {
     });
   }
 
+  async completeDraft(id: string, items: Array<{ productId: string; quantity: any }>) {
+    return this.prisma.$transaction(async (tx) => {
+      const productQtyMap = new Map<string, number>();
+      for (const item of items) {
+        const qty = parseFloat(item.quantity.toString());
+        const current = productQtyMap.get(item.productId) ?? 0;
+        productQtyMap.set(item.productId, current + qty);
+      }
+
+      for (const [productId, totalQty] of productQtyMap) {
+        const product = await tx.product.findUnique({
+          where: { id: productId },
+          select: { id: true, name: true, stockQuantity: true },
+        });
+        if (!product) throw new Error(`Product ${productId} not found`);
+        if (product.stockQuantity < totalQty) {
+          throw new Error(
+            `Insufficient stock for "${product.name}". Available: ${product.stockQuantity}, Required: ${totalQty}`,
+          );
+        }
+      }
+
+      for (const [productId, totalQty] of productQtyMap) {
+        await tx.product.update({
+          where: { id: productId },
+          data: { stockQuantity: { decrement: totalQty } },
+        });
+      }
+
+      return tx.sale.update({
+        where: { id },
+        data: { status: SaleStatus.COMPLETED },
+        select: SALE_SELECT,
+      });
+    });
+  }
+
   softDelete(id: string) {
     return this.prisma.sale.update({
       where: { id },

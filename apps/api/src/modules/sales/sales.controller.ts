@@ -46,6 +46,12 @@ export class SalesController {
     return this.salesService.update(id, dto);
   }
 
+  // PATCH /api/sales/:id/complete
+  @Patch(':id/complete')
+  complete(@Param('id') id: string) {
+    return this.salesService.complete(id);
+  }
+
   // PATCH /api/sales/:id/cancel
   @Patch(':id/cancel')
   cancel(@Param('id') id: string, @Body() dto: CancelSaleDto) {
