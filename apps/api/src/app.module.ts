@@ -17,6 +17,7 @@ import { InvoicesModule } from './modules/invoices/invoices.module';
 import { PaymentsModule } from './modules/payments/payments.module';
 import { ProductsModule } from './modules/products/products.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
+import { ReportsModule } from './modules/reports/reports.module';
 import { ExpensesModule } from './modules/expenses/expenses.module';
 import { SalesModule } from './modules/sales/sales.module';
 import { ServiceJobsModule } from './modules/service-jobs/service-jobs.module';
@@ -41,6 +42,7 @@ import { UsersModule } from './modules/users/users.module';
     PaymentsModule,
     ProductsModule,
     DashboardModule,
+    ReportsModule,
     ExpensesModule,
     SalesModule,
     ServiceJobsModule,
