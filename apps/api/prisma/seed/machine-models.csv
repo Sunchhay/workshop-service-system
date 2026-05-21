@@ -1,0 +1,6 @@
+brand,model,category,description,isActive
+Honda,CB150,Engine,Honda CB150 small engine,true
+Honda,GX160,Engine,Honda GX160 general purpose engine,true
+Kubota,RT140,Engine,Kubota RT140 farm tractor engine,true
+Yanmar,L70,Engine,Yanmar L70 single cylinder diesel engine,true
+Yamaha,AG100,Engine,Yamaha AG100 agricultural engine,true

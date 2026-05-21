@@ -1,0 +1,4 @@
+expenseNumber,category,description,amount,method,referenceNo,notes,expenseDate,createdByEmail
+EXP-2026-0001,SUPPLIES,Workshop supplies - sandpaper and cleaning fluid,25.00,CASH,,,2026-01-05,admin@workshop.local
+EXP-2026-0002,UTILITIES,Monthly electricity bill,45.00,BANK_TRANSFER,BANK-2026-001,,2026-01-07,admin@workshop.local
+EXP-2026-0003,RENT,Workshop monthly rent,200.00,CASH,,,2026-01-01,admin@workshop.local

@@ -1,0 +1,7 @@
+serviceCode,label,sizeFrom,sizeTo,unit,difficultyLevel,customerType,unitPrice,currency,notes,isActive
+SRV-001,Bore 60-70 mm - Normal,60,70,mm,NORMAL,,25.00,USD,,true
+SRV-001,Bore 60-70 mm - Difficult,60,70,mm,DIFFICULT,,35.00,USD,,true
+SRV-001,Bore 70-80 mm - Normal,70,80,mm,NORMAL,,30.00,USD,,true
+SRV-001,Bore 70-80 mm - Difficult,70,80,mm,DIFFICULT,,38.00,USD,,true
+SRV-003,Grind 40-50 mm - Normal,40,50,mm,NORMAL,,20.00,USD,,true
+SRV-003,Grind 40-50 mm - Difficult,40,50,mm,DIFFICULT,,28.00,USD,,true

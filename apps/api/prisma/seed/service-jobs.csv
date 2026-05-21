@@ -1,0 +1,4 @@
+jobCode,customerCode,machineModelBrand,machineModelModel,partDescription,status,priority,estimatedCompletionDate,notes,technicianNotes,createdByEmail,assignedToEmail
+JOB-2026-0001,C-0001,Honda,CB150,Cylinder with worn bore - needs reboring to 65.50mm,COMPLETED,NORMAL,2026-01-10,,Bore measured at 65.52mm - within spec after boring,admin@workshop.local,technician@workshop.local
+JOB-2026-0002,C-0002,Kubota,RT140,Crankshaft with worn journal - needs grinding,IN_PROGRESS,HIGH,2026-01-20,Customer needs urgent repair,Journal ground to 44.80mm - polishing in progress,staff@workshop.local,tech2@workshop.local
+JOB-2026-0003,C-0003,,,Engine block for general cleaning and inspection,PENDING,LOW,,,No notes yet,admin@workshop.local,

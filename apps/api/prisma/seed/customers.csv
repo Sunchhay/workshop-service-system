@@ -1,0 +1,6 @@
+code,name,phone,email,address,customerType,notes,isActive
+C-0001,Sokha Lim,012-555-101,sokha@example.com,Phnom Penh,VIP,VIP long-term customer,true
+C-0002,Dara Pich,012-555-102,,Siem Reap,NORMAL,,true
+C-0003,Bunna Chan,012-555-103,bunna@example.com,Battambang,WHOLESALE,Wholesale parts buyer,true
+C-0004,Srey Leak,012-555-104,,Phnom Penh,NORMAL,,true
+C-0005,Visal Kong,012-555-105,visal@partner.com,Kampot,PARTNER,Parts supplier partner,true

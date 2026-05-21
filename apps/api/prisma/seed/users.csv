@@ -1,0 +1,6 @@
+email,password,name,role,isActive
+admin@workshop.local,Admin@123,System Admin,ADMIN,true
+staff@workshop.local,Staff@123,Workshop Staff,STAFF,true
+technician@workshop.local,Technician@123,Workshop Technician,TECHNICIAN,true
+tech2@workshop.local,Tech2@123,Senior Technician,TECHNICIAN,true
+cashier@workshop.local,Cashier@123,Workshop Cashier,CASHIER,true

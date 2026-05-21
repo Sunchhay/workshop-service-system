@@ -1,0 +1,5 @@
+machineModelBrand,machineModelModel,componentType,partName,partCode,standardSize,wearLimit,serviceLimit,unit,sourceType,verificationStatus,notes,isActive
+Honda,CB150,Cylinder,Standard Bore - Honda CB150,CB150-CYL,65.000,65.500,65.250,mm,SERVICE_MANUAL,VERIFIED,,true
+Honda,GX160,Cylinder,Standard Bore - Honda GX160,GX160-CYL,68.000,68.500,68.250,mm,SERVICE_MANUAL,VERIFIED,,true
+Kubota,RT140,Crankshaft,Main Journal - Kubota RT140,RT140-CRK,45.000,44.800,44.900,mm,SUPPLIER_INFO,PENDING_REVIEW,,true
+,,Piston Ring,Generic Piston Ring Groove Width,GEN-PR,2.500,2.700,2.600,mm,REAL_MEASUREMENT,VERIFIED,Common size for small engines,true

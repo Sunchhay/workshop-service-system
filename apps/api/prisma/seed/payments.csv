@@ -1,0 +1,3 @@
+paymentNumber,invoiceNumber,customerCode,amount,method,referenceNo,notes,paidAt,createdByEmail
+PAY-2026-0001,INV-2026-0001,C-0001,38.00,CASH,,,2026-01-15,cashier@workshop.local
+PAY-2026-0002,INV-2026-0002,C-0002,40.00,ABA,ABA-REF-2026-001,,2026-01-18,cashier@workshop.local
