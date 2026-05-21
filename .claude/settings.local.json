@@ -12,7 +12,9 @@
       "Bash(pnpm -F web build)",
       "Bash(echo \"Exit: $?\")",
       "Bash(mkdir -p /Users/sunchhay/Documents/workshop-service-system/apps/web/app/\\\\\\(admin\\\\\\)/admin/invoices/\\\\[id\\\\]/edit)",
-      "Bash(mkdir -p /Users/sunchhay/Documents/workshop-service-system/apps/web/app/\\\\\\(public\\\\\\)/print/invoices/\\\\[id\\\\])"
+      "Bash(mkdir -p /Users/sunchhay/Documents/workshop-service-system/apps/web/app/\\\\\\(public\\\\\\)/print/invoices/\\\\[id\\\\])",
+      "Bash(npm install *)",
+      "Bash(npx tsx *)"
     ]
   }
 }
