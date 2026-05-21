@@ -16,6 +16,7 @@ import { ReferenceBookModule } from './modules/reference-book/reference-book.mod
 import { InvoicesModule } from './modules/invoices/invoices.module';
 import { PaymentsModule } from './modules/payments/payments.module';
 import { ProductsModule } from './modules/products/products.module';
+import { SalesModule } from './modules/sales/sales.module';
 import { ServiceJobsModule } from './modules/service-jobs/service-jobs.module';
 import { ServicesModule } from './modules/services/services.module';
 import { UsersModule } from './modules/users/users.module';
@@ -37,6 +38,7 @@ import { UsersModule } from './modules/users/users.module';
     InvoicesModule,
     PaymentsModule,
     ProductsModule,
+    SalesModule,
     ServiceJobsModule,
   ],
   controllers: [AppController],
