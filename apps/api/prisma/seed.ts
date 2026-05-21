@@ -581,6 +581,29 @@ async function main() {
     console.log(`  skip – ${auditCount} logs already exist`);
   }
 
+  // 17. Settings
+  console.log('\nSeeding settings...');
+  for (const row of readCsv('settings')) {
+    await prisma.setting.upsert({
+      where: { key: row.key },
+      update: {
+        type: str(row.type, 'text'),
+        group: str(row.group, 'general'),
+        description: str(row.description) || null,
+        isPublic: bool(row.isPublic, false),
+      },
+      create: {
+        key: str(row.key),
+        value: str(row.value) || null,
+        type: str(row.type, 'text'),
+        group: str(row.group, 'general'),
+        description: str(row.description) || null,
+        isPublic: bool(row.isPublic, false),
+      },
+    });
+    console.log(`  setting: ${row.key} = ${row.value || '(empty)'}`);
+  }
+
   console.log('\n✅ Seed complete!');
 }
 

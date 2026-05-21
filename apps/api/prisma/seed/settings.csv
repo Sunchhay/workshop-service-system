@@ -1,0 +1,18 @@
+key,value,type,group,description,isPublic
+business.name,Workshop Service,text,business,Business name in English,true
+business.nameKh,សេវាកម្មជួសជុលគ្រឿងម៉ាស៊ីន,text,business,Business name in Khmer,true
+business.phone,012345678,text,business,Business contact phone number,true
+business.address,"Phnom Penh, Cambodia",text,business,Business address in English,true
+business.addressKh,ភ្នំពេញ កម្ពុជា,text,business,Business address in Khmer,true
+business.logoUrl,,text,business,Logo URL or base64 data,true
+invoice.prefix,INV,text,invoice,Prefix used for invoice numbers,false
+invoice.footerNote,Thank you for your business.,text,invoice,Invoice footer note in English,false
+invoice.footerNoteKh,សូមអរគុណសម្រាប់ការគាំទ្រ,text,invoice,Invoice footer note in Khmer,false
+invoice.showLogo,true,boolean,invoice,Whether to show logo on invoice,false
+invoice.showSignature,true,boolean,invoice,Whether to show signature field on invoice,false
+system.defaultCurrency,USD,text,system,Primary currency code,false
+system.secondaryCurrency,KHR,text,system,Secondary currency code,false
+system.timezone,Asia/Phnom_Penh,text,system,System timezone,false
+localization.defaultLanguage,en,text,localization,Default UI language,false
+localization.supportedLanguages,"en,km",text,localization,Comma-separated supported language codes,false
+appearance.defaultTheme,system,text,appearance,Default UI theme (light/dark/system),false

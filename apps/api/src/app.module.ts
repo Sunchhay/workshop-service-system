@@ -21,6 +21,7 @@ import { ReportsModule } from './modules/reports/reports.module';
 import { ExpensesModule } from './modules/expenses/expenses.module';
 import { SalesModule } from './modules/sales/sales.module';
 import { ServiceJobsModule } from './modules/service-jobs/service-jobs.module';
+import { SettingsModule } from './modules/settings/settings.module';
 import { ServicesModule } from './modules/services/services.module';
 import { UsersModule } from './modules/users/users.module';
 
@@ -46,6 +47,7 @@ import { UsersModule } from './modules/users/users.module';
     ExpensesModule,
     SalesModule,
     ServiceJobsModule,
+    SettingsModule,
   ],
   controllers: [AppController],
   providers: [
