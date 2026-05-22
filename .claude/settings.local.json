@@ -14,7 +14,10 @@
       "Bash(mkdir -p /Users/sunchhay/Documents/workshop-service-system/apps/web/app/\\\\\\(admin\\\\\\)/admin/invoices/\\\\[id\\\\]/edit)",
       "Bash(mkdir -p /Users/sunchhay/Documents/workshop-service-system/apps/web/app/\\\\\\(public\\\\\\)/print/invoices/\\\\[id\\\\])",
       "Bash(npm install *)",
-      "Bash(npx tsx *)"
+      "Bash(npx tsx *)",
+      "Bash(grep -r '\"use client\"' /Users/sunchhay/Documents/workshop-service-system/apps/web --include=\"*.tsx\" --include=\"*.ts\" ! -path \"*/node_modules/*\")",
+      "Bash(grep -r '\"use client\"' /Users/sunchhay/Documents/workshop-service-system/apps/web --include='*.tsx' --include='*.ts' ! -path '*/node_modules/*')",
+      "Bash(npx eslint *)"
     ]
   }
 }
