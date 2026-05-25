@@ -8,4 +8,4 @@ apps/api/dist
 apps/api/node_modules
 apps/api/src/generated
 apps/web/.next
-apps/web/node_modules
+apps/web/node_modulesapps/api/.env.production
