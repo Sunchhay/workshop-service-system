@@ -18,7 +18,7 @@ export function InvoicePreview({ id }: { id: string }) {
   return (
     <div className="min-h-screen bg-gray-100 print:bg-white">
       {/* Toolbar — hidden during print */}
-      <div className="print:hidden sticky top-0 z-10 bg-white border-b px-4 py-2 flex items-center gap-3 shadow-sm">
+      <div className="print:hidden sticky top-0 z-10 bg-white border-b px-4 py-2 flex items-center gap-3 ">
         <Button variant="ghost" size="icon-sm" asChild>
           <Link href={`/admin/invoices/${id}`}>
             <ArrowLeft className="h-4 w-4" />

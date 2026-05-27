@@ -45,7 +45,7 @@ export function UserMobileCard({ user, onToggleStatus }: UserMobileCardProps) {
 
   return (
     <div
-      className="flex items-start gap-3 rounded-xl border bg-card p-4 shadow-sm cursor-pointer hover:bg-accent/50 transition-colors"
+      className="flex items-start gap-3 rounded-xl border bg-card p-4  cursor-pointer hover:bg-accent/50 transition-colors"
       onClick={() => router.push(`/admin/users/${user.id}`)}
       role="button"
       tabIndex={0}

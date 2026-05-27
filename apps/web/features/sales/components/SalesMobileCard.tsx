@@ -44,7 +44,7 @@ export function SalesMobileCard({ sale, onCancel, onDelete, onComplete }: SalesM
 
   return (
     <div
-      className="rounded-xl border bg-card shadow-sm overflow-hidden"
+      className="rounded-xl border bg-card  overflow-hidden"
     >
       {/* Card body — tappable */}
       <div

@@ -40,7 +40,9 @@ export const metadata: Metadata = {
         media: '(prefers-color-scheme: dark)',
       },
     ],
-  }
+    shortcut: '/icons/app-icon-512.png',
+    apple: '/icons/app-icon-512.png',
+  },
 };
 
 export const viewport: Viewport = {
