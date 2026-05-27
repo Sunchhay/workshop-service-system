@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
@@ -20,7 +21,6 @@ import {
   type NavItem,
 } from '@/lib/nav/navConfig';
 import { cn } from '@/lib/utils';
-import Image from 'next/image';
 
 function SidebarNavItem({
   item,
@@ -41,11 +41,11 @@ function SidebarNavItem({
       className={cn(
         'flex items-center rounded-lg transition-colors',
         collapsed
-          ? 'justify-center w-10 h-10 mx-auto'
-          : 'gap-3 px-3 py-2.5 text-sm w-full',
+          ? 'mx-auto h-10 w-10 justify-center'
+          : 'w-full gap-3 px-3 py-2.5 text-sm',
         active
-          ? 'bg-primary/10 text-primary font-medium'
-          : 'text-muted-foreground hover:text-foreground hover:bg-muted',
+          ? 'bg-primary/10 font-medium text-primary'
+          : 'text-muted-foreground hover:bg-muted hover:text-foreground',
       )}
     >
       <item.icon className="h-4 w-4 shrink-0" />
@@ -76,7 +76,7 @@ export function DesktopSidebar() {
     <TooltipProvider delayDuration={0}>
       <aside
         className={cn(
-          'hidden md:flex shrink-0 flex-col border-r bg-sidebar overflow-hidden',
+          'hidden h-screen shrink-0 flex-col overflow-hidden border-r bg-sidebar md:flex',
           'transition-[width] duration-300 ease-in-out',
           collapsed ? 'w-[72px]' : 'w-60',
         )}
@@ -84,7 +84,7 @@ export function DesktopSidebar() {
         {/* Brand row */}
         <div
           className={cn(
-            'flex h-20 shrink-0 items-center border-b overflow-hidden',
+            'flex h-20 shrink-0 items-center overflow-hidden border-b',
             collapsed ? 'justify-center px-2' : 'px-4',
           )}
         >
@@ -130,8 +130,8 @@ export function DesktopSidebar() {
         </div>
 
         {/* Scrollable nav */}
-        <ScrollArea className="flex-1">
-          <div className="px-2 py-4 space-y-1">
+        <ScrollArea className="min-h-0 flex-1">
+          <div className="space-y-1 px-2 py-4">
             {MAIN_NAV.map((item) => (
               <SidebarNavItem
                 key={item.href}

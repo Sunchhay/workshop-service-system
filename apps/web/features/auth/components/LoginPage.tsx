@@ -138,7 +138,7 @@ export function LoginPage() {
               </p>
             )}
 
-            <Button type="submit" size="lg" className="w-full mt-4" disabled={isLoading}>
+            <Button type="submit" size="lg" className="w-full mt-4 mb-10" disabled={isLoading}>
               {isLoading ? t('common.loading') : t('auth.loginButton')}
             </Button>
           </form>
