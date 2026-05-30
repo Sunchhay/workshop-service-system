@@ -1,4 +1,4 @@
 userEmail,action,entityType,entityId,ipAddress
-admin@workshop.local,CREATE,ServiceJob,,127.0.0.1
+admin@workshop.local,CREATE,Sale,,127.0.0.1
 cashier@workshop.local,PAYMENT,Invoice,,127.0.0.1
 admin@workshop.local,LOGIN,User,,127.0.0.1

@@ -29,6 +29,8 @@ import {
   useDeleteInvoiceMutation,
   useGetInvoiceQuery,
 } from '../api';
+import { getInvoiceItemDisplayName } from '@/lib/display-name';
+
 import type { InvoiceStatus } from '../types';
 import { CancelInvoiceDialog } from './dialogs/CancelInvoiceDialog';
 import { DeleteInvoiceDialog } from './dialogs/DeleteInvoiceDialog';
@@ -157,17 +159,6 @@ export function InvoiceDetailPage({ id }: { id: string }) {
                     <p>{formatDate(invoice.dueDate)}</p>
                   </div>
                 )}
-                {invoice.serviceJob && (
-                  <div>
-                    <p className="text-muted-foreground text-xs mb-1">{t('invoices.serviceJob')}</p>
-                    <Link
-                      href={`/admin/service-jobs/${invoice.serviceJob.id}`}
-                      className="font-medium hover:underline"
-                    >
-                      {invoice.serviceJob.jobCode}
-                    </Link>
-                  </div>
-                )}
                 <div>
                   <p className="text-muted-foreground text-xs mb-1">{t('invoices.createdBy')}</p>
                   <p>{invoice.createdBy.name}</p>
@@ -209,12 +200,14 @@ export function InvoiceDetailPage({ id }: { id: string }) {
                       {invoice.items.map((item) => (
                         <TableRow key={item.id}>
                           <TableCell>
-                            <p className="text-sm">{item.description}</p>
-                            {item.service && (
-                              <p className="text-xs text-muted-foreground">{item.service.code}</p>
+                            <p className="text-sm font-medium">
+                              {getInvoiceItemDisplayName(item)}
+                            </p>
+                            {item.itemNameKh && item.description !== item.itemNameKh && (
+                              <p className="text-xs text-muted-foreground">{item.description}</p>
                             )}
-                            {item.product && (
-                              <p className="text-xs text-muted-foreground">{item.product.code}</p>
+                            {item.itemCode && (
+                              <p className="text-xs text-muted-foreground font-mono">{item.itemCode}</p>
                             )}
                           </TableCell>
                           <TableCell className="text-right font-mono text-sm">

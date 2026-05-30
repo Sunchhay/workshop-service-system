@@ -72,13 +72,14 @@ export function ServiceEditPage({ id }: ServiceEditPageProps) {
             <ServiceForm
               mode="edit"
               defaultValues={{
+                code: data.data.code,
                 nameEn: data.data.nameEn,
                 nameKh: data.data.nameKh ?? '',
+                imageUrl: data.data.imageUrl ?? '',
                 category: data.data.category ?? '',
                 relatedComponent: data.data.relatedComponent ?? '',
-                priceType: data.data.priceType,
-                defaultPrice: data.data.defaultPrice ?? '',
                 description: data.data.description ?? '',
+                isActive: data.data.isActive,
               }}
               onSubmit={handleSubmit}
               isLoading={isUpdating}

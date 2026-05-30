@@ -1,15 +1,26 @@
-import type { ApiPaginatedResponse, ApiResponse } from '@/lib/api/types';
+import type { ApiPaginatedResponse, ApiResponse } from "@/lib/api/types";
 
 export interface ProductLinkedRefBook {
   id: string;
   partName: string;
   partCode: string | null;
+  machineModelId: string | null;
+  machineModel: {
+    id: string;
+    brand: string;
+    model: string;
+    category: string | null;
+  } | null;
 }
 
 export interface Product {
   id: string;
   code: string;
   name: string;
+  nameKh: string | null;
+  nameEn: string | null;
+  aliases: string | null;
+  imageUrl: string | null;
   brand: string | null;
   componentPartType: string | null;
   size: string | null;
@@ -30,6 +41,10 @@ export interface Product {
 
 export interface CreateProductRequest {
   name: string;
+  nameKh?: string;
+  nameEn?: string;
+  aliases?: string;
+  imageUrl?: string;
   brand?: string;
   componentPartType?: string;
   size?: string;
@@ -56,6 +71,7 @@ export interface ProductQuery {
   search?: string;
   category?: string;
   componentPartType?: string;
+  machineModelId?: string;
   isActive?: boolean;
   lowStock?: boolean;
   page?: number;

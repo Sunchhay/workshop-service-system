@@ -15,7 +15,6 @@ const invoicesApi = baseApi.injectEndpoints({
         search,
         status,
         customerId,
-        serviceJobId,
         dateFrom,
         dateTo,
         page = 1,
@@ -25,7 +24,6 @@ const invoicesApi = baseApi.injectEndpoints({
         if (search) params.set('search', search);
         if (status) params.set('status', status);
         if (customerId) params.set('customerId', customerId);
-        if (serviceJobId) params.set('serviceJobId', serviceJobId);
         if (dateFrom) params.set('dateFrom', dateFrom);
         if (dateTo) params.set('dateTo', dateTo);
         params.set('page', String(page));
@@ -40,13 +38,6 @@ const invoicesApi = baseApi.injectEndpoints({
     }),
     createInvoice: builder.mutation<GetInvoiceResponse, CreateInvoiceRequest>({
       query: (body) => ({ url: '/invoices', method: 'POST', body }),
-      invalidatesTags: ['Invoice'],
-    }),
-    createInvoiceFromServiceJob: builder.mutation<GetInvoiceResponse, string>({
-      query: (serviceJobId) => ({
-        url: `/invoices/from-service-job/${serviceJobId}`,
-        method: 'POST',
-      }),
       invalidatesTags: ['Invoice'],
     }),
     updateInvoice: builder.mutation<
@@ -88,7 +79,6 @@ export const {
   useGetInvoicesQuery,
   useGetInvoiceQuery,
   useCreateInvoiceMutation,
-  useCreateInvoiceFromServiceJobMutation,
   useUpdateInvoiceMutation,
   useCancelInvoiceMutation,
   useDeleteInvoiceMutation,

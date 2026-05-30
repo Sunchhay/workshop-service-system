@@ -30,7 +30,7 @@ export function RecentTransactions() {
 
   return (
     <Card>
-      <CardHeader className="pb-3">
+      <CardHeader className="border-b">
         <div className="flex items-center justify-between">
           <CardTitle className="text-sm font-semibold">{t('dashboard.recentTransactions')}</CardTitle>
           <Button asChild variant="ghost" size="sm" className="h-7 text-xs gap-1">
@@ -43,7 +43,7 @@ export function RecentTransactions() {
       </CardHeader>
       <CardContent className="pt-0">
         {isLoading ? (
-          <div className="space-y-3">
+          <div>
             {Array.from({ length: 4 }).map((_, i) => (
               <Skeleton key={i} className="h-12 w-full rounded-lg" />
             ))}

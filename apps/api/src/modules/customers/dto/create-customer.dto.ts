@@ -1,5 +1,4 @@
 import {
-  IsEmail,
   IsEnum,
   IsNotEmpty,
   IsOptional,
@@ -17,13 +16,9 @@ export class CreateCustomerDto {
   @IsNotEmpty()
   phone: string;
 
-  @IsEmail()
-  @IsOptional()
-  email?: string;
-
   @IsString()
   @IsOptional()
-  address?: string;
+  imageUrl?: string | null;
 
   @IsEnum(CustomerType)
   @IsOptional()

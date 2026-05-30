@@ -1,7 +1,6 @@
 import { Transform } from 'class-transformer';
 import {
   IsBoolean,
-  IsEnum,
   IsInt,
   IsOptional,
   IsString,
@@ -9,16 +8,10 @@ import {
   Min,
 } from 'class-validator';
 
-import { PriceType } from '../../../generated/prisma/enums';
-
 export class QueryServiceDto {
   @IsString()
   @IsOptional()
   search?: string;
-
-  @IsEnum(PriceType)
-  @IsOptional()
-  priceType?: PriceType;
 
   @IsBoolean()
   @IsOptional()

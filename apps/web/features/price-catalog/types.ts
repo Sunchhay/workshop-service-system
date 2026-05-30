@@ -1,24 +1,26 @@
-import type { ApiPaginatedResponse, ApiResponse } from '@/lib/api/types';
-
-export type DifficultyLevel = 'NORMAL' | 'DIFFICULT' | 'SPECIAL';
-export type CustomerType = 'NORMAL' | 'VIP' | 'WHOLESALE' | 'PARTNER';
+import type { ApiPaginatedResponse, ApiResponse } from "@/lib/api/types";
 
 export interface PriceCatalogService {
   id: string;
   nameEn: string;
+  nameKh: string | null;
   code: string;
+}
+
+export interface PriceCatalogMachineModel {
+  id: string;
+  brand: string;
+  model: string;
+  category: string | null;
 }
 
 export interface PriceCatalog {
   id: string;
   serviceId: string;
   service: PriceCatalogService;
+  machineModelId: string;
+  machineModel: PriceCatalogMachineModel;
   label: string;
-  sizeFrom: string | null; // Prisma Decimal → string
-  sizeTo: string | null;
-  unit: string | null;
-  difficultyLevel: DifficultyLevel;
-  customerType: CustomerType | null;
   unitPrice: string; // Decimal → string
   currency: string;
   notes: string | null;
@@ -31,51 +33,36 @@ export interface PriceCatalog {
 
 export interface CreatePriceCatalogRequest {
   serviceId: string;
+  machineModelId: string;
   label: string;
-  sizeFrom?: number;
-  sizeTo?: number;
-  unit?: string;
-  difficultyLevel?: DifficultyLevel;
-  customerType?: CustomerType | null;
   unitPrice: number;
   currency?: string;
   notes?: string;
   effectiveDate?: string;
   expiredDate?: string | null;
+  isActive?: boolean;
 }
 
 export interface UpdatePriceCatalogRequest {
   serviceId?: string;
+  machineModelId?: string;
   label?: string;
-  sizeFrom?: number;
-  sizeTo?: number;
-  unit?: string;
-  difficultyLevel?: DifficultyLevel;
-  customerType?: CustomerType | null;
   unitPrice?: number;
   currency?: string;
   notes?: string;
   effectiveDate?: string;
   expiredDate?: string | null;
+  isActive?: boolean;
 }
 
 export interface PriceCatalogQuery {
   search?: string;
   serviceId?: string;
-  difficultyLevel?: DifficultyLevel;
-  customerType?: CustomerType;
+  machineModelId?: string;
   isActive?: boolean;
   page?: number;
   limit?: number;
 }
 
-export interface PriceCatalogSuggestQuery {
-  serviceId: string;
-  size?: number;
-  difficultyLevel?: DifficultyLevel;
-  customerType?: CustomerType;
-}
-
 export type GetPriceCatalogsResponse = ApiPaginatedResponse<PriceCatalog>;
 export type GetPriceCatalogResponse = ApiResponse<PriceCatalog>;
-export type GetPriceCatalogSuggestResponse = ApiResponse<PriceCatalog[]>;

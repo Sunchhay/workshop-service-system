@@ -12,11 +12,6 @@ export class ReportsService {
     return createResponse(data);
   }
 
-  async getServiceJobs(dto: QueryReportDto) {
-    const data = await this.reportsRepository.getServiceJobs(dto);
-    return createResponse(data);
-  }
-
   async getInvoices(dto: QueryReportDto) {
     const data = await this.reportsRepository.getInvoices(dto);
     return createResponse(data);

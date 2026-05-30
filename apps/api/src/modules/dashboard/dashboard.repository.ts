@@ -13,10 +13,8 @@ export class DashboardRepository {
 
     const [
       totalCustomers,
-      todayNewJobs,
-      pendingJobs,
-      inProgressJobs,
-      completedJobs,
+      salesTodayCount,
+      salesMonthCount,
       invoiceTodayAgg,
       invoiceMonthAgg,
       paymentsTodayAgg,
@@ -28,20 +26,12 @@ export class DashboardRepository {
     ] = await Promise.all([
       this.prisma.customer.count({ where: { deletedAt: null } }),
 
-      this.prisma.serviceJob.count({
-        where: { deletedAt: null, createdAt: { gte: todayStart } },
+      this.prisma.sale.count({
+        where: { deletedAt: null, soldAt: { gte: todayStart } },
       }),
 
-      this.prisma.serviceJob.count({
-        where: { deletedAt: null, status: 'PENDING' },
-      }),
-
-      this.prisma.serviceJob.count({
-        where: { deletedAt: null, status: 'IN_PROGRESS' },
-      }),
-
-      this.prisma.serviceJob.count({
-        where: { deletedAt: null, status: { in: ['COMPLETED', 'DELIVERED'] } },
+      this.prisma.sale.count({
+        where: { deletedAt: null, soldAt: { gte: monthStart } },
       }),
 
       this.prisma.invoice.aggregate({
@@ -102,10 +92,8 @@ export class DashboardRepository {
 
     return {
       totalCustomers,
-      todayNewJobs,
-      pendingJobs,
-      inProgressJobs,
-      completedJobs,
+      salesTodayCount,
+      salesMonthCount,
       invoiceTotalToday: invoiceTodayAgg._sum.totalAmount?.toString() ?? '0',
       invoiceTotalMonth: invoiceMonthAgg._sum.totalAmount?.toString() ?? '0',
       paymentsTotalToday: paymentsTodayAgg._sum.amount?.toString() ?? '0',
@@ -115,23 +103,6 @@ export class DashboardRepository {
       expensesMonth: expensesMonthAgg._sum.amount?.toString() ?? '0',
       lowStockCount,
     };
-  }
-
-  async getRecentServiceJobs() {
-    return this.prisma.serviceJob.findMany({
-      where: { deletedAt: null },
-      orderBy: { createdAt: 'desc' },
-      take: 8,
-      select: {
-        id: true,
-        jobCode: true,
-        status: true,
-        priority: true,
-        createdAt: true,
-        partDescription: true,
-        customer: { select: { id: true, name: true, phone: true } },
-      },
-    });
   }
 
   async getRecentTransactions() {

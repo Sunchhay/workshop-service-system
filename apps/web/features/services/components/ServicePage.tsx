@@ -30,16 +30,14 @@ import {
   useGetServicesQuery,
   useUpdateServiceStatusMutation,
 } from '../api';
-import type { PriceType, Service } from '../types';
+import type { Service } from '../types';
 import { DeleteServiceDialog } from './dialogs/DeleteServiceDialog';
 import { DisableServiceDialog } from './dialogs/DisableServiceDialog';
 import { ServiceMobileCard } from './ServiceMobileCard';
 import { ServiceTable } from './ServiceTable';
 
-const PRICE_TYPES: PriceType[] = ['FIXED', 'CATALOG_BASED', 'CUSTOM'];
 const LIMIT = 20;
 
-type PriceTypeFilter = PriceType | '__all';
 type StatusFilter = 'true' | 'false' | '__all';
 
 export function ServicePage() {
@@ -47,9 +45,7 @@ export function ServicePage() {
 
   const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
-  const [priceTypeFilter, setPriceTypeFilter] = useState<PriceTypeFilter>('__all');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('__all');
-  const [pendingPriceType, setPendingPriceType] = useState<PriceTypeFilter>('__all');
   const [pendingStatus, setPendingStatus] = useState<StatusFilter>('__all');
   const [filterSheetOpen, setFilterSheetOpen] = useState(false);
   const [page, setPage] = useState(1);
@@ -73,11 +69,10 @@ export function ServicePage() {
 
   useEffect(() => {
     setPage(1);
-  }, [priceTypeFilter, statusFilter]);
+  }, [statusFilter]);
 
   const { data, isLoading, isFetching } = useGetServicesQuery({
     search: search || undefined,
-    priceType: priceTypeFilter === '__all' ? undefined : (priceTypeFilter as PriceType),
     isActive:
       statusFilter === '__all' ? undefined : statusFilter === 'true',
     page,
@@ -86,27 +81,22 @@ export function ServicePage() {
 
   const services = data?.data ?? [];
   const meta = data?.meta;
-  const activeFilterCount =
-    (priceTypeFilter !== '__all' ? 1 : 0) + (statusFilter !== '__all' ? 1 : 0);
+  const activeFilterCount = statusFilter !== '__all' ? 1 : 0;
 
   const handleSheetOpen = (open: boolean) => {
     if (open) {
-      setPendingPriceType(priceTypeFilter);
       setPendingStatus(statusFilter);
     }
     setFilterSheetOpen(open);
   };
 
   const handleApplyFilters = () => {
-    setPriceTypeFilter(pendingPriceType);
     setStatusFilter(pendingStatus);
     setFilterSheetOpen(false);
   };
 
   const handleResetFilters = () => {
-    setPendingPriceType('__all');
     setPendingStatus('__all');
-    setPriceTypeFilter('__all');
     setStatusFilter('__all');
     setFilterSheetOpen(false);
   };
@@ -179,22 +169,6 @@ export function ServicePage() {
         {/* Desktop filters */}
         <div className="hidden md:flex gap-3">
           <Select
-            value={priceTypeFilter}
-            onValueChange={(v) => setPriceTypeFilter(v as PriceTypeFilter)}
-          >
-            <SelectTrigger className="w-44">
-              <SelectValue placeholder={t('services.allPriceTypes')} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="__all">{t('services.allPriceTypes')}</SelectItem>
-              {PRICE_TYPES.map((pt) => (
-                <SelectItem key={pt} value={pt}>
-                  {t(`priceTypes.${pt}`)}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select
             value={statusFilter}
             onValueChange={(v) => setStatusFilter(v as StatusFilter)}
           >
@@ -230,25 +204,6 @@ export function ServicePage() {
               <SheetTitle>{t('common.filters')}</SheetTitle>
             </SheetHeader>
             <div className="space-y-4 p-4">
-              <div className="space-y-2">
-                <p className="text-sm font-medium">{t('services.priceType')}</p>
-                <Select
-                  value={pendingPriceType}
-                  onValueChange={(v) => setPendingPriceType(v as PriceTypeFilter)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder={t('services.allPriceTypes')} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="__all">{t('services.allPriceTypes')}</SelectItem>
-                    {PRICE_TYPES.map((pt) => (
-                      <SelectItem key={pt} value={pt}>
-                        {t(`priceTypes.${pt}`)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
               <div className="space-y-2">
                 <p className="text-sm font-medium">{t('services.statusLabel')}</p>
                 <Select

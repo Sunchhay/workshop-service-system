@@ -22,6 +22,8 @@ import {
 } from '@/lib/nav/navConfig';
 import { cn } from '@/lib/utils';
 
+import { ModeSwitcherSidebar } from './ModeSwitcher';
+
 function SidebarNavItem({
   item,
   pathname,
@@ -142,27 +144,34 @@ export function DesktopSidebar() {
             ))}
           </div>
 
-          <div className="px-2 pb-4">
-            <Separator className="mb-4" />
+          {MANAGEMENT_NAV.length > 0 && (
+            <div className="px-2 pb-4">
+              <Separator className="mb-4" />
 
-            {!collapsed && (
-              <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                {t('nav.management')}
-              </p>
-            )}
+              {!collapsed && (
+                <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  {t('nav.management')}
+                </p>
+              )}
 
-            <div className="space-y-1">
-              {MANAGEMENT_NAV.map((item) => (
-                <SidebarNavItem
-                  key={item.href}
-                  item={item}
-                  pathname={pathname}
-                  collapsed={collapsed}
-                />
-              ))}
+              <div className="space-y-1">
+                {MANAGEMENT_NAV.map((item) => (
+                  <SidebarNavItem
+                    key={item.href}
+                    item={item}
+                    pathname={pathname}
+                    collapsed={collapsed}
+                  />
+                ))}
+              </div>
             </div>
-          </div>
+          )}
         </ScrollArea>
+
+        {/* Mode switcher — always visible at sidebar bottom */}
+        <div className={cn('shrink-0 border-t py-2', collapsed ? 'flex justify-center' : 'px-2')}>
+          <ModeSwitcherSidebar />
+        </div>
       </aside>
     </TooltipProvider>
   );

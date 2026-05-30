@@ -25,14 +25,6 @@ import { useTranslation } from '@/lib/i18n/TranslationContext';
 
 import type { MachineModel } from '../types';
 
-function formatDate(dateStr: string) {
-  return new Date(dateStr).toLocaleDateString(undefined, {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  });
-}
-
 interface MachineModelTableProps {
   models: MachineModel[];
   onToggleStatus: (model: MachineModel) => void;
@@ -54,18 +46,17 @@ export function MachineModelTable({
           <TableRow>
             <TableHead>{t('machineModels.brand')}</TableHead>
             <TableHead>{t('machineModels.model')}</TableHead>
+            <TableHead>{t('machineModels.displayName')}</TableHead>
             <TableHead>{t('machineModels.category')}</TableHead>
-            <TableHead>{t('machineModels.description')}</TableHead>
             <TableHead>{t('machineModels.statusLabel')}</TableHead>
-            <TableHead>{t('machineModels.createdAt')}</TableHead>
-            <TableHead className="w-12" />
+            <TableHead className="w-12">{t('machineModels.action')}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {models.length === 0 ? (
             <TableRow>
               <TableCell
-                colSpan={7}
+                colSpan={6}
                 className="text-center text-muted-foreground py-10"
               >
                 {t('machineModels.noModels')}
@@ -80,6 +71,9 @@ export function MachineModelTable({
               >
                 <TableCell className="font-medium">{model.brand}</TableCell>
                 <TableCell>{model.model}</TableCell>
+                <TableCell className="font-medium">
+                  {model.brand} {model.model}
+                </TableCell>
                 <TableCell>
                   {model.category ? (
                     <Badge variant="outline" className="bg-blue-500/10 text-blue-700 border-blue-500/20 dark:text-blue-400">
@@ -88,11 +82,6 @@ export function MachineModelTable({
                   ) : (
                     <span className="text-muted-foreground text-sm">—</span>
                   )}
-                </TableCell>
-                <TableCell>
-                  <p className="text-sm text-muted-foreground max-w-[200px] truncate">
-                    {model.description ?? '—'}
-                  </p>
                 </TableCell>
                 <TableCell>
                   <Badge
@@ -105,9 +94,6 @@ export function MachineModelTable({
                   >
                     {t(model.isActive ? 'common.active' : 'common.inactive')}
                   </Badge>
-                </TableCell>
-                <TableCell className="text-muted-foreground text-sm">
-                  {formatDate(model.createdAt)}
                 </TableCell>
                 <TableCell onClick={(e) => e.stopPropagation()}>
                   <DropdownMenu>

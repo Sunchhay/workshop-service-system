@@ -1,15 +1,10 @@
-import {
-  IsEnum,
-  IsNotEmpty,
-  IsNumber,
-  IsOptional,
-  IsString,
-  Min,
-} from 'class-validator';
-
-import { PriceType } from '../../../generated/prisma/enums';
+import { IsBoolean, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export class CreateServiceDto {
+  @IsString()
+  @IsOptional()
+  code?: string;
+
   @IsString()
   @IsNotEmpty()
   nameEn: string;
@@ -26,15 +21,15 @@ export class CreateServiceDto {
   @IsOptional()
   relatedComponent?: string;
 
-  @IsEnum(PriceType)
-  priceType: PriceType;
-
-  @IsNumber()
-  @Min(0)
+  @IsString()
   @IsOptional()
-  defaultPrice?: number;
+  imageUrl?: string;
 
   @IsString()
   @IsOptional()
   description?: string;
+
+  @IsBoolean()
+  @IsOptional()
+  isActive?: boolean;
 }

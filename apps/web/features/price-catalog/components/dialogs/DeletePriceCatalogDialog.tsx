@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import {
   AlertDialog,
@@ -9,10 +9,10 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { useTranslation } from '@/lib/i18n/TranslationContext';
+} from "@/components/ui/alert-dialog";
+import { useTranslation } from "@/lib/i18n/TranslationContext";
 
-import type { PriceCatalog } from '../../types';
+import type { PriceCatalog } from "../../types";
 
 interface DeletePriceCatalogDialogProps {
   entry: PriceCatalog | null;
@@ -37,20 +37,24 @@ export function DeletePriceCatalogDialog({
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>{t('priceCatalog.confirmDeleteTitle')}</AlertDialogTitle>
+          <AlertDialogTitle>
+            {t("priceCatalog.confirmDeleteTitle")}
+          </AlertDialogTitle>
           <AlertDialogDescription>
-            <span className="font-medium text-foreground">{entry.label}</span> —{' '}
-            {t('priceCatalog.confirmDeleteDesc')}
+            <span className="font-medium text-foreground">{entry.label}</span> —{" "}
+            {t("priceCatalog.confirmDeleteDesc")}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={isLoading}>{t('common.cancel')}</AlertDialogCancel>
+          <AlertDialogCancel disabled={isLoading}>
+            {t("common.cancel")}
+          </AlertDialogCancel>
           <AlertDialogAction
             onClick={onConfirm}
             disabled={isLoading}
             className="bg-destructive/10 text-destructive hover:bg-destructive/20"
           >
-            {t('common.delete')}
+            {t("common.delete")}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

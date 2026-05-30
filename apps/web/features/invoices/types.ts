@@ -10,12 +10,6 @@ export interface InvoiceCustomer {
   phone: string | null;
 }
 
-export interface InvoiceServiceJob {
-  id: string;
-  jobCode: string;
-  partDescription: string;
-}
-
 export interface InvoiceCreatedBy {
   id: string;
   name: string;
@@ -25,6 +19,7 @@ export interface InvoiceItemService {
   id: string;
   code: string;
   nameEn: string;
+  nameKh: string | null;
 }
 
 export interface InvoiceItemProduct {
@@ -39,7 +34,12 @@ export interface InvoiceItem {
   type: ItemType;
   serviceId: string | null;
   productId: string | null;
+  machineModelId: string | null;
+  modelNameSnapshot: string | null;
   description: string;
+  itemCode: string | null;
+  itemNameKh: string | null;
+  itemNameEn: string | null;
   quantity: string; // Decimal → string
   unitPrice: string;
   discountAmount: string;
@@ -48,13 +48,13 @@ export interface InvoiceItem {
   updatedAt: string;
   service: InvoiceItemService | null;
   product: InvoiceItemProduct | null;
+  machineModel: { id: string; brand: string; model: string; category: string | null } | null;
 }
 
 export interface Invoice {
   id: string;
   invoiceNumber: string;
   customerId: string;
-  serviceJobId: string | null;
   saleId: string | null;
   status: InvoiceStatus;
   subtotal: string;
@@ -70,7 +70,6 @@ export interface Invoice {
   createdAt: string;
   updatedAt: string;
   customer: InvoiceCustomer;
-  serviceJob: InvoiceServiceJob | null;
   createdBy: InvoiceCreatedBy;
   items: InvoiceItem[];
 }
@@ -79,7 +78,12 @@ export interface CreateInvoiceItemRequest {
   type?: ItemType;
   serviceId?: string;
   productId?: string;
+  machineModelId?: string;
+  modelNameSnapshot?: string;
   description: string;
+  itemCode?: string;
+  itemNameKh?: string;
+  itemNameEn?: string;
   quantity?: number;
   unitPrice: number;
   discountAmount?: number;
@@ -87,7 +91,6 @@ export interface CreateInvoiceItemRequest {
 
 export interface CreateInvoiceRequest {
   customerId: string;
-  serviceJobId?: string;
   discountAmount?: number;
   taxAmount?: number;
   notes?: string;
@@ -97,7 +100,6 @@ export interface CreateInvoiceRequest {
 
 export interface UpdateInvoiceRequest {
   customerId?: string;
-  serviceJobId?: string;
   discountAmount?: number;
   taxAmount?: number;
   notes?: string;
@@ -110,7 +112,6 @@ export interface InvoiceQuery {
   search?: string;
   status?: InvoiceStatus;
   customerId?: string;
-  serviceJobId?: string;
   dateFrom?: string;
   dateTo?: string;
   page?: number;

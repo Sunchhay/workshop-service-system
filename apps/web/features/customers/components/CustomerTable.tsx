@@ -22,6 +22,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { useTranslation } from '@/lib/i18n/TranslationContext';
+import { getUploadImageUrl } from '@/lib/display-name';
 
 import type { Customer, CustomerType } from '../types';
 
@@ -46,6 +47,15 @@ function formatDate(dateStr: string) {
     month: 'short',
     day: 'numeric',
   });
+}
+
+function initials(name: string) {
+  return name
+    .split(' ')
+    .map((n) => n[0])
+    .slice(0, 2)
+    .join('')
+    .toUpperCase();
 }
 
 export function CustomerTable({
@@ -87,22 +97,28 @@ export function CustomerTable({
                 onClick={() => router.push(`/admin/customers/${customer.id}`)}
               >
                 <TableCell>
-                  <div>
-                    <p className="font-medium">{customer.name}</p>
-                    <p className="text-xs text-muted-foreground font-mono">
-                      {customer.code}
-                    </p>
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary/10 text-sm font-semibold text-primary">
+                      {getUploadImageUrl(customer.imageUrl) ? (
+                        <img
+                          src={getUploadImageUrl(customer.imageUrl) ?? ''}
+                          alt={customer.name}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        initials(customer.name)
+                      )}
+                    </div>
+                    <div>
+                      <p className="font-medium">{customer.name}</p>
+                      <p className="text-xs text-muted-foreground font-mono">
+                        {customer.code}
+                      </p>
+                    </div>
                   </div>
                 </TableCell>
                 <TableCell>
-                  <div>
-                    <p>{customer.phone}</p>
-                    {customer.email && (
-                      <p className="text-xs text-muted-foreground">
-                        {customer.email}
-                      </p>
-                    )}
-                  </div>
+                  <p>{customer.phone}</p>
                 </TableCell>
                 <TableCell>
                   <Badge

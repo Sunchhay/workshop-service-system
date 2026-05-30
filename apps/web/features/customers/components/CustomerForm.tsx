@@ -1,7 +1,8 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Loader2 } from 'lucide-react';
+import { ImageIcon, Loader2, Upload, X } from 'lucide-react';
+import { useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod/v4';
 
@@ -23,8 +24,10 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { getUploadImageUrl } from '@/lib/display-name';
 import { useTranslation } from '@/lib/i18n/TranslationContext';
 
+import { useUploadCustomerImageMutation } from '../api';
 import type {
   CreateCustomerRequest,
   CustomerType,
@@ -36,8 +39,7 @@ const CUSTOMER_TYPES: CustomerType[] = ['NORMAL', 'VIP', 'WHOLESALE', 'PARTNER']
 const customerSchema = z.object({
   name: z.string().min(1),
   phone: z.string().min(1),
-  email: z.union([z.string().email(), z.literal('')]),
-  address: z.string(),
+  imageUrl: z.string().nullable(),
   customerType: z.enum(['NORMAL', 'VIP', 'WHOLESALE', 'PARTNER']),
   notes: z.string(),
 });
@@ -51,6 +53,59 @@ interface CustomerFormProps {
   isLoading?: boolean;
 }
 
+const MAX_IMAGE_SIZE = 2 * 1024 * 1024;
+const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+const IMAGE_TOO_LARGE_KM =
+  'រូបភាពនៅតែធំពេក សូមជ្រើសរើសរូបភាពតូចជាងនេះ។';
+
+async function canvasSupportsWebp(): Promise<boolean> {
+  const canvas = document.createElement('canvas');
+  canvas.width = 1;
+  canvas.height = 1;
+  return canvas.toDataURL('image/webp').startsWith('data:image/webp');
+}
+
+function loadImage(file: File): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    const url = URL.createObjectURL(file);
+    image.onload = () => {
+      URL.revokeObjectURL(url);
+      resolve(image);
+    };
+    image.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error('Invalid image'));
+    };
+    image.src = url;
+  });
+}
+
+async function compressCustomerImage(file: File): Promise<File> {
+  const image = await loadImage(file);
+  const maxSize = 800;
+  const scale = Math.min(1, maxSize / image.width, maxSize / image.height);
+  const width = Math.max(1, Math.round(image.width * scale));
+  const height = Math.max(1, Math.round(image.height * scale));
+
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('Canvas is not available');
+  ctx.drawImage(image, 0, 0, width, height);
+
+  const useWebp = await canvasSupportsWebp();
+  const type = useWebp ? 'image/webp' : 'image/jpeg';
+  const ext = useWebp ? 'webp' : 'jpg';
+  const blob = await new Promise<Blob | null>((resolve) =>
+    canvas.toBlob(resolve, type, 0.82),
+  );
+  if (!blob) throw new Error('Image compression failed');
+
+  return new File([blob], `customer-profile.${ext}`, { type });
+}
+
 export function CustomerForm({
   mode,
   defaultValues,
@@ -58,25 +113,79 @@ export function CustomerForm({
   isLoading,
 }: CustomerFormProps) {
   const { t } = useTranslation();
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [uploadImage, { isLoading: isUploading }] = useUploadCustomerImageMutation();
+  const [compressedFile, setCompressedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(
+    getUploadImageUrl(defaultValues?.imageUrl),
+  );
+  const [imageRemoved, setImageRemoved] = useState(false);
+  const [imageError, setImageError] = useState<string | null>(null);
+  const [isCompressing, setIsCompressing] = useState(false);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(customerSchema),
     defaultValues: {
       name: defaultValues?.name ?? '',
       phone: defaultValues?.phone ?? '',
-      email: defaultValues?.email ?? '',
-      address: defaultValues?.address ?? '',
+      imageUrl: defaultValues?.imageUrl ?? null,
       customerType: defaultValues?.customerType ?? 'NORMAL',
       notes: defaultValues?.notes ?? '',
     },
   });
 
+  const handleImageSelected = async (file: File | undefined) => {
+    setImageError(null);
+    if (!file) return;
+
+    if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+      setImageError(t('customers.imageTypeError'));
+      return;
+    }
+
+    setIsCompressing(true);
+    try {
+      const compressed = await compressCustomerImage(file);
+      if (compressed.size > MAX_IMAGE_SIZE) {
+        setImageError(IMAGE_TOO_LARGE_KM);
+        setCompressedFile(null);
+        return;
+      }
+
+      setCompressedFile(compressed);
+      setImageRemoved(false);
+      form.setValue('imageUrl', defaultValues?.imageUrl ?? null);
+      setPreviewUrl(URL.createObjectURL(compressed));
+    } catch {
+      setImageError(t('customers.imageProcessError'));
+    } finally {
+      setIsCompressing(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setCompressedFile(null);
+    setPreviewUrl(null);
+    setImageRemoved(true);
+    form.setValue('imageUrl', null);
+    setImageError(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
   const handleSubmit = async (data: FormValues) => {
+    let imageUrl: string | null | undefined = data.imageUrl;
+    if (compressedFile) {
+      const result = await uploadImage(compressedFile).unwrap();
+      imageUrl = result.data.imageUrl;
+    } else if (imageRemoved) {
+      imageUrl = null;
+    }
+
     const payload: CreateCustomerRequest | UpdateCustomerRequest = {
       name: data.name,
       phone: data.phone,
-      email: data.email || undefined,
-      address: data.address || undefined,
+      imageUrl,
       customerType: data.customerType,
       notes: data.notes || undefined,
     };
@@ -86,6 +195,61 @@ export function CustomerForm({
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-5">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-full border bg-muted">
+            {previewUrl ? (
+              <img
+                src={previewUrl}
+                alt={t('customers.profileImage')}
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <ImageIcon className="h-8 w-8 text-muted-foreground" />
+            )}
+          </div>
+          <div className="space-y-2">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              className="hidden"
+              onChange={(e) => handleImageSelected(e.target.files?.[0])}
+            />
+            <div className="flex flex-wrap gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isCompressing || isUploading || isLoading}
+              >
+                {isCompressing ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Upload className="mr-2 h-4 w-4" />
+                )}
+                {previewUrl ? t('customers.replaceImage') : t('customers.uploadImage')}
+              </Button>
+              {previewUrl && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleRemoveImage}
+                  disabled={isCompressing || isUploading || isLoading}
+                >
+                  <X className="mr-2 h-4 w-4" />
+                  {t('customers.removeImage')}
+                </Button>
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {t('customers.imageHelp')}
+            </p>
+            {imageError && <p className="text-sm text-destructive">{imageError}</p>}
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
           <FormField
             control={form.control}
@@ -130,25 +294,6 @@ export function CustomerForm({
 
           <FormField
             control={form.control}
-            name="email"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t('customers.email')}</FormLabel>
-                <FormControl>
-                  <Input
-                    type="email"
-                    autoComplete="off"
-                    placeholder={t('customers.emailPlaceholder')}
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
             name="customerType"
             render={({ field }) => (
               <FormItem>
@@ -172,24 +317,6 @@ export function CustomerForm({
             )}
           />
         </div>
-
-        <FormField
-          control={form.control}
-          name="address"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t('customers.address')}</FormLabel>
-              <FormControl>
-                <Textarea
-                  placeholder={t('customers.addressPlaceholder')}
-                  className="min-h-[80px] resize-none"
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
 
         <FormField
           control={form.control}
@@ -220,9 +347,11 @@ export function CustomerForm({
             type="submit"
             size="lg"
             className="w-full md:w-auto"
-            disabled={isLoading}
+            disabled={isLoading || isCompressing || isUploading}
           >
-            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {(isLoading || isUploading) && (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            )}
             {mode === 'create' ? t('customers.createCustomer') : t('common.save')}
           </Button>
         </div>

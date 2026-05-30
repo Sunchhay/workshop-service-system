@@ -10,7 +10,6 @@ const INVOICE_SELECT = {
   id: true,
   invoiceNumber: true,
   customerId: true,
-  serviceJobId: true,
   saleId: true,
   status: true,
   subtotal: true,
@@ -26,7 +25,6 @@ const INVOICE_SELECT = {
   createdAt: true,
   updatedAt: true,
   customer: { select: { id: true, code: true, name: true, phone: true } },
-  serviceJob: { select: { id: true, jobCode: true, partDescription: true } },
   createdBy: { select: { id: true, name: true } },
   items: {
     select: {
@@ -35,7 +33,12 @@ const INVOICE_SELECT = {
       type: true,
       serviceId: true,
       productId: true,
+      machineModelId: true,
+      modelNameSnapshot: true,
       description: true,
+      itemCode: true,
+      itemNameKh: true,
+      itemNameEn: true,
       quantity: true,
       unitPrice: true,
       discountAmount: true,
@@ -44,6 +47,7 @@ const INVOICE_SELECT = {
       updatedAt: true,
       service: { select: { id: true, code: true, nameEn: true } },
       product: { select: { id: true, code: true, name: true } },
+      machineModel: { select: { id: true, brand: true, model: true, category: true } },
     },
     orderBy: { createdAt: 'asc' as const },
   },
@@ -98,6 +102,11 @@ export class InvoicesRepository {
       type: (item.type ?? 'SERVICE') as ItemType,
       serviceId: item.serviceId ?? null,
       productId: item.productId ?? null,
+      machineModelId: item.machineModelId ?? null,
+      modelNameSnapshot: item.modelNameSnapshot ?? null,
+      itemCode: item.itemCode ?? null,
+      itemNameKh: item.itemNameKh ?? null,
+      itemNameEn: item.itemNameEn ?? null,
       description: item.description,
       quantity: qty,
       unitPrice: item.unitPrice,
@@ -116,7 +125,7 @@ export class InvoicesRepository {
       data: {
         invoiceNumber,
         customerId: dto.customerId,
-        serviceJobId: dto.serviceJobId ?? null,
+        saleId: (dto as any).saleId ?? null,
         discountAmount: Math.min(dto.discountAmount ?? 0, totals.subtotal),
         taxAmount: dto.taxAmount ?? 0,
         subtotal: totals.subtotal,
@@ -139,7 +148,6 @@ export class InvoicesRepository {
       search,
       status,
       customerId,
-      serviceJobId,
       dateFrom,
       dateTo,
       page = 1,
@@ -151,7 +159,6 @@ export class InvoicesRepository {
 
     if (status) where.status = status;
     if (customerId) where.customerId = customerId;
-    if (serviceJobId) where.serviceJobId = serviceJobId;
 
     if (dateFrom || dateTo) {
       where.issuedAt = {
@@ -200,7 +207,6 @@ export class InvoicesRepository {
     const updateData: any = {};
 
     if (dto.customerId !== undefined) updateData.customerId = dto.customerId;
-    if (dto.serviceJobId !== undefined) updateData.serviceJobId = dto.serviceJobId;
     if (dto.notes !== undefined) updateData.notes = dto.notes;
     if (dto.dueDate !== undefined) updateData.dueDate = dto.dueDate ? new Date(dto.dueDate) : null;
     if (dto.status !== undefined) updateData.status = dto.status;
@@ -246,24 +252,4 @@ export class InvoicesRepository {
     });
   }
 
-  findServiceJobWithItems(serviceJobId: string) {
-    return this.prisma.serviceJob.findFirst({
-      where: { id: serviceJobId, deletedAt: null },
-      select: {
-        id: true,
-        customerId: true,
-        jobCode: true,
-        items: {
-          select: {
-            type: true,
-            serviceId: true,
-            productId: true,
-            description: true,
-            quantity: true,
-            unitPrice: true,
-          },
-        },
-      },
-    });
-  }
 }

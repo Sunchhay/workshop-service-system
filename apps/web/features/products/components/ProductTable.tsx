@@ -23,6 +23,8 @@ import {
 } from '@/components/ui/table';
 import { useTranslation } from '@/lib/i18n/TranslationContext';
 
+import { getProductDisplayName } from '@/lib/display-name';
+
 import type { Product } from '../types';
 
 function formatDecimal(v: string) {
@@ -82,16 +84,31 @@ export function ProductTable({
               >
                 {/* Name */}
                 <TableCell>
-                  <div>
-                    <p className="font-medium">{product.name}</p>
-                    {product.brand && (
-                      <p className="text-xs text-muted-foreground">
-                        {product.brand}
-                      </p>
+                  <div className="flex items-center gap-3">
+                    {product.imageUrl ? (
+                      <img
+                        src={product.imageUrl}
+                        alt={getProductDisplayName(product)}
+                        className="h-9 w-9 rounded object-cover shrink-0"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div className="h-9 w-9 rounded bg-muted flex items-center justify-center shrink-0 text-muted-foreground/40 text-sm">
+                        📦
+                      </div>
                     )}
-                    <p className="text-xs text-muted-foreground font-mono mt-0.5">
-                      {product.code}
-                    </p>
+                    <div>
+                      <p className="font-medium">{getProductDisplayName(product)}</p>
+                      {product.nameKh && product.nameEn && (
+                        <p className="text-xs text-muted-foreground">{product.nameEn}</p>
+                      )}
+                      {product.brand && (
+                        <p className="text-xs text-muted-foreground">{product.brand}</p>
+                      )}
+                      <p className="text-xs text-muted-foreground font-mono mt-0.5">
+                        {product.code}
+                      </p>
+                    </div>
                   </div>
                 </TableCell>
                 {/* Category / Part type */}

@@ -1,5 +1,5 @@
-import { SalesCreatePage } from '@/features/sales/components/SalesCreatePage';
+import { redirect } from 'next/navigation';
 
 export default function Page() {
-  return <SalesCreatePage />;
+  redirect('/admin/carts');
 }

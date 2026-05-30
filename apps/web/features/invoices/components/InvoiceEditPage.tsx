@@ -25,7 +25,6 @@ export function InvoiceEditPage({ id }: { id: string }) {
   const defaultValues: Partial<InvoiceFormValues> | undefined = invoice
     ? {
         customerId: invoice.customerId,
-        serviceJobId: invoice.serviceJobId ?? '',
         dueDate: invoice.dueDate ? invoice.dueDate.slice(0, 10) : '',
         notes: invoice.notes ?? '',
         discountAmount: invoice.discountAmount,
@@ -35,6 +34,9 @@ export function InvoiceEditPage({ id }: { id: string }) {
           serviceId: item.serviceId ?? '',
           productId: item.productId ?? '',
           description: item.description,
+          itemCode: item.itemCode ?? '',
+          itemNameKh: item.itemNameKh ?? '',
+          itemNameEn: item.itemNameEn ?? '',
           quantity: item.quantity,
           unitPrice: item.unitPrice,
           discountAmount: item.discountAmount,

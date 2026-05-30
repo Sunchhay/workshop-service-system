@@ -74,6 +74,7 @@ export function MachineModelEditPage({ id }: MachineModelEditPageProps) {
                 model: model.model,
                 category: model.category ?? '',
                 description: model.description ?? '',
+                isActive: model.isActive,
               }}
               onSubmit={handleSubmit}
               isLoading={isUpdating}

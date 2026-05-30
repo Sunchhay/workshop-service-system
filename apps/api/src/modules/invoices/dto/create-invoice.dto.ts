@@ -27,6 +27,26 @@ export class CreateInvoiceItemDto {
   productId?: string;
 
   @IsString()
+  @IsOptional()
+  machineModelId?: string;
+
+  @IsString()
+  @IsOptional()
+  modelNameSnapshot?: string;
+
+  @IsString()
+  @IsOptional()
+  itemCode?: string;
+
+  @IsString()
+  @IsOptional()
+  itemNameKh?: string;
+
+  @IsString()
+  @IsOptional()
+  itemNameEn?: string;
+
+  @IsString()
   @IsNotEmpty()
   description: string;
 
@@ -52,7 +72,7 @@ export class CreateInvoiceDto {
 
   @IsString()
   @IsOptional()
-  serviceJobId?: string;
+  saleId?: string;
 
   @IsNumber()
   @Min(0)

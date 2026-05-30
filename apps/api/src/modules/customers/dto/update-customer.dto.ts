@@ -1,6 +1,5 @@
 import {
   IsBoolean,
-  IsEmail,
   IsEnum,
   IsNotEmpty,
   IsOptional,
@@ -20,13 +19,9 @@ export class UpdateCustomerDto {
   @IsOptional()
   phone?: string;
 
-  @IsEmail()
-  @IsOptional()
-  email?: string;
-
   @IsString()
   @IsOptional()
-  address?: string;
+  imageUrl?: string | null;
 
   @IsEnum(CustomerType)
   @IsOptional()

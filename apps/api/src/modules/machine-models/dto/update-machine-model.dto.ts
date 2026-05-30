@@ -18,6 +18,10 @@ export class UpdateMachineModelDto {
   @IsString()
   @IsOptional()
   description?: string;
+
+  @IsBoolean()
+  @IsOptional()
+  isActive?: boolean;
 }
 
 export class UpdateMachineModelStatusDto {

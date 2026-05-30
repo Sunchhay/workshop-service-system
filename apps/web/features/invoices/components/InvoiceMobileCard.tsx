@@ -50,9 +50,6 @@ export function InvoiceMobileCard({ invoice, onCancel, onDelete }: InvoiceMobile
           <span className="font-mono font-medium text-sm">{invoice.invoiceNumber}</span>
         </div>
         <p className="text-sm text-muted-foreground mt-0.5">{invoice.customer.name}</p>
-        {invoice.serviceJob && (
-          <p className="text-xs text-muted-foreground">{invoice.serviceJob.jobCode}</p>
-        )}
         <div className="flex items-center gap-2 mt-1">
           <span className="font-mono text-sm font-medium">
             ${parseFloat(invoice.totalAmount).toFixed(2)}

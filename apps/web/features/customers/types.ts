@@ -7,8 +7,7 @@ export interface Customer {
   code: string;
   name: string;
   phone: string;
-  email: string | null;
-  address: string | null;
+  imageUrl: string | null;
   customerType: CustomerType;
   notes: string | null;
   isActive: boolean;
@@ -19,8 +18,7 @@ export interface Customer {
 export interface CreateCustomerRequest {
   name: string;
   phone: string;
-  email?: string;
-  address?: string;
+  imageUrl?: string | null;
   customerType?: CustomerType;
   notes?: string;
 }
@@ -28,8 +26,7 @@ export interface CreateCustomerRequest {
 export interface UpdateCustomerRequest {
   name?: string;
   phone?: string;
-  email?: string;
-  address?: string;
+  imageUrl?: string | null;
   customerType?: CustomerType;
   notes?: string;
 }
@@ -44,3 +41,4 @@ export interface CustomerQuery {
 
 export type GetCustomersResponse = ApiPaginatedResponse<Customer>;
 export type GetCustomerResponse = ApiResponse<Customer>;
+export type UploadCustomerImageResponse = ApiResponse<{ imageUrl: string }>;

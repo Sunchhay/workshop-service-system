@@ -1,4 +1,4 @@
-invoiceNumber,customerCode,serviceJobCode,saleNumber,status,subtotal,discountAmount,taxAmount,totalAmount,paidAmount,dueAmount,notes,issuedAt,dueDate,createdByEmail
-INV-2026-0001,C-0001,JOB-2026-0001,,PAID,38.00,0.00,0.00,38.00,38.00,0.00,,2026-01-15,2026-01-30,cashier@workshop.local
-INV-2026-0002,C-0002,JOB-2026-0002,,PARTIAL,76.00,0.00,0.00,76.00,40.00,36.00,Partial payment received,2026-01-18,2026-02-18,cashier@workshop.local
-INV-2026-0003,C-0003,JOB-2026-0003,,ISSUED,23.00,0.00,0.00,23.00,0.00,23.00,,2026-01-20,2026-02-20,cashier@workshop.local
+invoiceNumber,customerCode,saleNumber,status,subtotal,discountAmount,taxAmount,totalAmount,paidAmount,dueAmount,notes,issuedAt,dueDate,createdByEmail
+INV-2026-0001,C-0001,,PAID,38.00,0.00,0.00,38.00,38.00,0.00,,2026-01-15,2026-01-30,cashier@workshop.local
+INV-2026-0002,C-0002,,PARTIAL,76.00,0.00,0.00,76.00,40.00,36.00,Partial payment received,2026-01-18,2026-02-18,cashier@workshop.local
+INV-2026-0003,C-0003,,ISSUED,23.00,0.00,0.00,23.00,0.00,23.00,,2026-01-20,2026-02-20,cashier@workshop.local

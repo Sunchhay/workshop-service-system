@@ -14,6 +14,7 @@ const MACHINE_MODEL_SELECT = {
   isActive: true,
   createdAt: true,
   updatedAt: true,
+  deletedAt: true,
 } as const;
 
 @Injectable()
@@ -23,10 +24,11 @@ export class MachineModelsRepository {
   create(data: CreateMachineModelDto) {
     return this.prisma.machineModel.create({
       data: {
-        brand: data.brand,
-        model: data.model,
-        category: data.category,
-        description: data.description,
+        brand: data.brand.trim(),
+        model: data.model.trim(),
+        category: data.category?.trim() || null,
+        description: data.description?.trim() || null,
+        isActive: data.isActive ?? true,
       },
       select: MACHINE_MODEL_SELECT,
     });
@@ -86,7 +88,13 @@ export class MachineModelsRepository {
   update(id: string, data: UpdateMachineModelDto) {
     return this.prisma.machineModel.update({
       where: { id },
-      data,
+      data: {
+        ...(data.brand !== undefined && { brand: data.brand.trim() }),
+        ...(data.model !== undefined && { model: data.model.trim() }),
+        ...(data.category !== undefined && { category: data.category?.trim() || null }),
+        ...(data.description !== undefined && { description: data.description?.trim() || null }),
+        ...(data.isActive !== undefined && { isActive: data.isActive }),
+      },
       select: MACHINE_MODEL_SELECT,
     });
   }

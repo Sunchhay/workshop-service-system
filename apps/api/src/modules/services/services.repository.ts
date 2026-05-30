@@ -10,14 +10,14 @@ const SERVICE_SELECT = {
   code: true,
   nameEn: true,
   nameKh: true,
+  imageUrl: true,
   category: true,
   relatedComponent: true,
-  defaultPrice: true,
-  priceType: true,
   description: true,
   isActive: true,
   createdAt: true,
   updatedAt: true,
+  deletedAt: true,
 } as const;
 
 @Injectable()
@@ -40,23 +40,22 @@ export class ServicesRepository {
         code: data.code,
         nameEn: data.nameEn,
         nameKh: data.nameKh,
+        imageUrl: data.imageUrl,
         category: data.category,
         relatedComponent: data.relatedComponent,
-        priceType: data.priceType,
-        defaultPrice: data.defaultPrice,
         description: data.description,
+        isActive: data.isActive ?? true,
       },
       select: SERVICE_SELECT,
     });
   }
 
   async findAll(dto: QueryServiceDto) {
-    const { search, priceType, isActive, page = 1, limit = 20 } = dto;
+    const { search, isActive, page = 1, limit = 20 } = dto;
     const skip = (page - 1) * limit;
 
     const where = {
       deletedAt: null,
-      ...(priceType !== undefined && { priceType }),
       ...(isActive !== undefined && { isActive }),
       ...(search !== undefined && {
         OR: [

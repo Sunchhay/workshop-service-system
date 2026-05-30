@@ -11,11 +11,6 @@ export class ReportsController {
     return this.reportsService.getSummary(dto);
   }
 
-  @Get('service-jobs')
-  getServiceJobs(@Query() dto: QueryReportDto) {
-    return this.reportsService.getServiceJobs(dto);
-  }
-
   @Get('invoices')
   getInvoices(@Query() dto: QueryReportDto) {
     return this.reportsService.getInvoices(dto);

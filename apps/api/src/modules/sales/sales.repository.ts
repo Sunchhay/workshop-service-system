@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 
-import { SaleStatus } from '../../generated/prisma/enums';
+import { ItemType, SaleStatus } from '../../generated/prisma/enums';
 import { PrismaService } from '../../prisma/prisma.service';
 import type { CreateSaleItemDto } from './dto/create-sale.dto';
 import type { QuerySaleDto } from './dto/query-sale.dto';
@@ -10,6 +10,9 @@ const SALE_SELECT = {
   id: true,
   saleNumber: true,
   customerId: true,
+  machineModelId: true,
+  modelNameSnapshot: true,
+  customerName: true,
   status: true,
   subtotal: true,
   discountAmount: true,
@@ -20,12 +23,20 @@ const SALE_SELECT = {
   createdAt: true,
   updatedAt: true,
   customer: { select: { id: true, code: true, name: true, phone: true } },
+  machineModel: { select: { id: true, brand: true, model: true, category: true } },
   createdBy: { select: { id: true, name: true } },
   items: {
     select: {
       id: true,
       saleId: true,
+      type: true,
+      serviceId: true,
       productId: true,
+      machineModelId: true,
+      modelNameSnapshot: true,
+      itemCode: true,
+      itemNameKh: true,
+      itemNameEn: true,
       description: true,
       quantity: true,
       unitPrice: true,
@@ -33,17 +44,33 @@ const SALE_SELECT = {
       totalPrice: true,
       createdAt: true,
       updatedAt: true,
-      product: {
-        select: {
-          id: true,
-          code: true,
-          name: true,
-          unit: true,
-          stockQuantity: true,
-        },
-      },
+      service: { select: { id: true, code: true, nameEn: true, nameKh: true } },
+      product: { select: { id: true, code: true, name: true, nameKh: true, unit: true, stockQuantity: true } },
+      machineModel: { select: { id: true, brand: true, model: true, category: true } },
     },
     orderBy: { createdAt: 'asc' as const },
+  },
+  invoices: {
+    select: {
+      id: true,
+      invoiceNumber: true,
+      status: true,
+      totalAmount: true,
+      paidAmount: true,
+      dueAmount: true,
+      issuedAt: true,
+      payments: {
+        select: {
+          id: true,
+          paymentNumber: true,
+          amount: true,
+          method: true,
+          paidAt: true,
+        },
+        orderBy: { paidAt: 'desc' as const },
+      },
+    },
+    orderBy: { issuedAt: 'desc' as const },
   },
 } as const;
 
@@ -53,7 +80,7 @@ export interface SaleTotals {
 }
 
 export function calcSaleTotals(
-  items: CreateSaleItemDto[],
+  items: Array<{ quantity: number; unitPrice: number; discountAmount?: number }>,
   discountAmount = 0,
 ): SaleTotals {
   const subtotal = items.reduce((sum, item) => {
@@ -89,8 +116,15 @@ export class SalesRepository {
     const raw = qty * item.unitPrice;
     const itemDiscount = Math.min(item.discountAmount ?? 0, raw);
     return {
-      productId: item.productId,
-      description: item.description ?? null,
+      type: (item.type ?? ItemType.PRODUCT) as ItemType,
+      serviceId: item.serviceId ?? null,
+      productId: item.productId ?? null,
+      machineModelId: item.machineModelId ?? null,
+      modelNameSnapshot: item.modelNameSnapshot ?? null,
+      itemCode: item.itemCode ?? null,
+      itemNameKh: item.itemNameKh ?? null,
+      itemNameEn: item.itemNameEn ?? null,
+      description: item.description,
       quantity: qty,
       unitPrice: item.unitPrice,
       discountAmount: itemDiscount,
@@ -99,23 +133,24 @@ export class SalesRepository {
   }
 
   async createWithTransaction(
-    dto: { customerId?: string; notes?: string; soldAt?: string; discountAmount?: number; items: CreateSaleItemDto[] },
+    dto: { customerId?: string; customerName?: string; machineModelId?: string; modelNameSnapshot?: string; notes?: string; soldAt?: string; discountAmount?: number; items: CreateSaleItemDto[] },
     saleNumber: string,
     createdById: string,
     totals: SaleTotals,
     status: SaleStatus,
   ) {
     return this.prisma.$transaction(async (tx) => {
-      // Validate and deduct stock only for COMPLETED sales
+      // Only deduct stock for PRODUCT items on COMPLETED sales
       if (status === SaleStatus.COMPLETED) {
-        // Aggregate quantities per product
+        const productItems = dto.items.filter(
+          (i) => (i.type ?? ItemType.PRODUCT) === ItemType.PRODUCT && i.productId,
+        );
         const productQtyMap = new Map<string, number>();
-        for (const item of dto.items) {
-          const current = productQtyMap.get(item.productId) ?? 0;
-          productQtyMap.set(item.productId, current + item.quantity);
+        for (const item of productItems) {
+          const current = productQtyMap.get(item.productId!) ?? 0;
+          productQtyMap.set(item.productId!, current + item.quantity);
         }
 
-        // Check stock availability
         for (const [productId, totalQty] of productQtyMap) {
           const product = await tx.product.findUnique({
             where: { id: productId },
@@ -129,7 +164,6 @@ export class SalesRepository {
           }
         }
 
-        // Deduct stock
         for (const [productId, totalQty] of productQtyMap) {
           await tx.product.update({
             where: { id: productId },
@@ -142,6 +176,9 @@ export class SalesRepository {
         data: {
           saleNumber,
           customerId: dto.customerId ?? null,
+          machineModelId: dto.machineModelId ?? null,
+          modelNameSnapshot: dto.modelNameSnapshot ?? null,
+          customerName: dto.customerName ?? 'Walk-in Customer',
           status,
           subtotal: totals.subtotal,
           discountAmount: Math.min(dto.discountAmount ?? 0, totals.subtotal),
@@ -242,12 +279,12 @@ export class SalesRepository {
 
   async cancelAndRestoreStock(
     id: string,
-    items: Array<{ productId: string; quantity: any }>,
+    items: Array<{ type?: string | null; productId?: string | null; quantity: any }>,
   ) {
     return this.prisma.$transaction(async (tx) => {
-      // Aggregate quantities and restore stock
       const productQtyMap = new Map<string, number>();
       for (const item of items) {
+        if (item.type !== 'PRODUCT' || !item.productId) continue;
         const qty = parseFloat(item.quantity.toString());
         const current = productQtyMap.get(item.productId) ?? 0;
         productQtyMap.set(item.productId, current + qty);
@@ -268,10 +305,11 @@ export class SalesRepository {
     });
   }
 
-  async completeDraft(id: string, items: Array<{ productId: string; quantity: any }>) {
+  async completeDraft(id: string, items: Array<{ type?: string | null; productId?: string | null; quantity: any }>) {
     return this.prisma.$transaction(async (tx) => {
       const productQtyMap = new Map<string, number>();
       for (const item of items) {
+        if (item.type !== 'PRODUCT' || !item.productId) continue;
         const qty = parseFloat(item.quantity.toString());
         const current = productQtyMap.get(item.productId) ?? 0;
         productQtyMap.set(item.productId, current + qty);

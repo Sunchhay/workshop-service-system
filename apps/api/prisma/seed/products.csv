@@ -1,6 +1,6 @@
-code,name,brand,componentPartType,size,supplier,description,category,unit,costPrice,sellingPrice,stockQuantity,reorderLevel,linkedReferenceBookPartCode,isActive
-PRD-001,Piston Ring 65mm,NPR,Piston Ring,65.00 mm,KhmerParts Co,STD piston ring set for 65mm bore,Engine Parts,set,3.00,4.00,25,5,GEN-PR,true
-PRD-002,Cylinder Gasket,Honda,Gasket,,,Honda cylinder head gasket,Engine Parts,piece,2.50,4.50,15,3,,true
-PRD-003,Valve Set,Kubota,Valve,,KhmerParts Co,Kubota intake and exhaust valve set,Engine Parts,set,8.00,12.00,10,2,,true
-PRD-004,Bearing 6205,SKF,Bearing,25x52x15mm,SKF Cambodia,Deep groove ball bearing 6205,Bearings,piece,3.00,5.00,30,10,,true
-PRD-005,Engine Oil 1L,Castrol,Oil,,Oil Supplier,Castrol GTX 10W-40 motor oil 1 liter,Lubricants,liter,7.00,10.00,50,10,,true
+code,name,nameKh,nameEn,aliases,imageUrl,brand,componentPartType,size,supplier,description,category,unit,costPrice,sellingPrice,stockQuantity,reorderLevel,linkedReferenceBookPartCode,isActive
+PRD-001,Piston Ring 65mm,ក្រវ៉ាត់ពិស្តុង,Piston Ring 65mm,"piston ring,ក្រវ៉ាត់,ពិស្តុង",,NPR,Piston Ring,65.00 mm,KhmerParts Co,STD piston ring set for 65mm bore,Engine Parts,set,3.00,4.00,25,5,GEN-PR,true
+PRD-002,Cylinder Gasket,រ៉ងក្បាលកន្លះ,Head Gasket,"gasket,រ៉ង,ក្បាលកន្លះ,cylinder gasket",,Honda,Gasket,,,Honda cylinder head gasket,Engine Parts,piece,2.50,4.50,15,3,,true
+PRD-003,Valve Set,សូប៉ាប់,Valve Set,"valve,សូប៉ាប់,intake valve,exhaust valve",,Kubota,Valve,,KhmerParts Co,Kubota intake and exhaust valve set,Engine Parts,set,8.00,12.00,10,2,,true
+PRD-004,Bearing 6205,កូសាណេ,Ball Bearing 6205,"bearing,កូសាណេ,6205",,SKF,Bearing,25x52x15mm,SKF Cambodia,Deep groove ball bearing 6205,Bearings,piece,3.00,5.00,30,10,,true
+PRD-005,Engine Oil 1L,ប្រេងម៉ាស៊ីន,Engine Oil 1L,"oil,ប្រេង,engine oil",,Castrol,Oil,,Oil Supplier,Castrol GTX 10W-40 motor oil 1 liter,Lubricants,liter,7.00,10.00,50,10,,true

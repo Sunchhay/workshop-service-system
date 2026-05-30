@@ -15,21 +15,9 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useTranslation } from '@/lib/i18n/TranslationContext';
 
-import type { PriceType, Service } from '../types';
+import { getServiceDisplayName } from '@/lib/display-name';
 
-const priceTypeClass: Record<PriceType, string> = {
-  FIXED: 'bg-blue-500/10 text-blue-600 border-blue-500/20 dark:text-blue-400',
-  CATALOG_BASED:
-    'bg-amber-500/10 text-amber-700 border-amber-500/20 dark:text-amber-400',
-  CUSTOM:
-    'bg-purple-500/10 text-purple-700 border-purple-500/20 dark:text-purple-400',
-};
-
-function formatPrice(price: string | null): string {
-  if (!price) return '—';
-  const num = parseFloat(price);
-  return isNaN(num) ? '—' : num.toFixed(2);
-}
+import type { Service } from '../types';
 
 interface ServiceMobileCardProps {
   service: Service;
@@ -56,16 +44,26 @@ export function ServiceMobileCard({
           router.push(`/admin/services/${service.id}`);
       }}
     >
+      {/* Thumbnail */}
+      {service.imageUrl && (
+        <img
+          src={service.imageUrl}
+          alt={getServiceDisplayName(service)}
+          className="h-12 w-12 rounded-lg object-cover shrink-0"
+          loading="lazy"
+        />
+      )}
+
       {/* Main info */}
       <div className="min-w-0 flex-1">
         <div className="flex items-start gap-2 flex-wrap">
-          <span className="font-medium text-sm">{service.nameEn}</span>
+          <span className="font-medium text-sm">{getServiceDisplayName(service)}</span>
           <Badge variant="outline" className="font-mono text-xs px-1.5">
             {service.code}
           </Badge>
         </div>
         {service.nameKh && (
-          <p className="text-xs text-muted-foreground mt-0.5">{service.nameKh}</p>
+          <p className="text-xs text-muted-foreground mt-0.5">{service.nameEn}</p>
         )}
         {(service.category || service.relatedComponent) && (
           <p className="text-xs text-muted-foreground mt-0.5">
@@ -74,18 +72,7 @@ export function ServiceMobileCard({
               .join(' · ')}
           </p>
         )}
-        {service.priceType === 'FIXED' && service.defaultPrice && (
-          <p className="text-xs font-mono text-foreground mt-0.5">
-            {formatPrice(service.defaultPrice)}
-          </p>
-        )}
         <div className="mt-2 flex flex-wrap gap-1.5">
-          <Badge
-            variant="outline"
-            className={priceTypeClass[service.priceType]}
-          >
-            {t(`priceTypes.${service.priceType}`)}
-          </Badge>
           <Badge
             variant={service.isActive ? 'default' : 'outline'}
             className={

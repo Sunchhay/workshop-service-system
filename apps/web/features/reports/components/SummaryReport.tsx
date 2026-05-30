@@ -1,7 +1,7 @@
 'use client';
 
 import {
-  AlertTriangle, BarChart3, ClipboardList, CreditCard,
+  AlertTriangle, BarChart3, CreditCard,
   DollarSign, Package, TrendingDown, TrendingUp, Users, Wallet,
 } from 'lucide-react';
 
@@ -47,7 +47,6 @@ export function SummaryReport({ fromDate, toDate }: Props) {
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
       <SCard title={t('reports.totalCustomers')} value={isLoading ? '—' : (s?.totalCustomers ?? 0)} icon={Users} iconClass="bg-blue-500/10 text-blue-600 dark:text-blue-400" isLoading={isLoading} />
-      <SCard title={t('reports.totalServiceJobs')} value={isLoading ? '—' : (s?.totalServiceJobs ?? 0)} icon={ClipboardList} iconClass="bg-cyan-500/10 text-cyan-600 dark:text-cyan-400" isLoading={isLoading} />
       <SCard title={t('reports.totalInvoices')} value={isLoading ? '—' : (s?.totalInvoices ?? 0)} icon={BarChart3} iconClass="bg-purple-500/10 text-purple-600 dark:text-purple-400" isLoading={isLoading} />
       <SCard title={t('reports.invoiceTotal')} value={isLoading ? '—' : fmt(s?.invoiceTotal ?? '0')} icon={DollarSign} iconClass="bg-purple-500/10 text-purple-600 dark:text-purple-400" isLoading={isLoading} />
       <SCard title={t('reports.paymentTotal')} value={isLoading ? '—' : fmt(s?.paymentTotal ?? '0')} icon={Wallet} iconClass="bg-green-500/10 text-green-600 dark:text-green-400" isLoading={isLoading} highlight="success" />

@@ -22,6 +22,11 @@ function formatDate(d: string | null) {
   });
 }
 
+function getItemDescription(item: Invoice['items'][number]) {
+  const baseName = item.itemNameKh || item.description || item.itemNameEn || 'Item';
+  return item.modelNameSnapshot ? `${item.modelNameSnapshot} - ${baseName}` : baseName;
+}
+
 interface InvoicePrintProps {
   invoice: Invoice;
 }
@@ -63,14 +68,6 @@ export function InvoicePrint({ invoice }: InvoicePrintProps) {
             STATUS
           </p>
           <p style={{ fontWeight: 'bold', fontSize: '13px' }}>{STATUS_LABEL[invoice.status] ?? invoice.status}</p>
-          {invoice.serviceJob && (
-            <>
-              <p style={{ fontSize: '10px', textTransform: 'uppercase', color: '#555', marginTop: '8px', marginBottom: '4px' }}>
-                JOB REF
-              </p>
-              <p style={{ fontFamily: 'monospace' }}>{invoice.serviceJob.jobCode}</p>
-            </>
-          )}
         </div>
       </div>
 
@@ -89,7 +86,7 @@ export function InvoicePrint({ invoice }: InvoicePrintProps) {
           {invoice.items.map((item, idx) => (
             <tr key={item.id} style={{ borderBottom: '1px solid #e0e0e0', background: idx % 2 === 0 ? '#fff' : '#fafafa' }}>
               <td style={{ padding: '6px 4px' }}>
-                <span>{item.description}</span>
+                <span>{getItemDescription(item)}</span>
                 {item.service && (
                   <span style={{ color: '#888', fontSize: '10px', marginLeft: '6px' }}>
                     {item.service.code}

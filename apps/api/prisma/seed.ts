@@ -10,14 +10,10 @@ import { Pool } from 'pg';
 import {
   AuditAction,
   CustomerType,
-  DifficultyLevel,
   ExpenseCategory,
   InvoiceStatus,
   ItemType,
-  JobStatus,
   PaymentMethod,
-  PriceType,
-  Priority,
   PrismaClient,
   ReferenceSourceType,
   SaleStatus,
@@ -36,7 +32,11 @@ type Row = Record<string, string>;
 
 function readCsv(name: string): Row[] {
   const content = fs.readFileSync(path.join(SEED_DIR, `${name}.csv`), 'utf-8');
-  return parse(content, { columns: true, skip_empty_lines: true, trim: true }) as Row[];
+  return parse(content, {
+    columns: true,
+    skip_empty_lines: true,
+    trim: true,
+  });
 }
 
 const str = (v: string | undefined, def = ''): string => v?.trim() ?? def;
@@ -66,7 +66,11 @@ async function main() {
     const hashed = await bcrypt.hash(row.password, BCRYPT_ROUNDS);
     const user = await prisma.user.upsert({
       where: { email: row.email },
-      update: { name: str(row.name), role: row.role as UserRole, isActive: bool(row.isActive) },
+      update: {
+        name: str(row.name),
+        role: row.role as UserRole,
+        isActive: bool(row.isActive),
+      },
       create: {
         email: row.email,
         password: hashed,
@@ -88,8 +92,7 @@ async function main() {
       update: {
         name: str(row.name),
         phone: str(row.phone),
-        email: str(row.email) || null,
-        address: str(row.address) || null,
+        imageUrl: str(row.imageUrl) || null,
         customerType: row.customerType as CustomerType,
         notes: str(row.notes) || null,
         isActive: bool(row.isActive),
@@ -98,8 +101,7 @@ async function main() {
         code: row.code,
         name: str(row.name),
         phone: str(row.phone),
-        email: str(row.email) || null,
-        address: str(row.address) || null,
+        imageUrl: str(row.imageUrl) || null,
         customerType: row.customerType as CustomerType,
         notes: str(row.notes) || null,
         isActive: bool(row.isActive),
@@ -118,10 +120,9 @@ async function main() {
       update: {
         nameEn: str(row.nameEn),
         nameKh: str(row.nameKh) || null,
+        imageUrl: str(row.imageUrl) || null,
         category: str(row.category) || null,
         relatedComponent: str(row.relatedComponent) || null,
-        defaultPrice: str(row.defaultPrice) ? num(row.defaultPrice) : null,
-        priceType: row.priceType as PriceType,
         description: str(row.description) || null,
         isActive: bool(row.isActive),
       },
@@ -129,10 +130,9 @@ async function main() {
         code: row.code,
         nameEn: str(row.nameEn),
         nameKh: str(row.nameKh) || null,
+        imageUrl: str(row.imageUrl) || null,
         category: str(row.category) || null,
         relatedComponent: str(row.relatedComponent) || null,
-        defaultPrice: str(row.defaultPrice) ? num(row.defaultPrice) : null,
-        priceType: row.priceType as PriceType,
         description: str(row.description) || null,
         isActive: bool(row.isActive),
       },
@@ -141,39 +141,7 @@ async function main() {
     console.log(`  service: ${row.code} – ${row.nameEn}`);
   }
 
-  // 4. Price Catalog
-  console.log('\nSeeding price catalogs...');
-  const priceCatalogMap: Record<string, string> = {};
-  for (const row of readCsv('price-catalog')) {
-    const serviceId = serviceMap[row.serviceCode];
-    if (!serviceId) {
-      console.warn(`  skip catalog: no service ${row.serviceCode}`);
-      continue;
-    }
-    const existing = await prisma.priceCatalog.findFirst({
-      where: { serviceId, label: row.label },
-    });
-    const data = {
-      serviceId,
-      label: str(row.label),
-      sizeFrom: str(row.sizeFrom) ? num(row.sizeFrom) : null,
-      sizeTo: str(row.sizeTo) ? num(row.sizeTo) : null,
-      unit: str(row.unit) || null,
-      difficultyLevel: row.difficultyLevel as DifficultyLevel,
-      customerType: str(row.customerType) ? (row.customerType as CustomerType) : null,
-      unitPrice: num(row.unitPrice),
-      currency: str(row.currency, 'USD'),
-      notes: str(row.notes) || null,
-      isActive: bool(row.isActive),
-    };
-    const catalog = existing
-      ? await prisma.priceCatalog.update({ where: { id: existing.id }, data })
-      : await prisma.priceCatalog.create({ data });
-    priceCatalogMap[`${row.serviceCode}|${row.label}`] = catalog.id;
-    console.log(`  catalog: [${row.serviceCode}] ${row.label} = $${row.unitPrice}`);
-  }
-
-  // 5. Machine Models
+  // 4. Machine Models
   console.log('\nSeeding machine models...');
   const machineModelMap: Record<string, string> = {};
   for (const row of readCsv('machine-models')) {
@@ -196,6 +164,46 @@ async function main() {
     console.log(`  machineModel: ${row.brand} ${row.model}`);
   }
 
+  // 5. Price Catalog
+  console.log('\nSeeding price catalogs...');
+  const priceCatalogMap: Record<string, string> = {};
+  for (const row of readCsv('price-catalog')) {
+    const serviceId = serviceMap[row.serviceCode];
+    const machineModelId =
+      machineModelMap[`${row.machineModelBrand}|${row.machineModelModel}`];
+    if (!serviceId) {
+      console.warn(`  skip catalog: no service ${row.serviceCode}`);
+      continue;
+    }
+    if (!machineModelId) {
+      console.warn(
+        `  skip catalog: no machine model ${row.machineModelBrand} ${row.machineModelModel}`,
+      );
+      continue;
+    }
+    const existing = await prisma.priceCatalog.findFirst({
+      where: { serviceId, machineModelId, label: row.label },
+    });
+    const data = {
+      serviceId,
+      machineModelId,
+      label: str(row.label),
+      unitPrice: num(row.unitPrice),
+      currency: str(row.currency, 'USD'),
+      notes: str(row.notes) || null,
+      isActive: bool(row.isActive),
+    };
+    const catalog = existing
+      ? await prisma.priceCatalog.update({ where: { id: existing.id }, data })
+      : await prisma.priceCatalog.create({ data });
+    priceCatalogMap[
+      `${row.serviceCode}|${row.machineModelBrand}|${row.machineModelModel}|${row.label}`
+    ] = catalog.id;
+    console.log(
+      `  catalog: [${row.machineModelBrand} ${row.machineModelModel}] [${row.serviceCode}] ${row.label} = $${row.unitPrice}`,
+    );
+  }
+
   // 6. Reference Book
   console.log('\nSeeding reference books...');
   const referenceBookMap: Record<string, string> = {};
@@ -204,9 +212,13 @@ async function main() {
     if (!partCode) continue;
     const machineModelId =
       str(row.machineModelBrand) && str(row.machineModelModel)
-        ? (machineModelMap[`${row.machineModelBrand}|${row.machineModelModel}`] ?? null)
+        ? (machineModelMap[
+            `${row.machineModelBrand}|${row.machineModelModel}`
+          ] ?? null)
         : null;
-    const existing = await prisma.referenceBook.findFirst({ where: { partCode } });
+    const existing = await prisma.referenceBook.findFirst({
+      where: { partCode },
+    });
     const data = {
       machineModelId,
       componentType: str(row.componentType) || null,
@@ -239,6 +251,10 @@ async function main() {
       where: { code: row.code },
       update: {
         name: str(row.name),
+        nameKh: str(row.nameKh) || null,
+        nameEn: str(row.nameEn) || null,
+        aliases: str(row.aliases) || null,
+        imageUrl: str(row.imageUrl) || null,
         brand: str(row.brand) || null,
         componentPartType: str(row.componentPartType) || null,
         size: str(row.size) || null,
@@ -256,6 +272,10 @@ async function main() {
       create: {
         code: row.code,
         name: str(row.name),
+        nameKh: str(row.nameKh) || null,
+        nameEn: str(row.nameEn) || null,
+        aliases: str(row.aliases) || null,
+        imageUrl: str(row.imageUrl) || null,
         brand: str(row.brand) || null,
         componentPartType: str(row.componentPartType) || null,
         size: str(row.size) || null,
@@ -275,96 +295,18 @@ async function main() {
     console.log(`  product: ${row.code} – ${row.name}`);
   }
 
-  // 8. Service Jobs
-  console.log('\nSeeding service jobs...');
-  const serviceJobMap: Record<string, string> = {};
-  for (const row of readCsv('service-jobs')) {
-    const customerId = customerMap[row.customerCode];
-    if (!customerId) { console.warn(`  skip job: no customer ${row.customerCode}`); continue; }
-    const createdById = userMap[row.createdByEmail];
-    if (!createdById) { console.warn(`  skip job: no user ${row.createdByEmail}`); continue; }
-    const machineModelId =
-      str(row.machineModelBrand) && str(row.machineModelModel)
-        ? (machineModelMap[`${row.machineModelBrand}|${row.machineModelModel}`] ?? null)
-        : null;
-    const assignedToId = str(row.assignedToEmail)
-      ? (userMap[row.assignedToEmail] ?? null)
-      : null;
-    const job = await prisma.serviceJob.upsert({
-      where: { jobCode: row.jobCode },
-      update: {
-        machineModelId,
-        partDescription: str(row.partDescription),
-        status: row.status as JobStatus,
-        priority: row.priority as Priority,
-        estimatedCompletionDate: dt(row.estimatedCompletionDate) ?? null,
-        notes: str(row.notes) || null,
-        technicianNotes: str(row.technicianNotes) || null,
-        assignedToId,
-      },
-      create: {
-        jobCode: row.jobCode,
-        customerId,
-        machineModelId,
-        partDescription: str(row.partDescription),
-        status: row.status as JobStatus,
-        priority: row.priority as Priority,
-        estimatedCompletionDate: dt(row.estimatedCompletionDate) ?? null,
-        notes: str(row.notes) || null,
-        technicianNotes: str(row.technicianNotes) || null,
-        createdById,
-        assignedToId,
-      },
-    });
-    serviceJobMap[row.jobCode] = job.id;
-    console.log(`  serviceJob: ${row.jobCode} [${row.status}]`);
-  }
-
-  // 9. Service Job Items (delete + recreate per job)
-  console.log('\nSeeding service job items...');
-  const jobItemsByJob: Record<string, Row[]> = {};
-  for (const row of readCsv('service-job-items')) {
-    (jobItemsByJob[row.jobCode] ??= []).push(row);
-  }
-  for (const [jobCode, items] of Object.entries(jobItemsByJob)) {
-    const serviceJobId = serviceJobMap[jobCode];
-    if (!serviceJobId) { console.warn(`  skip items: no job ${jobCode}`); continue; }
-    await prisma.serviceJobItem.deleteMany({ where: { serviceJobId } });
-    for (const item of items) {
-      const serviceId = str(item.serviceCode) ? (serviceMap[item.serviceCode] ?? null) : null;
-      const priceCatalogId =
-        str(item.priceCatalogLabel) && str(item.serviceCode)
-          ? (priceCatalogMap[`${item.serviceCode}|${item.priceCatalogLabel}`] ?? null)
-          : null;
-      const productId = str(item.productCode) ? (productMap[item.productCode] ?? null) : null;
-      const qty = num(item.quantity, 1);
-      const price = num(item.unitPrice);
-      await prisma.serviceJobItem.create({
-        data: {
-          serviceJobId,
-          type: item.type as ItemType,
-          serviceId,
-          priceCatalogId,
-          productId,
-          description: str(item.description),
-          quantity: qty,
-          unitPrice: price,
-          totalPrice: qty * price,
-          measurement: str(item.measurement) || null,
-          notes: str(item.notes) || null,
-        },
-      });
-    }
-    console.log(`  serviceJobItems: ${jobCode} (${items.length} items)`);
-  }
-
-  // 10. Sales
+  // 8. Sales
   console.log('\nSeeding sales...');
   const saleMap: Record<string, string> = {};
   for (const row of readCsv('sales')) {
-    const customerId = str(row.customerCode) ? (customerMap[row.customerCode] ?? null) : null;
+    const customerId = str(row.customerCode)
+      ? (customerMap[row.customerCode] ?? null)
+      : null;
     const createdById = userMap[row.createdByEmail];
-    if (!createdById) { console.warn(`  skip sale: no user ${row.createdByEmail}`); continue; }
+    if (!createdById) {
+      console.warn(`  skip sale: no user ${row.createdByEmail}`);
+      continue;
+    }
     const sale = await prisma.sale.upsert({
       where: { saleNumber: row.saleNumber },
       update: {
@@ -389,10 +331,12 @@ async function main() {
       },
     });
     saleMap[row.saleNumber] = sale.id;
-    console.log(`  sale: ${row.saleNumber} [${row.status}] $${row.totalAmount}`);
+    console.log(
+      `  sale: ${row.saleNumber} [${row.status}] $${row.totalAmount}`,
+    );
   }
 
-  // 11. Sale Items (delete + recreate per sale)
+  // 9. Sale Items (delete + recreate per sale)
   console.log('\nSeeding sale items...');
   const saleItemsBySale: Record<string, Row[]> = {};
   for (const row of readCsv('sale-items')) {
@@ -400,16 +344,37 @@ async function main() {
   }
   for (const [saleNumber, items] of Object.entries(saleItemsBySale)) {
     const saleId = saleMap[saleNumber];
-    if (!saleId) { console.warn(`  skip saleItems: no sale ${saleNumber}`); continue; }
+    if (!saleId) {
+      console.warn(`  skip saleItems: no sale ${saleNumber}`);
+      continue;
+    }
     await prisma.saleItem.deleteMany({ where: { saleId } });
     for (const item of items) {
-      const productId = productMap[item.productCode];
-      if (!productId) { console.warn(`  skip saleItem: no product ${item.productCode}`); continue; }
+      const itemType = (str(item.type) || 'PRODUCT') as ItemType;
+      const productId = str(item.productCode)
+        ? (productMap[item.productCode] ?? null)
+        : null;
+      const serviceId = str(item.serviceCode)
+        ? (serviceMap[item.serviceCode] ?? null)
+        : null;
+      if (itemType === 'PRODUCT' && !productId && str(item.productCode)) {
+        console.warn(`  skip saleItem: no product ${item.productCode}`);
+        continue;
+      }
       await prisma.saleItem.create({
         data: {
           saleId,
+          type: itemType,
           productId,
-          description: str(item.description) || null,
+          serviceId,
+          itemCode: str(item.itemCode) || null,
+          itemNameKh: str(item.itemNameKh) || null,
+          itemNameEn: str(item.itemNameEn) || null,
+          description:
+            str(item.description) ||
+            str(item.itemNameEn) ||
+            str(item.itemNameKh) ||
+            'Item',
           quantity: num(item.quantity, 1),
           unitPrice: num(item.unitPrice),
           discountAmount: num(item.discountAmount),
@@ -420,16 +385,23 @@ async function main() {
     console.log(`  saleItems: ${saleNumber} (${items.length} items)`);
   }
 
-  // 12. Invoices
+  // 10. Invoices
   console.log('\nSeeding invoices...');
   const invoiceMap: Record<string, string> = {};
   for (const row of readCsv('invoices')) {
     const customerId = customerMap[row.customerCode];
-    if (!customerId) { console.warn(`  skip invoice: no customer ${row.customerCode}`); continue; }
+    if (!customerId) {
+      console.warn(`  skip invoice: no customer ${row.customerCode}`);
+      continue;
+    }
     const createdById = userMap[row.createdByEmail];
-    if (!createdById) { console.warn(`  skip invoice: no user ${row.createdByEmail}`); continue; }
-    const serviceJobId = str(row.serviceJobCode) ? (serviceJobMap[row.serviceJobCode] ?? null) : null;
-    const saleId = str(row.saleNumber) ? (saleMap[row.saleNumber] ?? null) : null;
+    if (!createdById) {
+      console.warn(`  skip invoice: no user ${row.createdByEmail}`);
+      continue;
+    }
+    const saleId = str(row.saleNumber)
+      ? (saleMap[row.saleNumber] ?? null)
+      : null;
     const invoice = await prisma.invoice.upsert({
       where: { invoiceNumber: row.invoiceNumber },
       update: {
@@ -447,7 +419,6 @@ async function main() {
       create: {
         invoiceNumber: row.invoiceNumber,
         customerId,
-        serviceJobId,
         saleId,
         status: row.status as InvoiceStatus,
         subtotal: num(row.subtotal),
@@ -463,10 +434,12 @@ async function main() {
       },
     });
     invoiceMap[row.invoiceNumber] = invoice.id;
-    console.log(`  invoice: ${row.invoiceNumber} [${row.status}] $${row.totalAmount}`);
+    console.log(
+      `  invoice: ${row.invoiceNumber} [${row.status}] $${row.totalAmount}`,
+    );
   }
 
-  // 13. Invoice Items (delete + recreate per invoice)
+  // 11. Invoice Items (delete + recreate per invoice)
   console.log('\nSeeding invoice items...');
   const invoiceItemsByInvoice: Record<string, Row[]> = {};
   for (const row of readCsv('invoice-items')) {
@@ -474,11 +447,18 @@ async function main() {
   }
   for (const [invoiceNumber, items] of Object.entries(invoiceItemsByInvoice)) {
     const invoiceId = invoiceMap[invoiceNumber];
-    if (!invoiceId) { console.warn(`  skip invoiceItems: no invoice ${invoiceNumber}`); continue; }
+    if (!invoiceId) {
+      console.warn(`  skip invoiceItems: no invoice ${invoiceNumber}`);
+      continue;
+    }
     await prisma.invoiceItem.deleteMany({ where: { invoiceId } });
     for (const item of items) {
-      const serviceId = str(item.serviceCode) ? (serviceMap[item.serviceCode] ?? null) : null;
-      const productId = str(item.productCode) ? (productMap[item.productCode] ?? null) : null;
+      const serviceId = str(item.serviceCode)
+        ? (serviceMap[item.serviceCode] ?? null)
+        : null;
+      const productId = str(item.productCode)
+        ? (productMap[item.productCode] ?? null)
+        : null;
       await prisma.invoiceItem.create({
         data: {
           invoiceId,
@@ -486,6 +466,9 @@ async function main() {
           serviceId,
           productId,
           description: str(item.description),
+          itemCode: str(item.itemCode) || null,
+          itemNameKh: str(item.itemNameKh) || null,
+          itemNameEn: str(item.itemNameEn) || null,
           quantity: num(item.quantity, 1),
           unitPrice: num(item.unitPrice),
           discountAmount: num(item.discountAmount),
@@ -496,15 +479,24 @@ async function main() {
     console.log(`  invoiceItems: ${invoiceNumber} (${items.length} items)`);
   }
 
-  // 14. Payments
+  // 12. Payments
   console.log('\nSeeding payments...');
   for (const row of readCsv('payments')) {
     const invoiceId = invoiceMap[row.invoiceNumber];
-    if (!invoiceId) { console.warn(`  skip payment: no invoice ${row.invoiceNumber}`); continue; }
+    if (!invoiceId) {
+      console.warn(`  skip payment: no invoice ${row.invoiceNumber}`);
+      continue;
+    }
     const customerId = customerMap[row.customerCode];
-    if (!customerId) { console.warn(`  skip payment: no customer ${row.customerCode}`); continue; }
+    if (!customerId) {
+      console.warn(`  skip payment: no customer ${row.customerCode}`);
+      continue;
+    }
     const createdById = userMap[row.createdByEmail];
-    if (!createdById) { console.warn(`  skip payment: no user ${row.createdByEmail}`); continue; }
+    if (!createdById) {
+      console.warn(`  skip payment: no user ${row.createdByEmail}`);
+      continue;
+    }
     await prisma.payment.upsert({
       where: { paymentNumber: row.paymentNumber },
       update: {
@@ -526,14 +518,19 @@ async function main() {
         createdById,
       },
     });
-    console.log(`  payment: ${row.paymentNumber} $${row.amount} [${row.method}]`);
+    console.log(
+      `  payment: ${row.paymentNumber} $${row.amount} [${row.method}]`,
+    );
   }
 
-  // 15. Expenses
+  // 13. Expenses
   console.log('\nSeeding expenses...');
   for (const row of readCsv('expenses')) {
     const createdById = userMap[row.createdByEmail];
-    if (!createdById) { console.warn(`  skip expense: no user ${row.createdByEmail}`); continue; }
+    if (!createdById) {
+      console.warn(`  skip expense: no user ${row.createdByEmail}`);
+      continue;
+    }
     await prisma.expense.upsert({
       where: { expenseNumber: row.expenseNumber },
       update: {
@@ -557,15 +554,19 @@ async function main() {
         createdById,
       },
     });
-    console.log(`  expense: ${row.expenseNumber} [${row.category}] $${row.amount}`);
+    console.log(
+      `  expense: ${row.expenseNumber} [${row.category}] $${row.amount}`,
+    );
   }
 
-  // 16. Audit Logs (skip if any already exist)
+  // 14. Audit Logs (skip if any already exist)
   console.log('\nSeeding audit logs...');
   const auditCount = await prisma.auditLog.count();
   if (auditCount === 0) {
     for (const row of readCsv('audit-logs')) {
-      const userId = str(row.userEmail) ? (userMap[row.userEmail] ?? null) : null;
+      const userId = str(row.userEmail)
+        ? (userMap[row.userEmail] ?? null)
+        : null;
       await prisma.auditLog.create({
         data: {
           userId,
@@ -581,7 +582,7 @@ async function main() {
     console.log(`  skip – ${auditCount} logs already exist`);
   }
 
-  // 17. Settings
+  // 15. Settings
   console.log('\nSeeding settings...');
   for (const row of readCsv('settings')) {
     await prisma.setting.upsert({

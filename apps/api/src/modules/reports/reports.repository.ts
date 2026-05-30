@@ -20,7 +20,6 @@ export class ReportsRepository {
     const dateRange = this.buildDateRange(fromDate, toDate);
     const [
       totalCustomers,
-      totalServiceJobs,
       totalInvoices,
       invoiceAgg,
       paymentAgg,
@@ -30,9 +29,6 @@ export class ReportsRepository {
       allProducts,
     ] = await Promise.all([
       this.prisma.customer.count({ where: { deletedAt: null } }),
-      this.prisma.serviceJob.count({
-        where: { deletedAt: null, ...(dateRange ? { createdAt: dateRange } : {}) },
-      }),
       this.prisma.invoice.count({
         where: { deletedAt: null, status: { not: 'CANCELLED' as any }, ...(dateRange ? { issuedAt: dateRange } : {}) },
       }),
@@ -68,7 +64,6 @@ export class ReportsRepository {
 
     return {
       totalCustomers,
-      totalServiceJobs,
       totalInvoices,
       invoiceTotal: invoiceAgg._sum.totalAmount?.toString() ?? '0',
       paymentTotal: paymentAgg._sum.amount?.toString() ?? '0',
@@ -78,35 +73,6 @@ export class ReportsRepository {
       profitEstimate: (paymentTotal - expenseTotal).toFixed(2),
       lowStockCount,
     };
-  }
-
-  async getServiceJobs(dto: QueryReportDto) {
-    const dateRange = this.buildDateRange(dto.fromDate, dto.toDate);
-    const where: any = {
-      deletedAt: null,
-      ...(dateRange ? { createdAt: dateRange } : {}),
-      ...(dto.status ? { status: dto.status as any } : {}),
-      ...(dto.priority ? { priority: dto.priority as any } : {}),
-      ...(dto.customerId ? { customerId: dto.customerId } : {}),
-    };
-
-    return this.prisma.serviceJob.findMany({
-      where,
-      orderBy: { createdAt: 'desc' },
-      take: TAKE,
-      select: {
-        id: true,
-        jobCode: true,
-        status: true,
-        priority: true,
-        partDescription: true,
-        createdAt: true,
-        completedAt: true,
-        customer: { select: { id: true, name: true, phone: true } },
-        assignedTo: { select: { id: true, name: true } },
-        _count: { select: { items: true } },
-      },
-    });
   }
 
   async getInvoices(dto: QueryReportDto) {

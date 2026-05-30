@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 
+import type { ProductWhereInput } from '../../generated/prisma/models/Product';
 import { PrismaService } from '../../prisma/prisma.service';
 import type { CreateProductDto } from './dto/create-product.dto';
 import type { QueryProductDto } from './dto/query-product.dto';
@@ -25,7 +26,15 @@ const PRODUCT_SELECT = {
   createdAt: true,
   updatedAt: true,
   linkedReferenceBook: {
-    select: { id: true, partName: true, partCode: true },
+    select: {
+      id: true,
+      partName: true,
+      partCode: true,
+      machineModelId: true,
+      machineModel: {
+        select: { id: true, brand: true, model: true, category: true },
+      },
+    },
   },
 } as const;
 
@@ -71,6 +80,7 @@ export class ProductsRepository {
       search,
       category,
       componentPartType,
+      machineModelId,
       isActive,
       lowStock,
       page = 1,
@@ -78,32 +88,45 @@ export class ProductsRepository {
     } = dto;
     const skip = (page - 1) * limit;
 
-    const where: Record<string, unknown> = { deletedAt: null };
+    const where: ProductWhereInput = { deletedAt: null };
 
     if (isActive !== undefined) where.isActive = isActive;
     if (category !== undefined)
-      where.category = { contains: category, mode: 'insensitive' };
+      where.category = { contains: category, mode: 'insensitive' as const };
     if (componentPartType !== undefined)
       where.componentPartType = {
         contains: componentPartType,
-        mode: 'insensitive',
+        mode: 'insensitive' as const,
       };
-    if (search !== undefined) {
+    if (machineModelId !== undefined) {
       where.OR = [
-        { code: { contains: search, mode: 'insensitive' } },
-        { name: { contains: search, mode: 'insensitive' } },
-        { brand: { contains: search, mode: 'insensitive' } },
-        { componentPartType: { contains: search, mode: 'insensitive' } },
-        { size: { contains: search, mode: 'insensitive' } },
-        { supplier: { contains: search, mode: 'insensitive' } },
-        { category: { contains: search, mode: 'insensitive' } },
+        { linkedReferenceBookId: null },
+        { linkedReferenceBook: { machineModelId: null } },
+        { linkedReferenceBook: { machineModelId } },
       ];
     }
-
-    const prismaWhere = where as any;
+    if (search !== undefined) {
+      const searchWhere = [
+        { code: { contains: search, mode: 'insensitive' as const } },
+        { name: { contains: search, mode: 'insensitive' as const } },
+        { brand: { contains: search, mode: 'insensitive' as const } },
+        {
+          componentPartType: { contains: search, mode: 'insensitive' as const },
+        },
+        { size: { contains: search, mode: 'insensitive' as const } },
+        { supplier: { contains: search, mode: 'insensitive' as const } },
+        { category: { contains: search, mode: 'insensitive' as const } },
+      ];
+      if (where.OR) {
+        where.AND = [{ OR: where.OR }, { OR: searchWhere }];
+        delete where.OR;
+      } else {
+        where.OR = searchWhere;
+      }
+    }
 
     let products = await this.prisma.product.findMany({
-      where: prismaWhere,
+      where,
       select: PRODUCT_SELECT,
       orderBy: { createdAt: 'desc' },
     });
@@ -115,7 +138,7 @@ export class ProductsRepository {
 
     const total = lowStock
       ? products.length
-      : await this.prisma.product.count({ where: prismaWhere });
+      : await this.prisma.product.count({ where });
 
     const paginated = products.slice(skip, skip + limit);
 
@@ -130,10 +153,9 @@ export class ProductsRepository {
   }
 
   update(id: string, data: UpdateProductDto) {
-    const updateData: any = { ...data };
     return this.prisma.product.update({
       where: { id },
-      data: updateData,
+      data,
       select: PRODUCT_SELECT,
     });
   }

@@ -3,6 +3,10 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { randomUUID } from 'crypto';
+import { mkdir, unlink, writeFile } from 'fs/promises';
+import { join, normalize } from 'path';
+import sharp from 'sharp';
 
 import { createPaginatedResponse, createResponse } from '../../common/types/api-response.type';
 import { CustomersRepository } from './customers.repository';
@@ -46,7 +50,7 @@ export class CustomersService {
   }
 
   async update(id: string, dto: UpdateCustomerDto) {
-    await this.findOne(id);
+    const existingCustomer = await this.findOne(id);
 
     if (dto.phone) {
       const existing = await this.customersRepository.findByPhone(dto.phone, id);
@@ -56,6 +60,13 @@ export class CustomersService {
     }
 
     const customer = await this.customersRepository.update(id, dto);
+    if (
+      dto.imageUrl !== undefined &&
+      existingCustomer.imageUrl &&
+      existingCustomer.imageUrl !== dto.imageUrl
+    ) {
+      await this.deleteLocalCustomerImage(existingCustomer.imageUrl);
+    }
     return createResponse(customer, 'Customer updated');
   }
 
@@ -66,8 +77,65 @@ export class CustomersService {
   }
 
   async remove(id: string) {
-    await this.findOne(id);
+    const customer = await this.findOne(id);
     await this.customersRepository.softDelete(id);
+    if (customer.imageUrl) {
+      await this.deleteLocalCustomerImage(customer.imageUrl);
+    }
     return createResponse(null, 'Customer deleted');
+  }
+
+  async uploadImage(file?: Express.Multer.File) {
+    if (!file) throw new BadRequestException('Image file is required');
+
+    const allowed = new Set(['image/jpeg', 'image/png', 'image/webp']);
+    if (!allowed.has(file.mimetype)) {
+      throw new BadRequestException('Only JPG, PNG, and WebP images are allowed');
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      throw new BadRequestException('Image is too large');
+    }
+
+    const uploadDir = join(process.cwd(), 'uploads', 'customers');
+    await mkdir(uploadDir, { recursive: true });
+
+    const fileName = `customer-${randomUUID()}.webp`;
+    const filePath = join(uploadDir, fileName);
+
+    const output = await sharp(file.buffer)
+      .rotate()
+      .resize(800, 800, {
+        fit: 'inside',
+        withoutEnlargement: true,
+      })
+      .webp({ quality: 80 })
+      .toBuffer();
+
+    if (output.length > 2 * 1024 * 1024) {
+      throw new BadRequestException('Compressed image is too large');
+    }
+
+    await writeFile(filePath, output);
+    return createResponse(
+      { imageUrl: `/uploads/customers/${fileName}` },
+      'Image uploaded',
+    );
+  }
+
+  private async deleteLocalCustomerImage(imageUrl: string) {
+    if (!imageUrl.startsWith('/uploads/customers/')) return;
+
+    const uploadRoot = join(process.cwd(), 'uploads', 'customers');
+    const fileName = imageUrl.split('/').pop();
+    if (!fileName) return;
+
+    const filePath = normalize(join(uploadRoot, fileName));
+    if (!filePath.startsWith(uploadRoot)) return;
+
+    try {
+      await unlink(filePath);
+    } catch {
+      // Ignore missing files; the database state is the source of truth.
+    }
   }
 }

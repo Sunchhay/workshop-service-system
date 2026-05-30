@@ -6,7 +6,6 @@ import { useTranslation } from '@/lib/i18n/TranslationContext';
 
 export type ReportTab =
   | 'summary'
-  | 'service-jobs'
   | 'invoices'
   | 'payments'
   | 'sales'
@@ -23,7 +22,6 @@ interface TabDef {
 
 const TABS: TabDef[] = [
   { id: 'summary', labelKey: 'reports.tabSummary' },
-  { id: 'service-jobs', labelKey: 'reports.tabServiceJobs' },
   { id: 'invoices', labelKey: 'reports.tabInvoices' },
   { id: 'payments', labelKey: 'reports.tabPayments' },
   { id: 'sales', labelKey: 'reports.tabSales' },

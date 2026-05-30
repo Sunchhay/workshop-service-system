@@ -21,8 +21,12 @@ export class QueryProductDto {
   @IsOptional()
   componentPartType?: string;
 
+  @IsString()
+  @IsOptional()
+  machineModelId?: string;
+
   @IsBoolean()
-  @Transform(({ value }) => {
+  @Transform(({ value }: { value: unknown }) => {
     if (value === 'true') return true;
     if (value === 'false') return false;
     return value;
@@ -31,7 +35,7 @@ export class QueryProductDto {
   isActive?: boolean;
 
   @IsBoolean()
-  @Transform(({ value }) => {
+  @Transform(({ value }: { value: unknown }) => {
     if (value === 'true') return true;
     if (value === 'false') return false;
     return value;

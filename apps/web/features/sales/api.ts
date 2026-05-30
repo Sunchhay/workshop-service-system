@@ -1,12 +1,6 @@
 import { baseApi } from '@/lib/api/baseApi';
 
-import type {
-  CreateSaleRequest,
-  GetSaleResponse,
-  GetSalesResponse,
-  SaleQuery,
-  UpdateSaleRequest,
-} from './types';
+import type { GetSaleResponse, GetSalesResponse, SaleQuery } from './types';
 
 const salesApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
@@ -28,14 +22,6 @@ const salesApi = baseApi.injectEndpoints({
       query: (id) => `/sales/${id}`,
       providesTags: (_result, _error, id) => [{ type: 'Sale', id }],
     }),
-    createSale: builder.mutation<GetSaleResponse, CreateSaleRequest>({
-      query: (body) => ({ url: '/sales', method: 'POST', body }),
-      invalidatesTags: ['Sale', 'Product'],
-    }),
-    updateSale: builder.mutation<GetSaleResponse, { id: string; data: UpdateSaleRequest }>({
-      query: ({ id, data }) => ({ url: `/sales/${id}`, method: 'PATCH', body: data }),
-      invalidatesTags: (_result, _error, { id }) => ['Sale', { type: 'Sale', id }],
-    }),
     cancelSale: builder.mutation<GetSaleResponse, { id: string; reason?: string }>({
       query: ({ id, reason }) => ({
         url: `/sales/${id}/cancel`,
@@ -43,10 +29,6 @@ const salesApi = baseApi.injectEndpoints({
         body: { reason },
       }),
       invalidatesTags: (_result, _error, { id }) => ['Sale', { type: 'Sale', id }, 'Product'],
-    }),
-    completeSale: builder.mutation<GetSaleResponse, string>({
-      query: (id) => ({ url: `/sales/${id}/complete`, method: 'PATCH' }),
-      invalidatesTags: (_result, _error, id) => ['Sale', { type: 'Sale', id }, 'Product'],
     }),
     deleteSale: builder.mutation<{ success: boolean; data: null }, string>({
       query: (id) => ({ url: `/sales/${id}`, method: 'DELETE' }),
@@ -58,9 +40,6 @@ const salesApi = baseApi.injectEndpoints({
 export const {
   useGetSalesQuery,
   useGetSaleQuery,
-  useCreateSaleMutation,
-  useUpdateSaleMutation,
-  useCompleteSaleMutation,
   useCancelSaleMutation,
   useDeleteSaleMutation,
 } = salesApi;

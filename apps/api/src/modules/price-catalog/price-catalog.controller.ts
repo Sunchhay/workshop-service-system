@@ -12,10 +12,7 @@ import {
 import { Roles } from '../../common/decorators/roles.decorator';
 import { UserRole } from '../../generated/prisma/enums';
 import { CreatePriceCatalogDto } from './dto/create-price-catalog.dto';
-import {
-  QueryPriceCatalogDto,
-  SuggestPriceCatalogDto,
-} from './dto/query-price-catalog.dto';
+import { QueryPriceCatalogDto } from './dto/query-price-catalog.dto';
 import {
   UpdatePriceCatalogDto,
   UpdatePriceCatalogStatusDto,
@@ -39,12 +36,6 @@ export class PriceCatalogController {
     return this.priceCatalogService.findAll(query);
   }
 
-  // GET /api/price-catalog/suggest — MUST be before /:id
-  @Get('suggest')
-  suggest(@Query() query: SuggestPriceCatalogDto) {
-    return this.priceCatalogService.suggest(query);
-  }
-
   // GET /api/price-catalog/:id
   @Get(':id')
   async findOne(@Param('id') id: string) {
@@ -60,7 +51,10 @@ export class PriceCatalogController {
 
   // PATCH /api/price-catalog/:id/status
   @Patch(':id/status')
-  updateStatus(@Param('id') id: string, @Body() dto: UpdatePriceCatalogStatusDto) {
+  updateStatus(
+    @Param('id') id: string,
+    @Body() dto: UpdatePriceCatalogStatusDto,
+  ) {
     return this.priceCatalogService.updateStatus(id, dto);
   }
 

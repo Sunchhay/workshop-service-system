@@ -1,5 +1,7 @@
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import express from 'express';
+import { join } from 'path';
 
 import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './common/filters/http-exception.filter';
@@ -9,6 +11,8 @@ async function bootstrap() {
 
   // All routes are prefixed with /api
   app.setGlobalPrefix('api');
+
+  app.use('/uploads', express.static(join(process.cwd(), 'uploads')));
 
   // Allow requests from the frontend origin
   app.enableCors({

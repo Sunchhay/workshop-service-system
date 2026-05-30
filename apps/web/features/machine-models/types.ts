@@ -9,6 +9,7 @@ export interface MachineModel {
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
+  deletedAt: string | null;
 }
 
 export interface CreateMachineModelRequest {
@@ -16,6 +17,7 @@ export interface CreateMachineModelRequest {
   model: string;
   category?: string;
   description?: string;
+  isActive?: boolean;
 }
 
 export interface UpdateMachineModelRequest {
@@ -23,6 +25,7 @@ export interface UpdateMachineModelRequest {
   model?: string;
   category?: string;
   description?: string;
+  isActive?: boolean;
 }
 
 export interface MachineModelQuery {

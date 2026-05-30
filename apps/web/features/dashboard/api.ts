@@ -3,7 +3,6 @@ import { baseApi } from '@/lib/api/baseApi';
 import type {
   GetDashboardSummaryResponse,
   GetLowStockProductsResponse,
-  GetRecentServiceJobsResponse,
   GetRecentTransactionsResponse,
 } from './types';
 
@@ -11,11 +10,6 @@ const dashboardApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getDashboardSummary: builder.query<GetDashboardSummaryResponse, void>({
       query: () => '/dashboard/summary',
-      keepUnusedDataFor: 300,
-    }),
-    getRecentServiceJobs: builder.query<GetRecentServiceJobsResponse, void>({
-      query: () => '/dashboard/recent-service-jobs',
-      providesTags: ['ServiceJob'],
       keepUnusedDataFor: 300,
     }),
     getRecentTransactions: builder.query<GetRecentTransactionsResponse, void>({
@@ -33,7 +27,6 @@ const dashboardApi = baseApi.injectEndpoints({
 
 export const {
   useGetDashboardSummaryQuery,
-  useGetRecentServiceJobsQuery,
   useGetRecentTransactionsQuery,
   useGetLowStockProductsQuery,
 } = dashboardApi;

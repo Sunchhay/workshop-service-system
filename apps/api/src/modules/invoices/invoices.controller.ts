@@ -27,15 +27,6 @@ export class InvoicesController {
     return this.invoicesService.create(dto, user.id);
   }
 
-  // POST /api/invoices/from-service-job/:serviceJobId
-  @Post('from-service-job/:serviceJobId')
-  createFromServiceJob(
-    @Param('serviceJobId') serviceJobId: string,
-    @CurrentUser() user: RequestUser,
-  ) {
-    return this.invoicesService.createFromServiceJob(serviceJobId, user.id);
-  }
-
   // GET /api/invoices
   @Get()
   findAll(@Query() query: QueryInvoiceDto) {

@@ -78,11 +78,6 @@ export function InvoiceTable({ invoices, onCancel, onDelete }: InvoiceTableProps
                 <TableCell>
                   <div>
                     <p className="font-mono font-medium text-sm">{inv.invoiceNumber}</p>
-                    {inv.serviceJob && (
-                      <p className="text-xs text-muted-foreground">
-                        {inv.serviceJob.jobCode}
-                      </p>
-                    )}
                   </div>
                 </TableCell>
                 <TableCell>

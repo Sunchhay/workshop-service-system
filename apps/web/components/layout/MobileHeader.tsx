@@ -8,6 +8,7 @@ import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { useTranslation } from '@/lib/i18n/TranslationContext';
 import { ALL_NAV, isActiveRoute } from '@/lib/nav/navConfig';
 
+import { ModeSwitcherMobile } from './ModeSwitcher';
 import { UserMenu } from './UserMenu';
 
 const MOBILE_BACK_ROUTES = new Set([
@@ -57,6 +58,7 @@ export function MobileHeader() {
       </h1>
 
       <div className="flex shrink-0 items-center gap-1">
+        <ModeSwitcherMobile />
         <ThemeToggle />
         <UserMenu />
       </div>

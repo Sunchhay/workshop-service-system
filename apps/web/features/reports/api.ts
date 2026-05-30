@@ -8,7 +8,6 @@ import type {
   GetReportProductsResponse,
   GetReportProfitResponse,
   GetReportSalesResponse,
-  GetReportServiceJobsResponse,
   GetReportSummaryResponse,
   GetReportUnpaidBalancesResponse,
   ReportQuery,
@@ -19,11 +18,6 @@ const reportsApi = baseApi.injectEndpoints({
     getReportSummary: builder.query<GetReportSummaryResponse, ReportQuery>({
       query: (params) => ({ url: '/reports/summary', params }),
       providesTags: ['ReportSummary'],
-      keepUnusedDataFor: 60,
-    }),
-    getReportServiceJobs: builder.query<GetReportServiceJobsResponse, ReportQuery>({
-      query: (params) => ({ url: '/reports/service-jobs', params }),
-      providesTags: ['ReportServiceJob'],
       keepUnusedDataFor: 60,
     }),
     getReportInvoices: builder.query<GetReportInvoicesResponse, ReportQuery>({
@@ -71,7 +65,6 @@ const reportsApi = baseApi.injectEndpoints({
 
 export const {
   useGetReportSummaryQuery,
-  useGetReportServiceJobsQuery,
   useGetReportInvoicesQuery,
   useGetReportPaymentsQuery,
   useGetReportSalesQuery,

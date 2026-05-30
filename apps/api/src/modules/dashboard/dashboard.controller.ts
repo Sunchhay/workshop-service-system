@@ -12,12 +12,6 @@ export class DashboardController {
     return this.dashboardService.getSummary();
   }
 
-  // GET /api/dashboard/recent-service-jobs
-  @Get('recent-service-jobs')
-  getRecentServiceJobs() {
-    return this.dashboardService.getRecentServiceJobs();
-  }
-
   // GET /api/dashboard/recent-transactions
   @Get('recent-transactions')
   getRecentTransactions() {

@@ -79,7 +79,7 @@ export function ExpenseReport({ fromDate, toDate }: Props) {
 
       {!isLoading && expenses.length > 0 && (
         <div className="hidden md:block rounded-xl border overflow-hidden">
-          <table className="w-full text-sm">
+          <table className="w-full text-sm bg-card">
             <thead className="bg-muted/50">
               <tr>
                 <th className="text-left px-4 py-3 font-medium text-xs text-muted-foreground">{t('reports.expenseNumber')}</th>

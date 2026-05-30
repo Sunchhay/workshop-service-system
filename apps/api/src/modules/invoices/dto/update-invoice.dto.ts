@@ -27,6 +27,26 @@ export class UpdateInvoiceItemDto {
 
   @IsString()
   @IsOptional()
+  machineModelId?: string;
+
+  @IsString()
+  @IsOptional()
+  modelNameSnapshot?: string;
+
+  @IsString()
+  @IsOptional()
+  itemCode?: string;
+
+  @IsString()
+  @IsOptional()
+  itemNameKh?: string;
+
+  @IsString()
+  @IsOptional()
+  itemNameEn?: string;
+
+  @IsString()
+  @IsOptional()
   description?: string;
 
   @IsNumber()
@@ -49,10 +69,6 @@ export class UpdateInvoiceDto {
   @IsString()
   @IsOptional()
   customerId?: string;
-
-  @IsString()
-  @IsOptional()
-  serviceJobId?: string;
 
   @IsNumber()
   @Min(0)

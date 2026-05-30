@@ -192,16 +192,8 @@ export function MachineModelDetailPage({ id }: MachineModelDetailPageProps) {
 
               <Separator />
 
-              {/* Placeholder sections for future relations */}
+              {/* Placeholder section for future relations */}
               <div className="space-y-3">
-                <div className="rounded-lg border border-dashed p-4">
-                  <p className="text-sm font-medium text-muted-foreground mb-1">
-                    {t('machineModels.relatedJobs')}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {t('machineModels.noRelatedJobs')}
-                  </p>
-                </div>
                 <div className="rounded-lg border border-dashed p-4">
                   <p className="text-sm font-medium text-muted-foreground mb-1">
                     {t('machineModels.relatedReference')}

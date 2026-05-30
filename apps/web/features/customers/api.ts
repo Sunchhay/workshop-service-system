@@ -6,6 +6,7 @@ import type {
   GetCustomerResponse,
   GetCustomersResponse,
   UpdateCustomerRequest,
+  UploadCustomerImageResponse,
 } from './types';
 
 const customersApi = baseApi.injectEndpoints({
@@ -69,6 +70,17 @@ const customersApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ['Customer'],
     }),
+    uploadCustomerImage: builder.mutation<UploadCustomerImageResponse, File>({
+      query: (file) => {
+        const body = new FormData();
+        body.append('file', file);
+        return {
+          url: '/customers/upload-image',
+          method: 'POST',
+          body,
+        };
+      },
+    }),
   }),
 });
 
@@ -79,4 +91,5 @@ export const {
   useUpdateCustomerMutation,
   useUpdateCustomerStatusMutation,
   useDeleteCustomerMutation,
+  useUploadCustomerImageMutation,
 } = customersApi;

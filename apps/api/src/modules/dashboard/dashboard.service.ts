@@ -12,11 +12,6 @@ export class DashboardService {
     return createResponse(summary);
   }
 
-  async getRecentServiceJobs() {
-    const jobs = await this.dashboardRepository.getRecentServiceJobs();
-    return createResponse(jobs);
-  }
-
   async getRecentTransactions() {
     const transactions = await this.dashboardRepository.getRecentTransactions();
     return createResponse(transactions);

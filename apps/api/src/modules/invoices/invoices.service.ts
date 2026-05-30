@@ -34,34 +34,6 @@ export class InvoicesService {
     return createResponse(invoice, 'Invoice created');
   }
 
-  async createFromServiceJob(serviceJobId: string, createdById: string) {
-    const job = await this.invoicesRepository.findServiceJobWithItems(serviceJobId);
-    if (!job) throw new NotFoundException('Service job not found');
-
-    const items: CreateInvoiceItemDto[] = job.items.map((item) => ({
-      type: item.type as any,
-      serviceId: item.serviceId ?? undefined,
-      productId: item.productId ?? undefined,
-      description: item.description,
-      quantity: parseFloat(item.quantity.toString()),
-      unitPrice: parseFloat(item.unitPrice.toString()),
-    }));
-
-    if (items.length === 0) {
-      throw new BadRequestException(
-        'Service job has no items to include in the invoice',
-      );
-    }
-
-    const dto: CreateInvoiceDto = {
-      customerId: job.customerId,
-      serviceJobId: job.id,
-      items,
-    };
-
-    return this.create(dto, createdById);
-  }
-
   async findAll(dto: QueryInvoiceDto) {
     const page = dto.page ?? 1;
     const limit = dto.limit ?? 20;

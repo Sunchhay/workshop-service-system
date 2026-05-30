@@ -14,6 +14,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useTranslation } from '@/lib/i18n/TranslationContext';
+import { getUploadImageUrl } from '@/lib/display-name';
 
 import type { Customer, CustomerType } from '../types';
 
@@ -46,6 +47,7 @@ export function CustomerMobileCard({
     .slice(0, 2)
     .join('')
     .toUpperCase();
+  const imageUrl = getUploadImageUrl(customer.imageUrl);
 
   return (
     <div
@@ -59,8 +61,12 @@ export function CustomerMobileCard({
       }}
     >
       {/* Avatar */}
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
-        {initials}
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary/10 text-sm font-semibold text-primary">
+        {imageUrl ? (
+          <img src={imageUrl} alt={customer.name} className="h-full w-full object-cover" />
+        ) : (
+          initials
+        )}
       </div>
 
       {/* Main info */}
@@ -72,11 +78,6 @@ export function CustomerMobileCard({
           </Badge>
         </div>
         <p className="text-xs text-muted-foreground mt-0.5">{customer.phone}</p>
-        {customer.email && (
-          <p className="text-xs text-muted-foreground truncate">
-            {customer.email}
-          </p>
-        )}
         <div className="mt-2 flex flex-wrap gap-1.5">
           <Badge variant="outline" className={typeClass[customer.customerType]}>
             {t(`customerTypes.${customer.customerType}`)}

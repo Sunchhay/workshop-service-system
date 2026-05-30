@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 
-import { CustomerType, DifficultyLevel } from '../../generated/prisma/enums';
 import { PrismaService } from '../../prisma/prisma.service';
 import type { CreatePriceCatalogDto } from './dto/create-price-catalog.dto';
 import type { QueryPriceCatalogDto } from './dto/query-price-catalog.dto';
@@ -9,12 +8,8 @@ import type { UpdatePriceCatalogDto } from './dto/update-price-catalog.dto';
 const PRICE_CATALOG_SELECT = {
   id: true,
   serviceId: true,
+  machineModelId: true,
   label: true,
-  sizeFrom: true,
-  sizeTo: true,
-  unit: true,
-  difficultyLevel: true,
-  customerType: true,
   unitPrice: true,
   currency: true,
   notes: true,
@@ -24,7 +19,10 @@ const PRICE_CATALOG_SELECT = {
   createdAt: true,
   updatedAt: true,
   service: {
-    select: { id: true, nameEn: true, code: true },
+    select: { id: true, nameEn: true, nameKh: true, code: true },
+  },
+  machineModel: {
+    select: { id: true, brand: true, model: true, category: true },
   },
 } as const;
 
@@ -36,37 +34,60 @@ export class PriceCatalogRepository {
     return this.prisma.priceCatalog.create({
       data: {
         serviceId: data.serviceId,
-        label: data.label,
-        sizeFrom: data.sizeFrom,
-        sizeTo: data.sizeTo,
-        unit: data.unit,
-        difficultyLevel: data.difficultyLevel ?? DifficultyLevel.NORMAL,
-        customerType: data.customerType ?? null,
+        machineModelId: data.machineModelId,
+        label: data.label.trim(),
         unitPrice: data.unitPrice,
-        currency: data.currency ?? 'USD',
-        notes: data.notes,
-        effectiveDate: data.effectiveDate ? new Date(data.effectiveDate) : new Date(),
+        currency: data.currency?.trim() || 'USD',
+        notes: data.notes?.trim() || null,
+        effectiveDate: data.effectiveDate
+          ? new Date(data.effectiveDate)
+          : new Date(),
         expiredDate: data.expiredDate ? new Date(data.expiredDate) : null,
+        isActive: data.isActive ?? true,
       },
       select: PRICE_CATALOG_SELECT,
     });
   }
 
   async findAll(dto: QueryPriceCatalogDto) {
-    const { search, serviceId, difficultyLevel, customerType, isActive, page = 1, limit = 20 } = dto;
+    const {
+      search,
+      serviceId,
+      machineModelId,
+      isActive,
+      page = 1,
+      limit = 20,
+    } = dto;
     const skip = (page - 1) * limit;
 
     const where = {
       ...(serviceId !== undefined && { serviceId }),
-      ...(difficultyLevel !== undefined && { difficultyLevel }),
-      ...(customerType !== undefined && { customerType }),
+      ...(machineModelId !== undefined && { machineModelId }),
       ...(isActive !== undefined && { isActive }),
       ...(search !== undefined && {
         OR: [
           { label: { contains: search, mode: 'insensitive' as const } },
-          { unit: { contains: search, mode: 'insensitive' as const } },
           { notes: { contains: search, mode: 'insensitive' as const } },
-          { service: { nameEn: { contains: search, mode: 'insensitive' as const } } },
+          {
+            service: {
+              nameEn: { contains: search, mode: 'insensitive' as const },
+            },
+          },
+          {
+            service: {
+              nameKh: { contains: search, mode: 'insensitive' as const },
+            },
+          },
+          {
+            machineModel: {
+              brand: { contains: search, mode: 'insensitive' as const },
+            },
+          },
+          {
+            machineModel: {
+              model: { contains: search, mode: 'insensitive' as const },
+            },
+          },
         ],
       }),
     };
@@ -95,19 +116,21 @@ export class PriceCatalogRepository {
   update(id: string, data: UpdatePriceCatalogDto) {
     const updateData: Record<string, unknown> = {};
     if (data.serviceId !== undefined) updateData.serviceId = data.serviceId;
-    if (data.label !== undefined) updateData.label = data.label;
-    if (data.sizeFrom !== undefined) updateData.sizeFrom = data.sizeFrom;
-    if (data.sizeTo !== undefined) updateData.sizeTo = data.sizeTo;
-    if (data.unit !== undefined) updateData.unit = data.unit;
-    if (data.difficultyLevel !== undefined) updateData.difficultyLevel = data.difficultyLevel;
-    if ('customerType' in data) updateData.customerType = data.customerType ?? null;
+    if (data.machineModelId !== undefined)
+      updateData.machineModelId = data.machineModelId;
+    if (data.label !== undefined) updateData.label = data.label.trim();
     if (data.unitPrice !== undefined) updateData.unitPrice = data.unitPrice;
-    if (data.currency !== undefined) updateData.currency = data.currency;
-    if (data.notes !== undefined) updateData.notes = data.notes;
-    if (data.effectiveDate !== undefined) updateData.effectiveDate = new Date(data.effectiveDate);
+    if (data.currency !== undefined)
+      updateData.currency = data.currency.trim() || 'USD';
+    if (data.notes !== undefined) updateData.notes = data.notes?.trim() || null;
+    if (data.effectiveDate !== undefined)
+      updateData.effectiveDate = new Date(data.effectiveDate);
     if ('expiredDate' in data) {
-      updateData.expiredDate = data.expiredDate ? new Date(data.expiredDate) : null;
+      updateData.expiredDate = data.expiredDate
+        ? new Date(data.expiredDate)
+        : null;
     }
+    if (data.isActive !== undefined) updateData.isActive = data.isActive;
 
     return this.prisma.priceCatalog.update({
       where: { id },
@@ -124,45 +147,7 @@ export class PriceCatalogRepository {
     });
   }
 
-  hardDelete(id: string) {
+  delete(id: string) {
     return this.prisma.priceCatalog.delete({ where: { id } });
-  }
-
-  async suggest(
-    serviceId: string,
-    size?: number,
-    difficultyLevel?: DifficultyLevel,
-    customerType?: CustomerType,
-  ) {
-    const records = await this.prisma.priceCatalog.findMany({
-      where: {
-        serviceId,
-        isActive: true,
-        ...(difficultyLevel !== undefined && { difficultyLevel }),
-      },
-      select: PRICE_CATALOG_SELECT,
-      orderBy: { createdAt: 'desc' },
-    });
-
-    let filtered = records;
-
-    // Filter by size range if provided
-    if (size !== undefined) {
-      filtered = records.filter((r) => {
-        if (r.sizeFrom === null && r.sizeTo === null) return true;
-        const from = r.sizeFrom !== null ? parseFloat(r.sizeFrom.toString()) : -Infinity;
-        const to = r.sizeTo !== null ? parseFloat(r.sizeTo.toString()) : Infinity;
-        return size >= from && size <= to;
-      });
-    }
-
-    // Prefer specific customerType, fall back to null (applies to all)
-    if (customerType) {
-      const specific = filtered.filter((r) => r.customerType === customerType);
-      if (specific.length > 0) return specific;
-      return filtered.filter((r) => r.customerType === null);
-    }
-
-    return filtered;
   }
 }

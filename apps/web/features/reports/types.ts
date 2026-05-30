@@ -2,7 +2,6 @@ import type { ApiResponse } from '@/lib/api/types';
 
 export interface ReportSummary {
   totalCustomers: number;
-  totalServiceJobs: number;
   totalInvoices: number;
   invoiceTotal: string;
   paymentTotal: string;
@@ -11,19 +10,6 @@ export interface ReportSummary {
   expenseTotal: string;
   profitEstimate: string;
   lowStockCount: number;
-}
-
-export interface ReportServiceJob {
-  id: string;
-  jobCode: string;
-  status: string;
-  priority: string;
-  partDescription: string;
-  createdAt: string;
-  completedAt: string | null;
-  customer: { id: string; name: string; phone: string };
-  assignedTo: { id: string; name: string } | null;
-  _count: { items: number };
 }
 
 export interface ReportInvoice {
@@ -131,14 +117,12 @@ export interface ReportQuery {
   status?: string;
   paymentMethod?: string;
   category?: string;
-  priority?: string;
   componentPartType?: string;
   isActive?: boolean;
   isLowStock?: boolean;
 }
 
 export type GetReportSummaryResponse = ApiResponse<ReportSummary>;
-export type GetReportServiceJobsResponse = ApiResponse<ReportServiceJob[]>;
 export type GetReportInvoicesResponse = ApiResponse<ReportInvoice[]>;
 export type GetReportPaymentsResponse = ApiResponse<ReportPayment[]>;
 export type GetReportSalesResponse = ApiResponse<ReportSale[]>;

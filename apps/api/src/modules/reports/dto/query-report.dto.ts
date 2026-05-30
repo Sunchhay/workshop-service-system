@@ -8,7 +8,6 @@ export class QueryReportDto {
   @IsOptional() @IsString() status?: string;
   @IsOptional() @IsString() paymentMethod?: string;
   @IsOptional() @IsString() category?: string;
-  @IsOptional() @IsString() priority?: string;
   @IsOptional() @IsString() componentPartType?: string;
   @IsOptional() @Transform(({ value }) => value === 'true') @IsBoolean() isActive?: boolean;
   @IsOptional() @Transform(({ value }) => value === 'true') @IsBoolean() isLowStock?: boolean;

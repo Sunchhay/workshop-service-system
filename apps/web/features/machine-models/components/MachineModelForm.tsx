@@ -15,6 +15,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { useTranslation } from '@/lib/i18n/TranslationContext';
 
@@ -25,6 +26,7 @@ const schema = z.object({
   model: z.string().min(1),
   category: z.string(),
   description: z.string(),
+  isActive: z.boolean(),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -51,6 +53,7 @@ export function MachineModelForm({
       model: defaultValues?.model ?? '',
       category: defaultValues?.category ?? '',
       description: defaultValues?.description ?? '',
+      isActive: defaultValues?.isActive ?? true,
     },
   });
 
@@ -60,6 +63,7 @@ export function MachineModelForm({
       model: data.model,
       category: data.category.trim() || undefined,
       description: data.description.trim() || undefined,
+      isActive: data.isActive,
     };
     await onSubmit(payload);
   };
@@ -132,6 +136,24 @@ export function MachineModelForm({
                 />
               </FormControl>
               <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="isActive"
+          render={({ field }) => (
+            <FormItem className="flex items-center justify-between rounded-lg border p-4">
+              <div>
+                <FormLabel>{t('machineModels.statusLabel')}</FormLabel>
+                <p className="text-sm text-muted-foreground">
+                  {field.value ? t('common.active') : t('common.inactive')}
+                </p>
+              </div>
+              <FormControl>
+                <Switch checked={field.value} onCheckedChange={field.onChange} />
+              </FormControl>
             </FormItem>
           )}
         />

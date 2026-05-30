@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowLeft, Clock, CreditCard, Pencil, Trash2 } from 'lucide-react';
+import { ArrowLeft, Clock, CreditCard, ImageIcon, Pencil, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
+import { getUploadImageUrl } from '@/lib/display-name';
 import { useTranslation } from '@/lib/i18n/TranslationContext';
 
 import {
@@ -56,6 +57,7 @@ export function CustomerDetailPage({ id }: CustomerDetailPageProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   const customer = data?.data;
+  const imageUrl = getUploadImageUrl(customer?.imageUrl);
 
   const handleStatusConfirm = async () => {
     if (!customer) return;
@@ -108,16 +110,29 @@ export function CustomerDetailPage({ id }: CustomerDetailPageProps) {
           <Card>
             <CardHeader>
               <div className="flex items-start justify-between gap-3 flex-wrap">
-                <div>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <CardTitle>{customer.name}</CardTitle>
-                    <Badge variant="outline" className="font-mono text-xs">
-                      {customer.code}
-                    </Badge>
+                <div className="flex items-center gap-4">
+                  <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-full border bg-muted">
+                    {imageUrl ? (
+                      <img
+                        src={imageUrl}
+                        alt={customer.name}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <ImageIcon className="h-8 w-8 text-muted-foreground" />
+                    )}
                   </div>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    {customer.phone}
-                  </p>
+                  <div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <CardTitle>{customer.name}</CardTitle>
+                      <Badge variant="outline" className="font-mono text-xs">
+                        {customer.code}
+                      </Badge>
+                    </div>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {customer.phone}
+                    </p>
+                  </div>
                 </div>
                 <div className="flex gap-2">
                   <Button asChild variant="outline" size="sm">
@@ -159,22 +174,6 @@ export function CustomerDetailPage({ id }: CustomerDetailPageProps) {
                     {t(customer.isActive ? 'common.active' : 'common.inactive')}
                   </Badge>
                 </div>
-                {customer.email && (
-                  <div>
-                    <p className="text-muted-foreground text-xs mb-1">
-                      {t('customers.email')}
-                    </p>
-                    <p className="break-all">{customer.email}</p>
-                  </div>
-                )}
-                {customer.address && (
-                  <div className="col-span-2 sm:col-span-3">
-                    <p className="text-muted-foreground text-xs mb-1">
-                      {t('customers.address')}
-                    </p>
-                    <p className="whitespace-pre-line">{customer.address}</p>
-                  </div>
-                )}
                 {customer.notes && (
                   <div className="col-span-2 sm:col-span-3">
                     <p className="text-muted-foreground text-xs mb-1">

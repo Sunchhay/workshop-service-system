@@ -41,6 +41,9 @@ const invoiceItemSchema = z.object({
   serviceId: z.string(),
   productId: z.string(),
   description: z.string().min(1),
+  itemCode: z.string(),
+  itemNameKh: z.string(),
+  itemNameEn: z.string(),
   quantity: z.string(),
   unitPrice: z.string(),
   discountAmount: z.string(),
@@ -49,7 +52,6 @@ const invoiceItemSchema = z.object({
 const invoiceSchema = z
   .object({
     customerId: z.string().min(1),
-    serviceJobId: z.string(),
     dueDate: z.string(),
     notes: z.string(),
     discountAmount: z.string(),
@@ -124,7 +126,6 @@ export function InvoiceForm({
     resolver: zodResolver(invoiceSchema),
     defaultValues: {
       customerId: defaultValues?.customerId ?? '',
-      serviceJobId: defaultValues?.serviceJobId ?? '',
       dueDate: defaultValues?.dueDate ?? '',
       notes: defaultValues?.notes ?? '',
       discountAmount: defaultValues?.discountAmount ?? '0',
@@ -135,6 +136,9 @@ export function InvoiceForm({
           serviceId: '',
           productId: '',
           description: '',
+          itemCode: '',
+          itemNameKh: '',
+          itemNameEn: '',
           quantity: '1',
           unitPrice: '0',
           discountAmount: '0',
@@ -146,7 +150,6 @@ export function InvoiceForm({
   const handleSubmit = async (data: InvoiceFormValues) => {
     const payload: CreateInvoiceRequest | UpdateInvoiceRequest = {
       customerId: data.customerId,
-      serviceJobId: data.serviceJobId || undefined,
       discountAmount: parseFloat(data.discountAmount) || 0,
       taxAmount: parseFloat(data.taxAmount) || 0,
       notes: data.notes || undefined,
@@ -156,6 +159,9 @@ export function InvoiceForm({
         serviceId: item.serviceId || undefined,
         productId: item.productId || undefined,
         description: item.description,
+        itemCode: item.itemCode || undefined,
+        itemNameKh: item.itemNameKh || undefined,
+        itemNameEn: item.itemNameEn || undefined,
         quantity: parseFloat(item.quantity) || 1,
         unitPrice: parseFloat(item.unitPrice) || 0,
         discountAmount: parseFloat(item.discountAmount) || 0,
@@ -168,7 +174,7 @@ export function InvoiceForm({
     <FormProvider {...form}>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-5">
-          {/* Customer + Service Job */}
+          {/* Customer */}
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
             <FormField
               control={form.control}
@@ -182,7 +188,7 @@ export function InvoiceForm({
                   <FormControl>
                     <Select value={field.value} onValueChange={field.onChange}>
                       <SelectTrigger className="w-full">
-                        <SelectValue placeholder={t('serviceJobs.selectCustomer')} />
+                        <SelectValue placeholder={t('invoices.selectCustomer')} />
                       </SelectTrigger>
                       <SelectContent>
                         {customers.map((c) => (

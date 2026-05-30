@@ -3,7 +3,6 @@ import {
   ArrayMinSize,
   IsDateString,
   IsEnum,
-  IsNotEmpty,
   IsNumber,
   IsOptional,
   IsString,
@@ -11,16 +10,43 @@ import {
   ValidateNested,
 } from 'class-validator';
 
-import { SaleStatus } from '../../../generated/prisma/enums';
+import { ItemType, SaleStatus } from '../../../generated/prisma/enums';
 
 export class CreateSaleItemDto {
-  @IsString()
-  @IsNotEmpty()
-  productId: string;
-
+  @IsEnum(ItemType)
   @IsOptional()
+  type?: ItemType;
+
   @IsString()
-  description?: string;
+  @IsOptional()
+  serviceId?: string;
+
+  @IsString()
+  @IsOptional()
+  productId?: string;
+
+  @IsString()
+  @IsOptional()
+  machineModelId?: string;
+
+  @IsString()
+  @IsOptional()
+  modelNameSnapshot?: string;
+
+  @IsString()
+  @IsOptional()
+  itemCode?: string;
+
+  @IsString()
+  @IsOptional()
+  itemNameKh?: string;
+
+  @IsString()
+  @IsOptional()
+  itemNameEn?: string;
+
+  @IsString()
+  description: string;
 
   @Type(() => Number)
   @IsNumber()
@@ -43,6 +69,18 @@ export class CreateSaleDto {
   @IsOptional()
   @IsString()
   customerId?: string;
+
+  @IsOptional()
+  @IsString()
+  customerName?: string;
+
+  @IsOptional()
+  @IsString()
+  machineModelId?: string;
+
+  @IsOptional()
+  @IsString()
+  modelNameSnapshot?: string;
 
   @IsOptional()
   @IsEnum(SaleStatus)

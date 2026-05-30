@@ -26,6 +26,8 @@ import { useGetProductsQuery } from '@/features/products/api';
 import { useGetServicesQuery } from '@/features/services/api';
 import { useTranslation } from '@/lib/i18n/TranslationContext';
 
+import { getProductDisplayName, getServiceDisplayName } from '@/lib/display-name';
+
 import type { InvoiceFormValues } from './InvoiceForm';
 
 const ITEM_TYPES = ['SERVICE', 'PRODUCT', 'CUSTOM'] as const;
@@ -48,26 +50,32 @@ function ItemRow({ index, onRemove }: { index: number; onRemove: () => void }) {
   const { data: productsData } = useGetProductsQuery({ isActive: true, limit: 100 });
   const products = productsData?.data ?? [];
 
-  // Auto-fill description from service
+  // Auto-fill description + snapshot fields from service
   useEffect(() => {
     if (itemType === 'SERVICE' && serviceId) {
       const svc = services.find((s) => s.id === serviceId);
       if (svc) {
         const current = getValues(`items.${index}.description`);
-        if (!current) setValue(`items.${index}.description`, svc.nameEn, { shouldValidate: false });
+        if (!current) setValue(`items.${index}.description`, getServiceDisplayName(svc), { shouldValidate: false });
+        setValue(`items.${index}.itemCode`, svc.code, { shouldValidate: false });
+        setValue(`items.${index}.itemNameKh`, svc.nameKh ?? '', { shouldValidate: false });
+        setValue(`items.${index}.itemNameEn`, svc.nameEn, { shouldValidate: false });
       }
     }
   }, [serviceId, itemType, services, index, setValue, getValues]);
 
-  // Auto-fill description from product
+  // Auto-fill description + snapshot fields from product
   useEffect(() => {
     if (itemType === 'PRODUCT' && productId) {
       const prod = products.find((p) => p.id === productId);
       if (prod) {
         const current = getValues(`items.${index}.description`);
-        if (!current) setValue(`items.${index}.description`, prod.name, { shouldValidate: false });
+        if (!current) setValue(`items.${index}.description`, getProductDisplayName(prod), { shouldValidate: false });
         const currentPrice = getValues(`items.${index}.unitPrice`);
         if (!currentPrice) setValue(`items.${index}.unitPrice`, prod.sellingPrice, { shouldValidate: false });
+        setValue(`items.${index}.itemCode`, prod.code, { shouldValidate: false });
+        setValue(`items.${index}.itemNameKh`, prod.nameKh ?? prod.name, { shouldValidate: false });
+        setValue(`items.${index}.itemNameEn`, prod.nameEn ?? '', { shouldValidate: false });
       }
     }
   }, [productId, itemType, products, index, setValue, getValues]);
@@ -140,7 +148,10 @@ function ItemRow({ index, onRemove }: { index: number; onRemove: () => void }) {
                   <SelectContent>
                     <SelectItem value="__none">{t('invoices.selectService')}</SelectItem>
                     {services.map((svc) => (
-                      <SelectItem key={svc.id} value={svc.id}>{svc.nameEn}</SelectItem>
+                      <SelectItem key={svc.id} value={svc.id}>
+                        {getServiceDisplayName(svc)}
+                        {svc.nameKh && <span className="text-muted-foreground ml-1 text-xs">({svc.code})</span>}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -168,7 +179,8 @@ function ItemRow({ index, onRemove }: { index: number; onRemove: () => void }) {
                     <SelectItem value="__none">{t('invoices.selectProduct')}</SelectItem>
                     {products.map((prod) => (
                       <SelectItem key={prod.id} value={prod.id}>
-                        {prod.name} ({prod.code})
+                        {getProductDisplayName(prod)}
+                        <span className="text-muted-foreground ml-1 text-xs">({prod.code})</span>
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -261,6 +273,9 @@ export function InvoiceItemSection() {
       serviceId: '',
       productId: '',
       description: '',
+      itemCode: '',
+      itemNameKh: '',
+      itemNameEn: '',
       quantity: '1',
       unitPrice: '0',
       discountAmount: '0',

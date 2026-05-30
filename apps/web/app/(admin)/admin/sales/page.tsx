@@ -1,5 +1,5 @@
-import { SalesPage } from '@/features/sales/components/SalesPage';
+import { redirect } from 'next/navigation';
 
 export default function Page() {
-  return <SalesPage />;
+  redirect('/admin/sales/history');
 }

@@ -1,6 +1,6 @@
-code,nameEn,nameKh,category,relatedComponent,defaultPrice,priceType,description,isActive
-SRV-001,Cylinder Boring,បូរស៊ីឡាំង,Cylinder Work,Cylinder,,CATALOG_BASED,Machine boring to restore cylinder to standard oversize,true
-SRV-002,Valve Lapping,ស្ទីមមុខ,Valve Work,Valve,8.00,FIXED,Hand lapping of engine valves for proper seating,true
-SRV-003,Crankshaft Grinding,ពង្រឹង Crankshaft,Crankshaft Work,Crankshaft,,CATALOG_BASED,Grinding and polishing of crankshaft journals,true
-SRV-004,Piston Ring Fitting,ដំឡើងចិញ្ចៀន,Piston Work,Piston Ring,5.00,FIXED,Fitting and gapping of piston rings to cylinder,true
-SRV-005,General Cleaning,សម្អាតទូទៅ,Cleaning,Engine,3.00,FIXED,Steam cleaning and degreasing of engine parts,true
+code,nameEn,nameKh,imageUrl,category,relatedComponent,description,isActive
+SRV-001,Valve Seat Cutting / Valve Grinding,ស៊ីសូប៉ាប់,,Valve Work,Valve,Cutting and grinding of valve seats for proper valve seating,true
+SRV-002,Cylinder Head Resurfacing,ម៉ាបក្បាលកន្លះ,,Cylinder Head Work,Cylinder Head,Machine resurfacing of cylinder head mating surface,true
+SRV-003,Cylinder Head Cleaning,លាងក្បាលកន្លះ,,Cylinder Head Work,Cylinder Head,Cleaning cylinder head surfaces and ports,true
+SRV-004,Crankshaft Grinding / Polishing,សំលៀងវីលីគាំង,,Crankshaft Work,Crankshaft,Grinding and polishing of crankshaft journals to standard size,true
+SRV-005,Cylinder Honing,ហូនស៊ីឡាំង,,Cylinder Work,Cylinder,Honing of cylinder bore to correct surface finish,true

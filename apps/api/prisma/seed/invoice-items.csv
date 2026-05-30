@@ -1,10 +1,10 @@
-invoiceNumber,type,serviceCode,productCode,description,quantity,unitPrice,discountAmount,totalPrice
-INV-2026-0001,SERVICE,SRV-001,,Cylinder Boring 60-70mm,1,25.00,0.00,25.00
-INV-2026-0001,PRODUCT,,PRD-001,Piston Ring 65mm,2,4.00,0.00,8.00
-INV-2026-0001,SERVICE,SRV-002,,Valve Lapping,1,5.00,0.00,5.00
-INV-2026-0002,SERVICE,SRV-003,,Crankshaft Grinding 40-50mm,1,28.00,0.00,28.00
-INV-2026-0002,SERVICE,SRV-002,,Valve Lapping,1,8.00,0.00,8.00
-INV-2026-0002,PRODUCT,,PRD-003,Valve Set,2,12.00,0.00,24.00
-INV-2026-0002,CUSTOM,,,Engine Assembly Labor,1,16.00,0.00,16.00
-INV-2026-0003,SERVICE,SRV-005,,General Cleaning,1,3.00,0.00,3.00
-INV-2026-0003,PRODUCT,,PRD-005,Engine Oil 1L,2,10.00,0.00,20.00
+invoiceNumber,type,serviceCode,productCode,description,quantity,unitPrice,discountAmount,totalPrice,itemCode,itemNameKh,itemNameEn
+INV-2026-0001,SERVICE,SRV-001,,Cylinder Boring 60-70mm,1,25.00,0.00,25.00,SRV-001,ស៊ីសូប៉ាប់,Valve Seat Cutting / Valve Grinding
+INV-2026-0001,PRODUCT,,PRD-001,Piston Ring 65mm,2,4.00,0.00,8.00,PRD-001,ក្រវ៉ាត់ពិស្តុង,Piston Ring 65mm
+INV-2026-0001,SERVICE,SRV-002,,Valve Lapping,1,5.00,0.00,5.00,SRV-002,ម៉ាបក្បាលកន្លះ,Cylinder Head Resurfacing
+INV-2026-0002,SERVICE,SRV-003,,Crankshaft Grinding 40-50mm,1,28.00,0.00,28.00,SRV-003,សំលៀងវីលីគាំង,Crankshaft Grinding / Polishing
+INV-2026-0002,SERVICE,SRV-002,,Valve Lapping,1,8.00,0.00,8.00,SRV-002,ម៉ាបក្បាលកន្លះ,Cylinder Head Resurfacing
+INV-2026-0002,PRODUCT,,PRD-003,Valve Set,2,12.00,0.00,24.00,PRD-003,សូប៉ាប់,Valve Set
+INV-2026-0002,CUSTOM,,,Engine Assembly Labor,1,16.00,0.00,16.00,,,Engine Assembly Labor
+INV-2026-0003,SERVICE,SRV-005,,General Cleaning,1,3.00,0.00,3.00,SRV-005,ប្តូរហ្វឺតសូប៉ាប់,Valve Seal Replacement
+INV-2026-0003,PRODUCT,,PRD-005,Engine Oil 1L,2,10.00,0.00,20.00,PRD-005,ប្រេងម៉ាស៊ីន,Engine Oil 1L

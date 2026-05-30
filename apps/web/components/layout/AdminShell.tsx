@@ -8,13 +8,15 @@ import { AuthGuard } from '@/features/auth/components/AuthGuard';
 
 import { DesktopHeader } from './DesktopHeader';
 import { DesktopSidebar } from './DesktopSidebar';
+import { isPosMode } from './ModeSwitcher';
 import { MobileBottomNav } from './MobileBottomNav';
 import { MobileHeader } from './MobileHeader';
 import { MoreMenu } from './MoreMenu';
 
 const LIST_ROUTES = new Set([
   '/admin',
-  '/admin/service-jobs',
+  '/admin/carts',
+  '/admin/sales/history',
   '/admin/customers',
   '/admin/services',
   '/admin/users',
@@ -24,7 +26,6 @@ const LIST_ROUTES = new Set([
   '/admin/products',
   '/admin/invoices',
   '/admin/payments',
-  '/admin/sales',
   '/admin/expenses',
   '/admin/reports',
   '/admin/settings',
@@ -35,13 +36,15 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
   const showBottomNav = LIST_ROUTES.has(pathname);
+  // In cart mode, hide the desktop sidebar to give the POS screen full width.
+  const posMode = isPosMode(pathname);
 
   return (
     <AuthGuard>
       <SidebarProvider>
         <div className="fixed inset-0 flex overflow-hidden bg-background">
-          {/* Desktop sidebar */}
-          <DesktopSidebar />
+          {/* Desktop sidebar — hidden in POS mode to maximise screen space */}
+          {!posMode && <DesktopSidebar />}
 
           {/* Main app layout */}
           <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
@@ -51,7 +54,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             {/* Mobile header */}
             <MobileHeader />
 
-            {/* Scrollable page content only */}
+            {/* Scrollable page content */}
             <main
               className={`min-h-0 flex-1 overflow-y-auto overscroll-contain bg-[var(--app-background)] p-4 md:p-6 ${
                 showBottomNav ? 'pb-safe-nav' : 'pb-6'

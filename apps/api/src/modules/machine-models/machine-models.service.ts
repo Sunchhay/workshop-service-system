@@ -21,17 +21,17 @@ export class MachineModelsService {
   constructor(private readonly machineModelsRepository: MachineModelsRepository) {}
 
   async create(dto: CreateMachineModelDto) {
+    const brand = dto.brand.trim();
+    const model = dto.model.trim();
     const existing = await this.machineModelsRepository.findByBrandAndModel(
-      dto.brand,
-      dto.model,
+      brand,
+      model,
     );
     if (existing) {
-      throw new BadRequestException(
-        `Machine model "${dto.brand} ${dto.model}" already exists`,
-      );
+      throw new BadRequestException('ម៉ូដែលនេះមានរួចហើយ។');
     }
 
-    const machineModel = await this.machineModelsRepository.create(dto);
+    const machineModel = await this.machineModelsRepository.create({ ...dto, brand, model });
     return createResponse(machineModel, 'Machine model created');
   }
 
@@ -53,8 +53,8 @@ export class MachineModelsService {
   async update(id: string, dto: UpdateMachineModelDto) {
     const current = await this.findOne(id);
 
-    const newBrand = dto.brand ?? current.brand;
-    const newModel = dto.model ?? current.model;
+    const newBrand = dto.brand?.trim() ?? current.brand;
+    const newModel = dto.model?.trim() ?? current.model;
 
     if (dto.brand !== undefined || dto.model !== undefined) {
       const duplicate = await this.machineModelsRepository.findByBrandAndModel(
@@ -63,13 +63,15 @@ export class MachineModelsService {
         id,
       );
       if (duplicate) {
-        throw new BadRequestException(
-          `Machine model "${newBrand} ${newModel}" already exists`,
-        );
+        throw new BadRequestException('ម៉ូដែលនេះមានរួចហើយ។');
       }
     }
 
-    const machineModel = await this.machineModelsRepository.update(id, dto);
+    const machineModel = await this.machineModelsRepository.update(id, {
+      ...dto,
+      ...(dto.brand !== undefined && { brand: newBrand }),
+      ...(dto.model !== undefined && { model: newModel }),
+    });
     return createResponse(machineModel, 'Machine model updated');
   }
 

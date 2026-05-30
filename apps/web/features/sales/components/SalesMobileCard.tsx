@@ -35,10 +35,9 @@ interface SalesMobileCardProps {
   sale: Sale;
   onCancel: (sale: Sale) => void;
   onDelete: (sale: Sale) => void;
-  onComplete?: (sale: Sale) => void;
 }
 
-export function SalesMobileCard({ sale, onCancel, onDelete, onComplete }: SalesMobileCardProps) {
+export function SalesMobileCard({ sale, onCancel, onDelete }: SalesMobileCardProps) {
   const { t } = useTranslation();
   const router = useRouter();
 
@@ -66,6 +65,11 @@ export function SalesMobileCard({ sale, onCancel, onDelete, onComplete }: SalesM
           <p className="text-xs text-muted-foreground">
             {sale.items.length} {sale.items.length === 1 ? 'item' : 'items'} · {formatDate(sale.soldAt)}
           </p>
+          {(sale.modelNameSnapshot || sale.machineModel) && (
+            <p className="text-xs text-muted-foreground">
+              {sale.modelNameSnapshot ?? `${sale.machineModel?.brand} ${sale.machineModel?.model}`}
+            </p>
+          )}
           <div className="flex items-center gap-2 mt-1">
             <span className="font-mono text-sm font-medium">
               ${parseFloat(sale.totalAmount).toFixed(2)}
@@ -108,26 +112,6 @@ export function SalesMobileCard({ sale, onCancel, onDelete, onComplete }: SalesM
           </DropdownMenu>
         </div>
       </div>
-
-      {/* Draft action bar — visible, touch-friendly */}
-      {sale.status === 'DRAFT' && (
-        <div className="flex gap-2 px-4 pb-4 border-t pt-3">
-          <Button asChild variant="outline" size="sm" className="flex-1">
-            <Link href={`/admin/sales/${sale.id}/edit`}>
-              {t('sales.continueDraft')}
-            </Link>
-          </Button>
-          {onComplete && (
-            <Button
-              size="sm"
-              className="flex-1"
-              onClick={(e) => { e.stopPropagation(); onComplete(sale); }}
-            >
-              {t('sales.completeSale')}
-            </Button>
-          )}
-        </div>
-      )}
     </div>
   );
 }

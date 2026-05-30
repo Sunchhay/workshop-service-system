@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import {
   AlertDialog,
@@ -9,10 +9,10 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { useTranslation } from '@/lib/i18n/TranslationContext';
+} from "@/components/ui/alert-dialog";
+import { useTranslation } from "@/lib/i18n/TranslationContext";
 
-import type { PriceCatalog } from '../../types';
+import type { PriceCatalog } from "../../types";
 
 interface DisablePriceCatalogDialogProps {
   entry: PriceCatalog | null;
@@ -41,30 +41,32 @@ export function DisablePriceCatalogDialog({
         <AlertDialogHeader>
           <AlertDialogTitle>
             {isDisabling
-              ? t('priceCatalog.confirmDisableTitle')
-              : t('priceCatalog.confirmEnableTitle')}
+              ? t("priceCatalog.confirmDisableTitle")
+              : t("priceCatalog.confirmEnableTitle")}
           </AlertDialogTitle>
           <AlertDialogDescription>
-            <span className="font-medium text-foreground">{entry.label}</span> —{' '}
+            <span className="font-medium text-foreground">{entry.label}</span> —{" "}
             {isDisabling
-              ? t('priceCatalog.confirmDisableDesc')
-              : t('priceCatalog.confirmEnableDesc')}
+              ? t("priceCatalog.confirmDisableDesc")
+              : t("priceCatalog.confirmEnableDesc")}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={isLoading}>{t('common.cancel')}</AlertDialogCancel>
+          <AlertDialogCancel disabled={isLoading}>
+            {t("common.cancel")}
+          </AlertDialogCancel>
           <AlertDialogAction
             onClick={onConfirm}
             disabled={isLoading}
             className={
               isDisabling
-                ? 'bg-destructive/10 text-destructive hover:bg-destructive/20'
-                : ''
+                ? "bg-destructive/10 text-destructive hover:bg-destructive/20"
+                : ""
             }
           >
             {isDisabling
-              ? t('priceCatalog.confirmDisableTitle')
-              : t('priceCatalog.confirmEnableTitle')}
+              ? t("priceCatalog.confirmDisableTitle")
+              : t("priceCatalog.confirmEnableTitle")}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowLeft, CheckCircle, Pencil, Trash2, XCircle } from 'lucide-react';
+import { ArrowLeft, Printer, Receipt, Trash2, XCircle } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -21,10 +21,9 @@ import {
 } from '@/components/ui/table';
 import { useTranslation } from '@/lib/i18n/TranslationContext';
 
-import { useCancelSaleMutation, useCompleteSaleMutation, useDeleteSaleMutation, useGetSaleQuery } from '../api';
+import { useCancelSaleMutation, useDeleteSaleMutation, useGetSaleQuery } from '../api';
 import type { SaleStatus } from '../types';
 import { CancelSaleDialog } from './dialogs/CancelSaleDialog';
-import { CompleteSaleDialog } from './dialogs/CompleteSaleDialog';
 import { DeleteSaleDialog } from './dialogs/DeleteSaleDialog';
 
 const statusClass: Record<SaleStatus, string> = {
@@ -47,30 +46,37 @@ function fmt(v: string) {
   return isNaN(n) ? '0.00' : n.toFixed(2);
 }
 
+function getItemName(item: {
+  itemNameKh?: string | null;
+  itemNameEn?: string | null;
+  modelNameSnapshot?: string | null;
+  description: string | null;
+  product?: { name: string } | null;
+  service?: { nameKh: string | null; nameEn: string } | null;
+}) {
+  const baseName = (
+    item.itemNameKh ||
+    item.itemNameEn ||
+    item.description ||
+    item.product?.name ||
+    item.service?.nameKh ||
+    item.service?.nameEn ||
+    'Item'
+  );
+  return item.modelNameSnapshot ? `${item.modelNameSnapshot} - ${baseName}` : baseName;
+}
+
 export function SalesDetailPage({ id }: { id: string }) {
   const { t } = useTranslation();
   const router = useRouter();
   const { data, isLoading } = useGetSaleQuery(id);
-  const [completeSale, { isLoading: isCompleting }] = useCompleteSaleMutation();
   const [cancelSale, { isLoading: isCancelling }] = useCancelSaleMutation();
   const [deleteSale, { isLoading: isDeleting }] = useDeleteSaleMutation();
 
-  const [completeDialogOpen, setCompleteDialogOpen] = useState(false);
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   const sale = data?.data;
-
-  const handleCompleteConfirm = async () => {
-    try {
-      await completeSale(id).unwrap();
-      toast.success(t('sales.completeSuccess'));
-      setCompleteDialogOpen(false);
-    } catch (err: unknown) {
-      const message = (err as { data?: { message?: string } })?.data?.message ?? t('common.error');
-      toast.error(message);
-    }
-  };
 
   const handleCancelConfirm = async () => {
     try {
@@ -86,7 +92,7 @@ export function SalesDetailPage({ id }: { id: string }) {
     try {
       await deleteSale(id).unwrap();
       toast.success(t('sales.deleteSuccess'));
-      router.replace('/admin/sales');
+      router.replace('/admin/sales/history');
     } catch {
       toast.error(t('common.error'));
     }
@@ -125,15 +131,12 @@ export function SalesDetailPage({ id }: { id: string }) {
                     ? `${sale.customer.name}${sale.customer.phone ? ` · ${sale.customer.phone}` : ''}`
                     : t('sales.walkIn')}
                 </p>
+                {(sale.modelNameSnapshot || sale.machineModel) && (
+                  <p className="text-sm text-muted-foreground mt-1">
+                    ម៉ូដែល៖ {sale.modelNameSnapshot ?? `${sale.machineModel?.brand} ${sale.machineModel?.model}`}
+                  </p>
+                )}
               </div>
-              {sale.status === 'DRAFT' && (
-                <Button asChild variant="outline" size="sm">
-                  <Link href={`/admin/sales/${id}/edit`}>
-                    <Pencil className="h-3.5 w-3.5 mr-1.5" />
-                    {t('common.edit')}
-                  </Link>
-                </Button>
-              )}
             </div>
           </CardHeader>
 
@@ -188,12 +191,14 @@ export function SalesDetailPage({ id }: { id: string }) {
                       <TableRow key={item.id}>
                         <TableCell>
                           <p className="text-sm font-medium">
-                            {item.description ?? item.product.name}
+                            {getItemName(item)}
                           </p>
-                          <p className="text-xs text-muted-foreground">{item.product.code}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {item.itemCode ?? item.product?.code ?? item.service?.code ?? item.type}
+                          </p>
                         </TableCell>
                         <TableCell className="text-right font-mono text-sm">
-                          {fmt(item.quantity)} {item.product.unit}
+                          {fmt(item.quantity)} {item.product?.unit ?? ''}
                         </TableCell>
                         <TableCell className="text-right font-mono text-sm">
                           ${fmt(item.unitPrice)}
@@ -238,17 +243,77 @@ export function SalesDetailPage({ id }: { id: string }) {
 
             <Separator />
 
+            {sale.invoices.length > 0 && (
+              <>
+                <div className="space-y-3">
+                  <p className="text-sm font-medium">{t('sales.invoiceInformation')}</p>
+                  {sale.invoices.map((invoice) => (
+                    <div key={invoice.id} className="rounded-lg border p-3 text-sm">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div>
+                          <p className="font-mono font-medium">{invoice.invoiceNumber}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {formatDate(invoice.issuedAt)}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button asChild variant="outline" size="sm">
+                            <Link href={`/admin/invoices/${invoice.id}`}>
+                              <Receipt className="h-3.5 w-3.5 mr-1.5" />
+                              {t('invoices.invoiceDetail')}
+                            </Link>
+                          </Button>
+                          <Button asChild variant="outline" size="sm">
+                            <Link href={`/print/invoices/${invoice.id}`} target="_blank" rel="noopener noreferrer">
+                              <Printer className="h-3.5 w-3.5 mr-1.5" />
+                              {t('invoices.printInvoice')}
+                            </Link>
+                          </Button>
+                        </div>
+                      </div>
+
+                      <div className="mt-3 grid grid-cols-3 gap-3">
+                        <div>
+                          <p className="text-xs text-muted-foreground">{t('invoices.totalAmount')}</p>
+                          <p className="font-mono">${fmt(invoice.totalAmount)}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground">{t('invoices.paidAmount')}</p>
+                          <p className="font-mono">${fmt(invoice.paidAmount)}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground">{t('invoices.dueAmount')}</p>
+                          <p className="font-mono">${fmt(invoice.dueAmount)}</p>
+                        </div>
+                      </div>
+
+                      {invoice.payments.length > 0 && (
+                        <div className="mt-3 border-t pt-3">
+                          <p className="mb-2 text-xs font-medium text-muted-foreground">
+                            {t('sales.paymentHistory')}
+                          </p>
+                          <div className="space-y-1">
+                            {invoice.payments.map((payment) => (
+                              <div key={payment.id} className="flex justify-between gap-3 text-xs">
+                                <span className="font-mono">{payment.paymentNumber}</span>
+                                <span>{payment.method}</span>
+                                <span>{formatDate(payment.paidAt)}</span>
+                                <span className="font-mono">${fmt(payment.amount)}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                <Separator />
+              </>
+            )}
+
             {/* Actions */}
             <div className="flex flex-wrap gap-2">
-              {sale.status === 'DRAFT' && (
-                <Button
-                  size="sm"
-                  onClick={() => setCompleteDialogOpen(true)}
-                >
-                  <CheckCircle className="h-3.5 w-3.5 mr-1.5" />
-                  {t('sales.completeSale')}
-                </Button>
-              )}
               {sale.status !== 'CANCELLED' && (
                 <Button
                   variant="outline"
@@ -278,13 +343,6 @@ export function SalesDetailPage({ id }: { id: string }) {
 
       {sale && (
         <>
-          <CompleteSaleDialog
-            sale={sale}
-            open={completeDialogOpen}
-            onOpenChange={setCompleteDialogOpen}
-            onConfirm={handleCompleteConfirm}
-            isLoading={isCompleting}
-          />
           <CancelSaleDialog
             sale={sale}
             open={cancelDialogOpen}

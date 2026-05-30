@@ -43,10 +43,9 @@ interface SalesTableProps {
   sales: Sale[];
   onCancel: (sale: Sale) => void;
   onDelete: (sale: Sale) => void;
-  onComplete?: (sale: Sale) => void;
 }
 
-export function SalesTable({ sales, onCancel, onDelete, onComplete }: SalesTableProps) {
+export function SalesTable({ sales, onCancel, onDelete }: SalesTableProps) {
   const { t } = useTranslation();
   const router = useRouter();
 
@@ -83,6 +82,11 @@ export function SalesTable({ sales, onCancel, onDelete, onComplete }: SalesTable
                     <p className="text-xs text-muted-foreground">
                       {sale.items.length} {sale.items.length === 1 ? 'item' : 'items'}
                     </p>
+                    {(sale.modelNameSnapshot || sale.machineModel) && (
+                      <p className="text-xs text-muted-foreground">
+                        {sale.modelNameSnapshot ?? `${sale.machineModel?.brand} ${sale.machineModel?.model}`}
+                      </p>
+                    )}
                   </div>
                 </TableCell>
                 <TableCell>
@@ -119,16 +123,6 @@ export function SalesTable({ sales, onCancel, onDelete, onComplete }: SalesTable
                       <DropdownMenuItem asChild>
                         <Link href={`/admin/sales/${sale.id}`}>{t('sales.saleDetail')}</Link>
                       </DropdownMenuItem>
-                      {sale.status === 'DRAFT' && (
-                        <DropdownMenuItem asChild>
-                          <Link href={`/admin/sales/${sale.id}/edit`}>{t('sales.continueDraft')}</Link>
-                        </DropdownMenuItem>
-                      )}
-                      {sale.status === 'DRAFT' && onComplete && (
-                        <DropdownMenuItem onClick={() => onComplete(sale)}>
-                          {t('sales.completeSale')}
-                        </DropdownMenuItem>
-                      )}
                       <DropdownMenuSeparator />
                       {sale.status !== 'CANCELLED' && (
                         <DropdownMenuItem

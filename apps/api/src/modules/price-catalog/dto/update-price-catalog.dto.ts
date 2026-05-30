@@ -1,18 +1,12 @@
 import {
   IsBoolean,
   IsDateString,
-  IsEnum,
   IsNotEmpty,
   IsNumber,
   IsOptional,
   IsString,
   Min,
 } from 'class-validator';
-
-import {
-  CustomerType,
-  DifficultyLevel,
-} from '../../../generated/prisma/enums';
 
 export class UpdatePriceCatalogDto {
   @IsString()
@@ -23,32 +17,15 @@ export class UpdatePriceCatalogDto {
   @IsString()
   @IsNotEmpty()
   @IsOptional()
+  machineModelId?: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @IsOptional()
   label?: string;
 
   @IsNumber()
-  @Min(0)
-  @IsOptional()
-  sizeFrom?: number;
-
-  @IsNumber()
-  @Min(0)
-  @IsOptional()
-  sizeTo?: number;
-
-  @IsString()
-  @IsOptional()
-  unit?: string;
-
-  @IsEnum(DifficultyLevel)
-  @IsOptional()
-  difficultyLevel?: DifficultyLevel;
-
-  @IsEnum(CustomerType)
-  @IsOptional()
-  customerType?: CustomerType | null;
-
-  @IsNumber()
-  @Min(0)
+  @Min(0.01)
   @IsOptional()
   unitPrice?: number;
 
@@ -68,6 +45,10 @@ export class UpdatePriceCatalogDto {
   @IsDateString()
   @IsOptional()
   expiredDate?: string | null;
+
+  @IsBoolean()
+  @IsOptional()
+  isActive?: boolean;
 }
 
 export class UpdatePriceCatalogStatusDto {

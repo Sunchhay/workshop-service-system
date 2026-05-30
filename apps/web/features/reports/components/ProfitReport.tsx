@@ -20,7 +20,7 @@ interface ProfitCardProps {
 function PCard({ title, value, icon: Icon, iconClass, borderClass = '', note, isLoading }: ProfitCardProps) {
   return (
     <Card className={borderClass}>
-      <CardContent className="p-5">
+      <CardContent>
         {isLoading ? (
           <div className="space-y-3"><Skeleton className="h-4 w-32" /><Skeleton className="h-9 w-40" /></div>
         ) : (

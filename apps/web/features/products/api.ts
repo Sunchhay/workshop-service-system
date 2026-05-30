@@ -1,4 +1,4 @@
-import { baseApi } from '@/lib/api/baseApi';
+import { baseApi } from "@/lib/api/baseApi";
 
 import type {
   AdjustStockRequest,
@@ -7,7 +7,7 @@ import type {
   GetProductsResponse,
   ProductQuery,
   UpdateProductRequest,
-} from './types';
+} from "./types";
 
 const productsApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
@@ -16,30 +16,33 @@ const productsApi = baseApi.injectEndpoints({
         search,
         category,
         componentPartType,
+        machineModelId,
         isActive,
         lowStock,
         page = 1,
         limit = 20,
       }) => {
         const params = new URLSearchParams();
-        if (search) params.set('search', search);
-        if (category) params.set('category', category);
-        if (componentPartType) params.set('componentPartType', componentPartType);
-        if (isActive !== undefined) params.set('isActive', String(isActive));
-        if (lowStock !== undefined) params.set('lowStock', String(lowStock));
-        params.set('page', String(page));
-        params.set('limit', String(limit));
+        if (search) params.set("search", search);
+        if (category) params.set("category", category);
+        if (componentPartType)
+          params.set("componentPartType", componentPartType);
+        if (machineModelId) params.set("machineModelId", machineModelId);
+        if (isActive !== undefined) params.set("isActive", String(isActive));
+        if (lowStock !== undefined) params.set("lowStock", String(lowStock));
+        params.set("page", String(page));
+        params.set("limit", String(limit));
         return `/products?${params}`;
       },
-      providesTags: ['Product'],
+      providesTags: ["Product"],
     }),
     getProduct: builder.query<GetProductResponse, string>({
       query: (id) => `/products/${id}`,
-      providesTags: (_result, _error, id) => [{ type: 'Product', id }],
+      providesTags: (_result, _error, id) => [{ type: "Product", id }],
     }),
     createProduct: builder.mutation<GetProductResponse, CreateProductRequest>({
-      query: (body) => ({ url: '/products', method: 'POST', body }),
-      invalidatesTags: ['Product'],
+      query: (body) => ({ url: "/products", method: "POST", body }),
+      invalidatesTags: ["Product"],
     }),
     updateProduct: builder.mutation<
       GetProductResponse,
@@ -47,12 +50,12 @@ const productsApi = baseApi.injectEndpoints({
     >({
       query: ({ id, data }) => ({
         url: `/products/${id}`,
-        method: 'PATCH',
+        method: "PATCH",
         body: data,
       }),
       invalidatesTags: (_result, _error, { id }) => [
-        'Product',
-        { type: 'Product', id },
+        "Product",
+        { type: "Product", id },
       ],
     }),
     updateProductStatus: builder.mutation<
@@ -61,12 +64,12 @@ const productsApi = baseApi.injectEndpoints({
     >({
       query: ({ id, isActive }) => ({
         url: `/products/${id}/status`,
-        method: 'PATCH',
+        method: "PATCH",
         body: { isActive },
       }),
       invalidatesTags: (_result, _error, { id }) => [
-        'Product',
-        { type: 'Product', id },
+        "Product",
+        { type: "Product", id },
       ],
     }),
     adjustProductStock: builder.mutation<
@@ -75,17 +78,17 @@ const productsApi = baseApi.injectEndpoints({
     >({
       query: ({ id, data }) => ({
         url: `/products/${id}/stock`,
-        method: 'PATCH',
+        method: "PATCH",
         body: data,
       }),
       invalidatesTags: (_result, _error, { id }) => [
-        'Product',
-        { type: 'Product', id },
+        "Product",
+        { type: "Product", id },
       ],
     }),
     deleteProduct: builder.mutation<{ success: boolean; data: null }, string>({
-      query: (id) => ({ url: `/products/${id}`, method: 'DELETE' }),
-      invalidatesTags: ['Product'],
+      query: (id) => ({ url: `/products/${id}`, method: "DELETE" }),
+      invalidatesTags: ["Product"],
     }),
   }),
 });

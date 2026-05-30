@@ -26,7 +26,7 @@ export class QueryInvoiceDto {
 
   @IsString()
   @IsOptional()
-  serviceJobId?: string;
+  saleId?: string;
 
   @IsDateString()
   @IsOptional()

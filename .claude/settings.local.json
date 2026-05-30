@@ -17,7 +17,10 @@
       "Bash(npx tsx *)",
       "Bash(grep -r '\"use client\"' /Users/sunchhay/Documents/workshop-service-system/apps/web --include=\"*.tsx\" --include=\"*.ts\" ! -path \"*/node_modules/*\")",
       "Bash(grep -r '\"use client\"' /Users/sunchhay/Documents/workshop-service-system/apps/web --include='*.tsx' --include='*.ts' ! -path '*/node_modules/*')",
-      "Bash(npx eslint *)"
+      "Bash(npx eslint *)",
+      "Bash(PRISMA_HIDE_UPDATE_MESSAGE=true npx prisma *)",
+      "Bash(grep -v \"^$\")",
+      "Bash(xargs ls)"
     ]
   }
 }

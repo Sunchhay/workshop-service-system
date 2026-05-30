@@ -15,6 +15,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useTranslation } from '@/lib/i18n/TranslationContext';
 
+import { getProductDisplayName } from '@/lib/display-name';
+
 import type { Product } from '../types';
 
 function isLowStock(p: Product) {
@@ -50,14 +52,31 @@ export function ProductMobileCard({
           router.push(`/admin/products/${product.id}`);
       }}
     >
+      {/* Thumbnail */}
+      {product.imageUrl ? (
+        <img
+          src={product.imageUrl}
+          alt={getProductDisplayName(product)}
+          className="h-12 w-12 rounded-lg object-cover shrink-0"
+          loading="lazy"
+        />
+      ) : (
+        <div className="h-12 w-12 rounded-lg bg-muted flex items-center justify-center shrink-0 text-xl">
+          📦
+        </div>
+      )}
+
       {/* Main info */}
       <div className="min-w-0 flex-1">
         <div className="flex items-start gap-2 flex-wrap">
-          <span className="font-medium text-sm">{product.name}</span>
+          <span className="font-medium text-sm">{getProductDisplayName(product)}</span>
           <Badge variant="outline" className="font-mono text-xs px-1.5">
             {product.code}
           </Badge>
         </div>
+        {product.nameKh && (
+          <p className="text-xs text-muted-foreground mt-0.5">{product.nameEn}</p>
+        )}
         {(product.brand || product.componentPartType) && (
           <p className="text-xs text-muted-foreground mt-0.5">
             {[product.brand, product.componentPartType].filter(Boolean).join(' · ')}

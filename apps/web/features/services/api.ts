@@ -11,10 +11,9 @@ import type {
 const servicesApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getServices: builder.query<GetServicesResponse, ServiceQuery>({
-      query: ({ search, priceType, isActive, page = 1, limit = 20 }) => {
+      query: ({ search, isActive, page = 1, limit = 20 }) => {
         const params = new URLSearchParams();
         if (search) params.set('search', search);
-        if (priceType) params.set('priceType', priceType);
         if (isActive !== undefined) params.set('isActive', String(isActive));
         params.set('page', String(page));
         params.set('limit', String(limit));

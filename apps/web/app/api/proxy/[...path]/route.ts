@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from 'next/server';
 
-const API_BASE = 'https://api-workshop.sunchhay.com/api';
-// const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api';
+// const API_BASE = 'https://api-workshop.sunchhay.com/api';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api';
 
 async function proxy(req: NextRequest, params: Promise<{ path: string[] }>) {
   const { path } = await params;

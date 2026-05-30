@@ -71,8 +71,7 @@ export function CustomerEditPage({ id }: CustomerEditPageProps) {
               defaultValues={{
                 name: data.data.name,
                 phone: data.data.phone,
-                email: data.data.email ?? '',
-                address: data.data.address ?? '',
+                imageUrl: data.data.imageUrl ?? null,
                 customerType: data.data.customerType,
                 notes: data.data.notes ?? '',
               }}

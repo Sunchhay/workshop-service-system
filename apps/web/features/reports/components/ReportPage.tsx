@@ -14,7 +14,6 @@ import { ReportFilter } from './ReportFilter';
 import type { ReportTab } from './ReportTabs';
 import { ReportTabs } from './ReportTabs';
 import { SalesReport } from './SalesReport';
-import { ServiceJobReport } from './ServiceJobReport';
 import { SummaryReport } from './SummaryReport';
 import { UnpaidBalanceReport } from './UnpaidBalanceReport';
 
@@ -39,7 +38,6 @@ export function ReportPage() {
 
       <div className="pt-2">
         {activeTab === 'summary' && <SummaryReport fromDate={fromDate} toDate={toDate} />}
-        {activeTab === 'service-jobs' && <ServiceJobReport fromDate={fromDate} toDate={toDate} />}
         {activeTab === 'invoices' && <InvoiceReport fromDate={fromDate} toDate={toDate} />}
         {activeTab === 'payments' && <PaymentReport fromDate={fromDate} toDate={toDate} />}
         {activeTab === 'sales' && <SalesReport fromDate={fromDate} toDate={toDate} />}

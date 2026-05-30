@@ -45,9 +45,11 @@ export function MachineModelMobileCard({
       {/* Main info */}
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="font-medium text-sm">{model.brand}</span>
-          <span className="text-muted-foreground text-sm">{model.model}</span>
+          <span className="font-medium text-sm">{model.brand} {model.model}</span>
         </div>
+        <p className="text-xs text-muted-foreground mt-0.5">
+          {model.brand} · {model.model}
+        </p>
         {model.description && (
           <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
             {model.description}

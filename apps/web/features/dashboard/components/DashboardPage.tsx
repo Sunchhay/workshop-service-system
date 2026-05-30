@@ -2,15 +2,12 @@
 
 import {
   AlertTriangle,
-  CheckCircle2,
-  ClipboardList,
-  Clock,
   CreditCard,
   DollarSign,
   Package,
   Receipt,
+  ShoppingCart,
   TrendingDown,
-  TrendingUp,
   Users,
   Wallet,
 } from 'lucide-react';
@@ -21,7 +18,6 @@ import { useGetDashboardSummaryQuery } from '../api';
 import { DashboardQuickActions } from './DashboardQuickActions';
 import { DashboardSummaryCard } from './DashboardSummaryCard';
 import { LowStockProducts } from './LowStockProducts';
-import { RecentServiceJobs } from './RecentServiceJobs';
 import { RecentTransactions } from './RecentTransactions';
 
 function fmt(v: string) {
@@ -63,48 +59,23 @@ export function DashboardPage() {
           isLoading={isLoading}
         />
 
-        {/* Today's new jobs */}
         <DashboardSummaryCard
-          title={t('dashboard.todayNewJobs')}
-          value={isLoading ? '—' : (s?.todayNewJobs ?? 0)}
+          title={t('dashboard.salesToday')}
+          value={isLoading ? '—' : (s?.salesTodayCount ?? 0)}
           subtitle={t('dashboard.todaySubtitle')}
-          icon={ClipboardList}
+          icon={ShoppingCart}
           iconClass="bg-cyan-500/10 text-cyan-600 dark:text-cyan-400"
-          href="/admin/service-jobs"
+          href="/admin/sales/history"
           isLoading={isLoading}
         />
 
-        {/* Pending */}
         <DashboardSummaryCard
-          title={t('dashboard.pendingJobs')}
-          value={isLoading ? '—' : (s?.pendingJobs ?? 0)}
-          subtitle={t('dashboard.jobsSubtitle')}
-          icon={Clock}
+          title={t('dashboard.salesMonth')}
+          value={isLoading ? '—' : (s?.salesMonthCount ?? 0)}
+          subtitle={t('dashboard.monthSubtitle')}
+          icon={ShoppingCart}
           iconClass="bg-amber-500/10 text-amber-600 dark:text-amber-400"
-          highlight={s && s.pendingJobs > 0 ? 'warn' : undefined}
-          href="/admin/service-jobs"
-          isLoading={isLoading}
-        />
-
-        {/* In Progress */}
-        <DashboardSummaryCard
-          title={t('dashboard.inProgressJobs')}
-          value={isLoading ? '—' : (s?.inProgressJobs ?? 0)}
-          subtitle={t('dashboard.jobsSubtitle')}
-          icon={TrendingUp}
-          iconClass="bg-indigo-500/10 text-indigo-600 dark:text-indigo-400"
-          href="/admin/service-jobs"
-          isLoading={isLoading}
-        />
-
-        {/* Completed */}
-        <DashboardSummaryCard
-          title={t('dashboard.completedJobs')}
-          value={isLoading ? '—' : (s?.completedJobs ?? 0)}
-          subtitle={t('dashboard.jobsSubtitle')}
-          icon={CheckCircle2}
-          iconClass="bg-green-500/10 text-green-600 dark:text-green-400"
-          href="/admin/service-jobs"
+          href="/admin/sales/history"
           isLoading={isLoading}
         />
 
@@ -200,9 +171,8 @@ export function DashboardPage() {
       {/* Low stock warning list */}
       <LowStockProducts />
 
-      {/* Recent activity — two columns on desktop */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <RecentServiceJobs />
+      {/* Recent activity */}
+      <div className="grid grid-cols-1 gap-4">
         <RecentTransactions />
       </div>
     </div>

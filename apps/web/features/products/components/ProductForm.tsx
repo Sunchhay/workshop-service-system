@@ -22,6 +22,10 @@ import type { CreateProductRequest, UpdateProductRequest } from '../types';
 
 const productSchema = z.object({
   name: z.string().min(1),
+  nameKh: z.string(),
+  nameEn: z.string(),
+  aliases: z.string(),
+  imageUrl: z.string(),
   brand: z.string(),
   componentPartType: z.string(),
   size: z.string(),
@@ -94,6 +98,10 @@ export function ProductForm({
     resolver: zodResolver(productSchema),
     defaultValues: {
       name: defaultValues?.name ?? '',
+      nameKh: defaultValues?.nameKh ?? '',
+      nameEn: defaultValues?.nameEn ?? '',
+      aliases: defaultValues?.aliases ?? '',
+      imageUrl: defaultValues?.imageUrl ?? '',
       brand: defaultValues?.brand ?? '',
       componentPartType: defaultValues?.componentPartType ?? '',
       size: defaultValues?.size ?? '',
@@ -110,8 +118,13 @@ export function ProductForm({
   });
 
   const handleSubmit = async (data: FormValues) => {
+    const nameValue = data.name || data.nameKh || data.nameEn || '';
     const payload: CreateProductRequest | UpdateProductRequest = {
-      name: data.name,
+      name: nameValue,
+      nameKh: data.nameKh || undefined,
+      nameEn: data.nameEn || undefined,
+      aliases: data.aliases || undefined,
+      imageUrl: data.imageUrl || undefined,
       brand: data.brand || undefined,
       componentPartType: data.componentPartType || undefined,
       size: data.size || undefined,
@@ -147,6 +160,66 @@ export function ProductForm({
             </FormItem>
           )}
         />
+
+        {/* Row 1b: Khmer name + English name */}
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+          <FormField
+            control={form.control}
+            name="nameKh"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('products.nameKh')}</FormLabel>
+                <FormControl>
+                  <Input placeholder={t('products.nameKhPlaceholder')} {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="nameEn"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('products.nameEn')}</FormLabel>
+                <FormControl>
+                  <Input placeholder={t('products.nameEnPlaceholder')} {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        {/* Aliases + Image URL */}
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+          <FormField
+            control={form.control}
+            name="aliases"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('products.aliases')}</FormLabel>
+                <FormControl>
+                  <Input placeholder={t('products.aliasesPlaceholder')} {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="imageUrl"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('products.imageUrl')}</FormLabel>
+                <FormControl>
+                  <Input placeholder={t('products.imageUrlPlaceholder')} {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
 
         {/* Row 2: Brand + Part type */}
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
