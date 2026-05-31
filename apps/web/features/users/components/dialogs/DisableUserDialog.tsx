@@ -33,29 +33,23 @@ export function DisableUserDialog({
 
   if (!user) return null;
 
-  const isDisabling = user.isActive;
+  const isDisabling = user.status === 'ACTIVE';
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>
-            {isDisabling
-              ? t('users.confirmDisableTitle')
-              : t('users.confirmEnableTitle')}
+            {isDisabling ? t('users.confirmDisableTitle') : t('users.confirmEnableTitle')}
           </AlertDialogTitle>
           <AlertDialogDescription>
             <span className="font-medium text-foreground">{user.name}</span>
             {' — '}
-            {isDisabling
-              ? t('users.confirmDisableDesc')
-              : t('users.confirmEnableDesc')}
+            {isDisabling ? t('users.confirmDisableDesc') : t('users.confirmEnableDesc')}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={isLoading}>
-            {t('common.cancel')}
-          </AlertDialogCancel>
+          <AlertDialogCancel disabled={isLoading}>{t('common.cancel')}</AlertDialogCancel>
           <AlertDialogAction
             onClick={onConfirm}
             disabled={isLoading}
@@ -65,9 +59,7 @@ export function DisableUserDialog({
                 : ''
             }
           >
-            {isDisabling
-              ? t('users.confirmDisableTitle')
-              : t('users.confirmEnableTitle')}
+            {isDisabling ? t('users.confirmDisableTitle') : t('users.confirmEnableTitle')}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

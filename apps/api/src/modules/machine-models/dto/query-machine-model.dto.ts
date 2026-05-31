@@ -1,12 +1,7 @@
 import { Transform } from 'class-transformer';
-import {
-  IsBoolean,
-  IsInt,
-  IsOptional,
-  IsString,
-  Max,
-  Min,
-} from 'class-validator';
+import { IsEnum, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
+
+import { RecordStatus } from '../../../generated/prisma/enums';
 
 export class QueryMachineModelDto {
   @IsString()
@@ -15,25 +10,22 @@ export class QueryMachineModelDto {
 
   @IsString()
   @IsOptional()
-  category?: string;
+  machineType?: string;
 
-  @IsBoolean()
+  @IsEnum(RecordStatus)
   @IsOptional()
-  @Transform(({ value }) => {
-    if (value === 'true' || value === true) return true;
-    if (value === 'false' || value === false) return false;
-    return undefined;
-  })
-  isActive?: boolean;
+  status?: RecordStatus;
 
   @IsInt()
   @Min(1)
   @IsOptional()
+  @Transform(({ value }) => Number(value))
   page?: number = 1;
 
   @IsInt()
   @Min(1)
   @Max(100)
   @IsOptional()
+  @Transform(({ value }) => Number(value))
   limit?: number = 20;
 }

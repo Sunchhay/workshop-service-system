@@ -6,16 +6,17 @@ import type {
   GetCustomerResponse,
   GetCustomersResponse,
   UpdateCustomerRequest,
+  UpdateCustomerStatusRequest,
 } from './types';
 
 const customersApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getCustomers: builder.query<GetCustomersResponse, CustomerQuery>({
-      query: ({ search, customerType, isActive, page = 1, limit = 20 }) => {
+      query: ({ search, customerType, status, page = 1, limit = 20 }) => {
         const params = new URLSearchParams();
         if (search) params.set('search', search);
         if (customerType) params.set('customerType', customerType);
-        if (isActive !== undefined) params.set('isActive', String(isActive));
+        if (status) params.set('status', status);
         params.set('page', String(page));
         params.set('limit', String(limit));
         return `/customers?${params}`;
@@ -50,19 +51,19 @@ const customersApi = baseApi.injectEndpoints({
     }),
     updateCustomerStatus: builder.mutation<
       GetCustomerResponse,
-      { id: string; isActive: boolean }
+      { id: string; data: UpdateCustomerStatusRequest }
     >({
-      query: ({ id, isActive }) => ({
+      query: ({ id, data }) => ({
         url: `/customers/${id}/status`,
         method: 'PATCH',
-        body: { isActive },
+        body: data,
       }),
       invalidatesTags: (_result, _error, { id }) => [
         'Customer',
         { type: 'Customer', id },
       ],
     }),
-    deleteCustomer: builder.mutation<{ success: boolean; data: null }, string>({
+    deleteCustomer: builder.mutation<GetCustomerResponse, string>({
       query: (id) => ({
         url: `/customers/${id}`,
         method: 'DELETE',

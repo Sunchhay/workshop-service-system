@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Patch,
@@ -10,7 +11,6 @@ import {
 
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
-import { createResponse } from '../../common/types/api-response.type';
 import type { RequestUser } from '../../common/types/jwt-payload.type';
 import { UserRole } from '../../generated/prisma/enums';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -25,39 +25,41 @@ export class UsersController {
 
   // POST /api/users
   @Post()
-  async create(@Body() dto: CreateUserDto) {
-    const user = await this.usersService.create(dto);
-    return createResponse(user, 'User created');
+  create(@Body() dto: CreateUserDto) {
+    return this.usersService.create(dto);
   }
 
-  // GET /api/users?role=STAFF&search=john&page=1&limit=20
+  // GET /api/users
   @Get()
-  findAll(@Query() query: QueryUserDto, @CurrentUser() currentUser: RequestUser) {
-    return this.usersService.findAll(query, currentUser.id);
+  findAll(@Query() dto: QueryUserDto, @CurrentUser() user: RequestUser) {
+    return this.usersService.findAll(dto, user.id);
   }
 
   // GET /api/users/:id
   @Get(':id')
-  async findOne(@Param('id') id: string) {
-    const user = await this.usersService.findOne(id);
-    return createResponse(user);
+  findOne(@Param('id') id: string) {
+    return this.usersService.findOne(id);
   }
 
   // PATCH /api/users/:id
   @Patch(':id')
-  async update(@Param('id') id: string, @Body() dto: UpdateUserDto) {
-    const user = await this.usersService.update(id, dto);
-    return createResponse(user, 'User updated');
+  update(@Param('id') id: string, @Body() dto: UpdateUserDto) {
+    return this.usersService.update(id, dto);
   }
 
   // PATCH /api/users/:id/status
   @Patch(':id/status')
-  async updateStatus(
+  updateStatus(
     @Param('id') id: string,
     @Body() dto: UpdateUserStatusDto,
-    @CurrentUser() currentUser: RequestUser,
+    @CurrentUser() user: RequestUser,
   ) {
-    const user = await this.usersService.updateStatus(id, dto, currentUser.id);
-    return createResponse(user, 'User status updated');
+    return this.usersService.updateStatus(id, dto, user.id);
+  }
+
+  // DELETE /api/users/:id  — deactivates, does not hard delete
+  @Delete(':id')
+  remove(@Param('id') id: string, @CurrentUser() user: RequestUser) {
+    return this.usersService.remove(id, user.id);
   }
 }

@@ -18,16 +18,15 @@ import type {
 
 @Injectable()
 export class MachineModelsService {
-  constructor(private readonly machineModelsRepository: MachineModelsRepository) {}
+  constructor(
+    private readonly machineModelsRepository: MachineModelsRepository,
+  ) {}
 
   async create(dto: CreateMachineModelDto) {
-    const existing = await this.machineModelsRepository.findByBrandAndModel(
-      dto.brand,
-      dto.model,
-    );
+    const existing = await this.machineModelsRepository.findByCode(dto.code);
     if (existing) {
       throw new BadRequestException(
-        `Machine model "${dto.brand} ${dto.model}" already exists`,
+        `Machine model "${dto.code}" already exists`,
       );
     }
 
@@ -51,20 +50,16 @@ export class MachineModelsService {
   }
 
   async update(id: string, dto: UpdateMachineModelDto) {
-    const current = await this.findOne(id);
+    await this.findOne(id);
 
-    const newBrand = dto.brand ?? current.brand;
-    const newModel = dto.model ?? current.model;
-
-    if (dto.brand !== undefined || dto.model !== undefined) {
-      const duplicate = await this.machineModelsRepository.findByBrandAndModel(
-        newBrand,
-        newModel,
+    if (dto.code !== undefined) {
+      const duplicate = await this.machineModelsRepository.findByCode(
+        dto.code,
         id,
       );
       if (duplicate) {
         throw new BadRequestException(
-          `Machine model "${newBrand} ${newModel}" already exists`,
+          `Machine model "${dto.code}" already exists`,
         );
       }
     }
@@ -77,14 +72,14 @@ export class MachineModelsService {
     await this.findOne(id);
     const machineModel = await this.machineModelsRepository.updateStatus(
       id,
-      dto.isActive,
+      dto.status,
     );
     return createResponse(machineModel, 'Machine model status updated');
   }
 
   async remove(id: string) {
     await this.findOne(id);
-    await this.machineModelsRepository.softDelete(id);
-    return createResponse(null, 'Machine model deleted');
+    const machineModel = await this.machineModelsRepository.deactivate(id);
+    return createResponse(machineModel, 'Machine model deactivated');
   }
 }

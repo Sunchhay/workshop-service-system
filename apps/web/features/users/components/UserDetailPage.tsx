@@ -24,10 +24,7 @@ interface UserDetailPageProps {
 const roleClass: Record<UserRole, string> = {
   ADMIN: '',
   STAFF: 'bg-blue-500/10 text-blue-600 border-blue-500/20 dark:text-blue-400',
-  TECHNICIAN:
-    'bg-orange-500/10 text-orange-600 border-orange-500/20 dark:text-orange-400',
-  CASHIER:
-    'bg-purple-500/10 text-purple-600 border-purple-500/20 dark:text-purple-400',
+  VIEWER: 'bg-purple-500/10 text-purple-600 border-purple-500/20 dark:text-purple-400',
 };
 
 function formatDate(dateStr: string) {
@@ -54,13 +51,12 @@ export function UserDetailPage({ id }: UserDetailPageProps) {
   const handleStatusConfirm = async () => {
     if (!user) return;
     try {
+      const isActive = user.status === 'ACTIVE';
       await updateUserStatus({
         id: user.id,
-        isActive: !user.isActive,
+        status: isActive ? 'INACTIVE' : 'ACTIVE',
       }).unwrap();
-      toast.success(
-        user.isActive ? t('users.disabledSuccess') : t('users.enabledSuccess'),
-      );
+      toast.success(isActive ? t('users.disabledSuccess') : t('users.enabledSuccess'));
       setDialogOpen(false);
     } catch {
       toast.error(t('common.error'));
@@ -123,14 +119,14 @@ export function UserDetailPage({ id }: UserDetailPageProps) {
                     {t('users.statusLabel')}
                   </p>
                   <Badge
-                    variant={user.isActive ? 'default' : 'outline'}
+                    variant={user.status === 'ACTIVE' ? 'default' : 'outline'}
                     className={
-                      user.isActive
+                      user.status === 'ACTIVE'
                         ? 'bg-green-500/10 text-green-700 border-green-500/20 dark:text-green-400'
                         : 'text-muted-foreground'
                     }
                   >
-                    {t(user.isActive ? 'common.active' : 'common.inactive')}
+                    {t(user.status === 'ACTIVE' ? 'common.active' : 'common.inactive')}
                   </Badge>
                 </div>
                 <div>
@@ -150,16 +146,16 @@ export function UserDetailPage({ id }: UserDetailPageProps) {
               <Separator />
 
               <Button
-                variant={user.isActive ? 'destructive' : 'outline'}
+                variant={user.status === 'ACTIVE' ? 'destructive' : 'outline'}
                 size="sm"
                 onClick={() => setDialogOpen(true)}
                 className={
-                  !user.isActive
+                  !user.status === 'ACTIVE'
                     ? 'border-green-500/30 text-green-700 hover:bg-green-500/10 dark:text-green-400'
                     : ''
                 }
               >
-                {user.isActive
+                {user.status === 'ACTIVE'
                   ? t('users.confirmDisableTitle')
                   : t('users.confirmEnableTitle')}
               </Button>

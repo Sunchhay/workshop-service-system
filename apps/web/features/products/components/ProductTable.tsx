@@ -25,27 +25,16 @@ import { useTranslation } from '@/lib/i18n/TranslationContext';
 
 import type { Product } from '../types';
 
-function formatDecimal(v: string) {
-  const n = parseFloat(v);
-  return isNaN(n) ? '—' : `$${n.toFixed(2)}`;
-}
-
-function isLowStock(p: Product) {
-  return p.stockQuantity <= p.reorderLevel;
-}
-
 interface ProductTableProps {
   products: Product[];
   onToggleStatus: (product: Product) => void;
   onDelete: (product: Product) => void;
-  onAdjustStock: (product: Product) => void;
 }
 
 export function ProductTable({
   products,
   onToggleStatus,
   onDelete,
-  onAdjustStock,
 }: ProductTableProps) {
   const { t } = useTranslation();
   const router = useRouter();
@@ -55,10 +44,11 @@ export function ProductTable({
       <Table>
         <TableHeader>
           <TableRow>
+            <TableHead>{t('products.code')}</TableHead>
             <TableHead>{t('products.name')}</TableHead>
+            <TableHead>{t('products.nameEn')}</TableHead>
             <TableHead>{t('products.category')}</TableHead>
-            <TableHead>{t('products.stockQuantity')}</TableHead>
-            <TableHead>{t('products.sellingPrice')}</TableHead>
+            <TableHead>{t('products.unit')}</TableHead>
             <TableHead>{t('products.statusLabel')}</TableHead>
             <TableHead className="w-12" />
           </TableRow>
@@ -67,7 +57,7 @@ export function ProductTable({
           {products.length === 0 ? (
             <TableRow>
               <TableCell
-                colSpan={6}
+                colSpan={7}
                 className="text-center text-muted-foreground py-10"
               >
                 {t('products.noProducts')}
@@ -80,69 +70,39 @@ export function ProductTable({
                 className="cursor-pointer"
                 onClick={() => router.push(`/admin/products/${product.id}`)}
               >
-                {/* Name */}
+                <TableCell className="font-mono text-sm font-medium">
+                  {product.code}
+                </TableCell>
+                <TableCell className="font-medium">{product.name}</TableCell>
+                <TableCell className="text-muted-foreground">
+                  {product.nameEn ?? <span className="text-muted-foreground">—</span>}
+                </TableCell>
                 <TableCell>
-                  <div>
-                    <p className="font-medium">{product.name}</p>
-                    {product.brand && (
-                      <p className="text-xs text-muted-foreground">
-                        {product.brand}
-                      </p>
-                    )}
-                    <p className="text-xs text-muted-foreground font-mono mt-0.5">
-                      {product.code}
-                    </p>
-                  </div>
+                  {product.category ? (
+                    <span className="text-sm">{product.category}</span>
+                  ) : (
+                    <span className="text-sm text-muted-foreground">—</span>
+                  )}
                 </TableCell>
-                {/* Category / Part type */}
                 <TableCell>
-                  <div>
-                    {product.category ? (
-                      <p className="text-sm">{product.category}</p>
-                    ) : (
-                      <p className="text-sm text-muted-foreground">—</p>
-                    )}
-                    {product.componentPartType && (
-                      <p className="text-xs text-muted-foreground">
-                        {product.componentPartType}
-                      </p>
-                    )}
-                  </div>
+                  {product.unit ? (
+                    <span className="text-sm">{product.unit}</span>
+                  ) : (
+                    <span className="text-sm text-muted-foreground">—</span>
+                  )}
                 </TableCell>
-                {/* Stock */}
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono text-sm">
-                      {product.stockQuantity} {product.unit}
-                    </span>
-                    {isLowStock(product) && (
-                      <Badge
-                        variant="outline"
-                        className="text-[10px] px-1 py-0 bg-amber-500/10 text-amber-700 border-amber-500/20 dark:text-amber-400"
-                      >
-                        {t('products.lowStock')}
-                      </Badge>
-                    )}
-                  </div>
-                </TableCell>
-                {/* Price */}
-                <TableCell className="font-mono text-sm">
-                  {formatDecimal(product.sellingPrice)}
-                </TableCell>
-                {/* Status */}
                 <TableCell>
                   <Badge
-                    variant={product.isActive ? 'default' : 'outline'}
+                    variant={product.status === 'ACTIVE' ? 'default' : 'outline'}
                     className={
-                      product.isActive
+                      product.status === 'ACTIVE'
                         ? 'bg-green-500/10 text-green-700 border-green-500/20 dark:text-green-400'
                         : 'text-muted-foreground'
                     }
                   >
-                    {t(product.isActive ? 'common.active' : 'common.inactive')}
+                    {t(product.status === 'ACTIVE' ? 'common.active' : 'common.inactive')}
                   </Badge>
                 </TableCell>
-                {/* Actions */}
                 <TableCell onClick={(e) => e.stopPropagation()}>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -161,21 +121,16 @@ export function ProductTable({
                           {t('common.edit')}
                         </Link>
                       </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => onAdjustStock(product)}
-                      >
-                        {t('products.adjustStock')}
-                      </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
                         onClick={() => onToggleStatus(product)}
                         className={
-                          product.isActive
+                          product.status === 'ACTIVE'
                             ? 'text-destructive focus:text-destructive'
                             : 'text-green-600 focus:text-green-600'
                         }
                       >
-                        {product.isActive
+                        {product.status === 'ACTIVE'
                           ? t('products.confirmDisableTitle')
                           : t('products.confirmEnableTitle')}
                       </DropdownMenuItem>

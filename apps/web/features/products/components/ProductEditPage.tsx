@@ -10,7 +10,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useTranslation } from '@/lib/i18n/TranslationContext';
 
 import { useGetProductQuery, useUpdateProductMutation } from '../api';
-import type { UpdateProductRequest } from '../types';
+import type { CreateProductRequest, UpdateProductRequest } from '../types';
 import { ProductForm } from './ProductForm';
 
 export function ProductEditPage({ id }: { id: string }) {
@@ -19,9 +19,9 @@ export function ProductEditPage({ id }: { id: string }) {
   const { data, isLoading: isFetching } = useGetProductQuery(id);
   const [updateProduct, { isLoading: isUpdating }] = useUpdateProductMutation();
 
-  const handleSubmit = async (payload: UpdateProductRequest) => {
+  const handleSubmit = async (payload: CreateProductRequest | UpdateProductRequest) => {
     try {
-      await updateProduct({ id, data: payload }).unwrap();
+      await updateProduct({ id, data: payload as UpdateProductRequest }).unwrap();
       toast.success(t('products.updateSuccess'));
       router.replace(`/admin/products/${id}`);
     } catch (err: unknown) {
@@ -33,24 +33,6 @@ export function ProductEditPage({ id }: { id: string }) {
   };
 
   const product = data?.data;
-
-  const defaultValues = product
-    ? {
-        name: product.name,
-        brand: product.brand ?? '',
-        componentPartType: product.componentPartType ?? '',
-        size: product.size ?? '',
-        supplier: product.supplier ?? '',
-        category: product.category ?? '',
-        unit: product.unit,
-        costPrice: product.costPrice,
-        sellingPrice: product.sellingPrice,
-        stockQuantity: String(product.stockQuantity),
-        reorderLevel: String(product.reorderLevel),
-        linkedReferenceBookId: product.linkedReferenceBookId ?? '',
-        description: product.description ?? '',
-      }
-    : undefined;
 
   return (
     <div className="space-y-4">
@@ -69,16 +51,29 @@ export function ProductEditPage({ id }: { id: string }) {
           {isFetching ? (
             <div className="space-y-5">
               <Skeleton className="h-11 w-full" />
-              <div className="grid grid-cols-2 gap-5">
+              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                <Skeleton className="h-11 w-full" />
+                <Skeleton className="h-11 w-full" />
+              </div>
+              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                 <Skeleton className="h-11 w-full" />
                 <Skeleton className="h-11 w-full" />
               </div>
               <Skeleton className="h-11 w-full" />
+              <Skeleton className="h-20 w-full" />
             </div>
           ) : product ? (
             <ProductForm
               mode="edit"
-              defaultValues={defaultValues}
+              defaultValues={{
+                code: product.code,
+                name: product.name,
+                nameEn: product.nameEn ?? '',
+                category: product.category ?? '',
+                unit: product.unit ?? '',
+                description: product.description ?? '',
+                status: product.status,
+              }}
               onSubmit={handleSubmit}
               isLoading={isUpdating}
             />

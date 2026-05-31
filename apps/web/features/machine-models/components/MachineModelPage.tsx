@@ -31,24 +31,24 @@ import {
   useGetMachineModelsQuery,
   useUpdateMachineModelStatusMutation,
 } from '../api';
-import type { MachineModel } from '../types';
+import type { MachineModel, RecordStatus } from '../types';
 import { DeleteMachineModelDialog } from './dialogs/DeleteMachineModelDialog';
 import { DisableMachineModelDialog } from './dialogs/DisableMachineModelDialog';
 import { MachineModelMobileCard } from './MachineModelMobileCard';
 import { MachineModelTable } from './MachineModelTable';
 
 const LIMIT = 20;
-type StatusFilter = 'true' | 'false' | '__all';
+type StatusFilter = RecordStatus | '__all';
 
 export function MachineModelPage() {
   const { t } = useTranslation();
 
   const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('');
+  const [machineTypeFilter, setMachineTypeFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('__all');
 
-  const [pendingCategory, setPendingCategory] = useState('');
+  const [pendingMachineType, setPendingMachineType] = useState('');
   const [pendingStatus, setPendingStatus] = useState<StatusFilter>('__all');
 
   const [filterSheetOpen, setFilterSheetOpen] = useState(false);
@@ -72,12 +72,12 @@ export function MachineModelPage() {
 
   useEffect(() => {
     setPage(1);
-  }, [categoryFilter, statusFilter]);
+  }, [machineTypeFilter, statusFilter]);
 
   const { data, isLoading, isFetching } = useGetMachineModelsQuery({
     search: search || undefined,
-    category: categoryFilter || undefined,
-    isActive: statusFilter === '__all' ? undefined : statusFilter === 'true',
+    machineType: machineTypeFilter || undefined,
+    status: statusFilter === '__all' ? undefined : (statusFilter as RecordStatus),
     page,
     limit: LIMIT,
   });
@@ -86,26 +86,26 @@ export function MachineModelPage() {
   const meta = data?.meta;
 
   const activeFilterCount =
-    (categoryFilter ? 1 : 0) + (statusFilter !== '__all' ? 1 : 0);
+    (machineTypeFilter ? 1 : 0) + (statusFilter !== '__all' ? 1 : 0);
 
   const handleSheetOpen = (open: boolean) => {
     if (open) {
-      setPendingCategory(categoryFilter);
+      setPendingMachineType(machineTypeFilter);
       setPendingStatus(statusFilter);
     }
     setFilterSheetOpen(open);
   };
 
   const handleApplyFilters = () => {
-    setCategoryFilter(pendingCategory);
+    setMachineTypeFilter(pendingMachineType);
     setStatusFilter(pendingStatus);
     setFilterSheetOpen(false);
   };
 
   const handleResetFilters = () => {
-    setPendingCategory('');
+    setPendingMachineType('');
     setPendingStatus('__all');
-    setCategoryFilter('');
+    setMachineTypeFilter('');
     setStatusFilter('__all');
     setFilterSheetOpen(false);
   };
@@ -125,10 +125,12 @@ export function MachineModelPage() {
     try {
       await updateStatus({
         id: statusTarget.id,
-        isActive: !statusTarget.isActive,
+        data: {
+          status: statusTarget.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE',
+        },
       }).unwrap();
       toast.success(
-        statusTarget.isActive
+        statusTarget.status === 'ACTIVE'
           ? t('machineModels.disabledSuccess')
           : t('machineModels.enabledSuccess'),
       );
@@ -178,9 +180,9 @@ export function MachineModelPage() {
         {/* Desktop filters */}
         <div className="hidden md:flex gap-3">
           <Input
-            placeholder={t('machineModels.allCategories')}
-            value={categoryFilter}
-            onChange={(e) => setCategoryFilter(e.target.value)}
+            placeholder={t('machineModels.allMachineTypes')}
+            value={machineTypeFilter}
+            onChange={(e) => setMachineTypeFilter(e.target.value)}
             className="w-44"
           />
           <Select
@@ -192,8 +194,8 @@ export function MachineModelPage() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="__all">{t('machineModels.allStatuses')}</SelectItem>
-              <SelectItem value="true">{t('common.active')}</SelectItem>
-              <SelectItem value="false">{t('common.inactive')}</SelectItem>
+              <SelectItem value="ACTIVE">{t('common.active')}</SelectItem>
+              <SelectItem value="INACTIVE">{t('common.inactive')}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -220,11 +222,11 @@ export function MachineModelPage() {
             </SheetHeader>
             <div className="space-y-4 p-4">
               <div className="space-y-2">
-                <p className="text-sm font-medium">{t('machineModels.category')}</p>
+                <p className="text-sm font-medium">{t('machineModels.machineType')}</p>
                 <Input
-                  placeholder={t('machineModels.categoryPlaceholder')}
-                  value={pendingCategory}
-                  onChange={(e) => setPendingCategory(e.target.value)}
+                  placeholder={t('machineModels.machineTypePlaceholder')}
+                  value={pendingMachineType}
+                  onChange={(e) => setPendingMachineType(e.target.value)}
                 />
               </div>
               <div className="space-y-2">
@@ -238,8 +240,8 @@ export function MachineModelPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="__all">{t('machineModels.allStatuses')}</SelectItem>
-                    <SelectItem value="true">{t('common.active')}</SelectItem>
-                    <SelectItem value="false">{t('common.inactive')}</SelectItem>
+                    <SelectItem value="ACTIVE">{t('common.active')}</SelectItem>
+                    <SelectItem value="INACTIVE">{t('common.inactive')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

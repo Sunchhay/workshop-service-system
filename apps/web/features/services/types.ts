@@ -1,46 +1,45 @@
 import type { ApiPaginatedResponse, ApiResponse } from '@/lib/api/types';
 
-export type PriceType = 'FIXED' | 'CATALOG_BASED' | 'CUSTOM';
+export type RecordStatus = 'ACTIVE' | 'INACTIVE';
 
 export interface Service {
   id: string;
   code: string;
+  name: string;
   nameEn: string;
-  nameKh: string | null;
-  category: string | null;
-  relatedComponent: string | null;
-  defaultPrice: string | null; // Prisma Decimal serializes to string
-  priceType: PriceType;
-  description: string | null;
-  isActive: boolean;
+  category?: string | null;
+  description?: string | null;
+  status: RecordStatus;
   createdAt: string;
   updatedAt: string;
 }
 
 export interface CreateServiceRequest {
+  code: string;
+  name: string;
   nameEn: string;
-  nameKh?: string;
   category?: string;
-  relatedComponent?: string;
-  priceType: PriceType;
-  defaultPrice?: number;
   description?: string;
+  status?: RecordStatus;
 }
 
 export interface UpdateServiceRequest {
+  code?: string;
+  name?: string;
   nameEn?: string;
-  nameKh?: string;
   category?: string;
-  relatedComponent?: string;
-  priceType?: PriceType;
-  defaultPrice?: number;
   description?: string;
+  status?: RecordStatus;
+}
+
+export interface UpdateServiceStatusRequest {
+  status: RecordStatus;
 }
 
 export interface ServiceQuery {
   search?: string;
-  priceType?: PriceType;
-  isActive?: boolean;
+  status?: RecordStatus;
+  category?: string;
   page?: number;
   limit?: number;
 }

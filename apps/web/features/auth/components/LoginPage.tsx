@@ -48,7 +48,7 @@ export function LoginPage() {
   const form = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      email: process.env.NODE_ENV == "development" ? 'admin@workshop.local' : '',
+      email: process.env.NODE_ENV == "development" ? 'admin@workshop.com' : '',
       password: process.env.NODE_ENV == "development" ? 'Admin@123' : '',
     },
   });

@@ -7,6 +7,7 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 
 import type { JwtPayload } from '../../common/types/jwt-payload.type';
+import { RecordStatus } from '../../generated/prisma/enums';
 import { AuthRepository } from './auth.repository';
 import type { ChangePasswordDto } from './dto/change-password.dto';
 import type { LoginDto } from './dto/login.dto';
@@ -24,12 +25,15 @@ export class AuthService {
   async login(dto: LoginDto) {
     const user = await this.authRepository.findByEmailWithPassword(dto.email);
 
-    // Intentionally vague — do not reveal whether email exists
-    if (!user || !user.isActive) {
+    if (!user) {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const passwordMatches = await bcrypt.compare(dto.password, user.password);
+    if (user.status === RecordStatus.INACTIVE) {
+      throw new UnauthorizedException('Account is inactive');
+    }
+
+    const passwordMatches = await bcrypt.compare(dto.password, user.passwordHash);
     if (!passwordMatches) {
       throw new UnauthorizedException('Invalid credentials');
     }
@@ -42,15 +46,9 @@ export class AuthService {
 
     const accessToken = this.jwtService.sign(payload);
 
-    return {
-      accessToken,
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-      },
-    };
+    const { passwordHash: _, ...safeUser } = user;
+
+    return { accessToken, user: safeUser };
   }
 
   async getMe(userId: string) {
@@ -69,10 +67,10 @@ export class AuthService {
       }
     }
 
-    const updateData: { name?: string; email?: string; avatarUrl?: string | null } = {};
+    const updateData: { name?: string; email?: string; imageUrl?: string | null } = {};
     if (dto.name !== undefined) updateData.name = dto.name;
     if (dto.email !== undefined) updateData.email = dto.email;
-    if (dto.avatarUrl !== undefined) updateData.avatarUrl = dto.avatarUrl;
+    if (dto.imageUrl !== undefined) updateData.imageUrl = dto.imageUrl;
 
     return this.authRepository.update(userId, updateData);
   }
@@ -83,12 +81,12 @@ export class AuthService {
       throw new UnauthorizedException('User not found');
     }
 
-    const matches = await bcrypt.compare(dto.currentPassword, user.password);
+    const matches = await bcrypt.compare(dto.currentPassword, user.passwordHash);
     if (!matches) {
       throw new BadRequestException('Current password is incorrect');
     }
 
     const hashed = await bcrypt.hash(dto.newPassword, BCRYPT_ROUNDS);
-    await this.authRepository.update(userId, { password: hashed });
+    await this.authRepository.update(userId, { passwordHash: hashed });
   }
 }

@@ -11,9 +11,9 @@ import type { PaymentMethod } from '../types';
 
 const methodClass: Record<PaymentMethod, string> = {
   CASH: 'bg-green-500/10 text-green-700 border-green-500/20 dark:text-green-400',
+  ACLEDA: 'bg-purple-500/10 text-purple-700 border-purple-500/20 dark:text-purple-400',
   ABA: 'bg-blue-500/10 text-blue-700 border-blue-500/20 dark:text-blue-400',
-  BANK_TRANSFER: 'bg-purple-500/10 text-purple-700 border-purple-500/20 dark:text-purple-400',
-  CARD: 'bg-amber-500/10 text-amber-700 border-amber-500/20 dark:text-amber-400',
+  BAKONG: 'bg-cyan-500/10 text-cyan-700 border-cyan-500/20 dark:text-cyan-400',
   OTHER: 'bg-gray-500/10 text-gray-600 border-gray-500/20 dark:text-gray-400',
 };
 

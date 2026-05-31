@@ -33,7 +33,7 @@ export function DisableMachineModelDialog({
 
   if (!model) return null;
 
-  const isDisabling = model.isActive;
+  const isDisabling = model.status === 'ACTIVE';
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
@@ -46,7 +46,7 @@ export function DisableMachineModelDialog({
           </AlertDialogTitle>
           <AlertDialogDescription>
             <span className="font-medium text-foreground">
-              {model.brand} {model.model}
+              {model.code} — {model.modelName}
             </span>{' '}
             —{' '}
             {isDisabling

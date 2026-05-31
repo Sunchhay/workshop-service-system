@@ -1,6 +1,7 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Query } from '@nestjs/common';
 
 import { DashboardService } from './dashboard.service';
+import { QueryDashboardDto } from './dto/query-dashboard.dto';
 
 @Controller('dashboard')
 export class DashboardController {
@@ -12,21 +13,27 @@ export class DashboardController {
     return this.dashboardService.getSummary();
   }
 
-  // GET /api/dashboard/recent-service-jobs
-  @Get('recent-service-jobs')
-  getRecentServiceJobs() {
-    return this.dashboardService.getRecentServiceJobs();
+  // GET /api/dashboard/recent-sales
+  @Get('recent-sales')
+  getRecentSales(@Query() dto: QueryDashboardDto) {
+    return this.dashboardService.getRecentSales(dto);
   }
 
-  // GET /api/dashboard/recent-transactions
-  @Get('recent-transactions')
-  getRecentTransactions() {
-    return this.dashboardService.getRecentTransactions();
+  // GET /api/dashboard/top-services
+  @Get('top-services')
+  getTopServices(@Query() dto: QueryDashboardDto) {
+    return this.dashboardService.getTopServices(dto);
   }
 
-  // GET /api/dashboard/low-stock-products
-  @Get('low-stock-products')
-  getLowStockProducts() {
-    return this.dashboardService.getLowStockProducts();
+  // GET /api/dashboard/top-products
+  @Get('top-products')
+  getTopProducts(@Query() dto: QueryDashboardDto) {
+    return this.dashboardService.getTopProducts(dto);
+  }
+
+  // GET /api/dashboard/payment-summary
+  @Get('payment-summary')
+  getPaymentSummary(@Query() dto: QueryDashboardDto) {
+    return this.dashboardService.getPaymentSummary(dto);
   }
 }

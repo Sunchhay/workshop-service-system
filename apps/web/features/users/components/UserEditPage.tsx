@@ -63,7 +63,9 @@ export function UserEditPage({ id }: UserEditPageProps) {
               defaultValues={{
                 name: data.data.name,
                 email: data.data.email,
+                imageUrl: data.data.imageUrl ?? '',
                 role: data.data.role,
+                status: data.data.status,
               }}
               onSubmit={handleSubmit}
               isLoading={isUpdating}

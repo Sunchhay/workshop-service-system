@@ -26,13 +26,11 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useTranslation } from '@/lib/i18n/TranslationContext';
 
 import {
-  useAdjustProductStockMutation,
   useDeleteProductMutation,
   useGetProductsQuery,
   useUpdateProductStatusMutation,
 } from '../api';
-import type { AdjustStockRequest, Product } from '../types';
-import { AdjustStockDialog } from './dialogs/AdjustStockDialog';
+import type { Product, RecordStatus } from '../types';
 import { DeleteProductDialog } from './dialogs/DeleteProductDialog';
 import { DisableProductDialog } from './dialogs/DisableProductDialog';
 import { ProductMobileCard } from './ProductMobileCard';
@@ -40,8 +38,7 @@ import { ProductTable } from './ProductTable';
 
 const LIMIT = 20;
 
-type StatusFilter = 'true' | 'false' | '__all';
-type LowStockFilter = 'true' | '__all';
+type StatusFilter = RecordStatus | '__all';
 
 export function ProductPage() {
   const { t } = useTranslation();
@@ -49,22 +46,17 @@ export function ProductPage() {
   const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('__all');
-  const [lowStockFilter, setLowStockFilter] = useState<LowStockFilter>('__all');
   const [pendingStatus, setPendingStatus] = useState<StatusFilter>('__all');
-  const [pendingLowStock, setPendingLowStock] = useState<LowStockFilter>('__all');
   const [filterSheetOpen, setFilterSheetOpen] = useState(false);
   const [page, setPage] = useState(1);
 
   const [statusTarget, setStatusTarget] = useState<Product | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Product | null>(null);
-  const [stockTarget, setStockTarget] = useState<Product | null>(null);
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [stockDialogOpen, setStockDialogOpen] = useState(false);
 
   const [updateStatus, { isLoading: isToggling }] = useUpdateProductStatusMutation();
   const [deleteProduct, { isLoading: isDeleting }] = useDeleteProductMutation();
-  const [adjustStock, { isLoading: isAdjusting }] = useAdjustProductStockMutation();
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -76,40 +68,32 @@ export function ProductPage() {
 
   useEffect(() => {
     setPage(1);
-  }, [statusFilter, lowStockFilter]);
+  }, [statusFilter]);
 
   const { data, isLoading, isFetching } = useGetProductsQuery({
     search: search || undefined,
-    isActive: statusFilter === '__all' ? undefined : statusFilter === 'true',
-    lowStock: lowStockFilter === 'true' ? true : undefined,
+    status: statusFilter === '__all' ? undefined : statusFilter,
     page,
     limit: LIMIT,
   });
 
   const products = data?.data ?? [];
   const meta = data?.meta;
-  const activeFilterCount =
-    (statusFilter !== '__all' ? 1 : 0) + (lowStockFilter !== '__all' ? 1 : 0);
+  const activeFilterCount = statusFilter !== '__all' ? 1 : 0;
 
   const handleSheetOpen = (open: boolean) => {
-    if (open) {
-      setPendingStatus(statusFilter);
-      setPendingLowStock(lowStockFilter);
-    }
+    if (open) setPendingStatus(statusFilter);
     setFilterSheetOpen(open);
   };
 
   const handleApplyFilters = () => {
     setStatusFilter(pendingStatus);
-    setLowStockFilter(pendingLowStock);
     setFilterSheetOpen(false);
   };
 
   const handleResetFilters = () => {
     setPendingStatus('__all');
-    setPendingLowStock('__all');
     setStatusFilter('__all');
-    setLowStockFilter('__all');
     setFilterSheetOpen(false);
   };
 
@@ -123,17 +107,14 @@ export function ProductPage() {
     setDeleteDialogOpen(true);
   };
 
-  const handleAdjustStock = (p: Product) => {
-    setStockTarget(p);
-    setStockDialogOpen(true);
-  };
-
   const handleStatusConfirm = async () => {
     if (!statusTarget) return;
     try {
-      await updateStatus({ id: statusTarget.id, isActive: !statusTarget.isActive }).unwrap();
+      const nextStatus: RecordStatus =
+        statusTarget.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
+      await updateStatus({ id: statusTarget.id, data: { status: nextStatus } }).unwrap();
       toast.success(
-        statusTarget.isActive
+        statusTarget.status === 'ACTIVE'
           ? t('products.disabledSuccess')
           : t('products.enabledSuccess'),
       );
@@ -153,21 +134,6 @@ export function ProductPage() {
       setDeleteTarget(null);
     } catch {
       toast.error(t('common.error'));
-    }
-  };
-
-  const handleStockConfirm = async (data: AdjustStockRequest) => {
-    if (!stockTarget) return;
-    try {
-      await adjustStock({ id: stockTarget.id, data }).unwrap();
-      toast.success(t('products.stockAdjusted'));
-      setStockDialogOpen(false);
-      setStockTarget(null);
-    } catch (err: unknown) {
-      const message =
-        (err as { data?: { message?: string } })?.data?.message ??
-        t('common.error');
-      toast.error(message);
     }
   };
 
@@ -206,20 +172,8 @@ export function ProductPage() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="__all">{t('products.allStatuses')}</SelectItem>
-              <SelectItem value="true">{t('common.active')}</SelectItem>
-              <SelectItem value="false">{t('common.inactive')}</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select
-            value={lowStockFilter}
-            onValueChange={(v) => setLowStockFilter(v as LowStockFilter)}
-          >
-            <SelectTrigger className="w-44">
-              <SelectValue placeholder={t('products.allStatuses')} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="__all">{t('products.allStatuses')}</SelectItem>
-              <SelectItem value="true">{t('products.showLowStockOnly')}</SelectItem>
+              <SelectItem value="ACTIVE">{t('common.active')}</SelectItem>
+              <SelectItem value="INACTIVE">{t('common.inactive')}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -256,23 +210,8 @@ export function ProductPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="__all">{t('products.allStatuses')}</SelectItem>
-                    <SelectItem value="true">{t('common.active')}</SelectItem>
-                    <SelectItem value="false">{t('common.inactive')}</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <p className="text-sm font-medium">{t('products.stockQuantity')}</p>
-                <Select
-                  value={pendingLowStock}
-                  onValueChange={(v) => setPendingLowStock(v as LowStockFilter)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="__all">{t('products.allStatuses')}</SelectItem>
-                    <SelectItem value="true">{t('products.showLowStockOnly')}</SelectItem>
+                    <SelectItem value="ACTIVE">{t('common.active')}</SelectItem>
+                    <SelectItem value="INACTIVE">{t('common.inactive')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -309,7 +248,6 @@ export function ProductPage() {
             products={products}
             onToggleStatus={handleToggleStatus}
             onDelete={handleDelete}
-            onAdjustStock={handleAdjustStock}
           />
         </div>
       )}
@@ -330,7 +268,6 @@ export function ProductPage() {
                 product={product}
                 onToggleStatus={handleToggleStatus}
                 onDelete={handleDelete}
-                onAdjustStock={handleAdjustStock}
               />
             ))
           )}
@@ -379,13 +316,6 @@ export function ProductPage() {
         onOpenChange={setDeleteDialogOpen}
         onConfirm={handleDeleteConfirm}
         isLoading={isDeleting}
-      />
-      <AdjustStockDialog
-        product={stockTarget}
-        open={stockDialogOpen}
-        onOpenChange={setStockDialogOpen}
-        onConfirm={handleStockConfirm}
-        isLoading={isAdjusting}
       />
     </div>
   );

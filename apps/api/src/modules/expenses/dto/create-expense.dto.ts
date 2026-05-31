@@ -1,4 +1,3 @@
-import { Type } from 'class-transformer';
 import {
   IsDateString,
   IsEnum,
@@ -9,33 +8,49 @@ import {
   Min,
 } from 'class-validator';
 
-import { ExpenseCategory, PaymentMethod } from '../../../generated/prisma/enums';
+import { ExpenseStatus, PaymentMethod } from '../../../generated/prisma/enums';
 
 export class CreateExpenseDto {
-  @IsEnum(ExpenseCategory)
-  category: ExpenseCategory;
-
   @IsString()
   @IsNotEmpty()
-  description: string;
+  title: string;
 
-  @Type(() => Number)
+  @IsString()
+  @IsOptional()
+  category?: string;
+
   @IsNumber()
-  @Min(0.01)
+  @Min(0)
   amount: number;
 
   @IsEnum(PaymentMethod)
-  method: PaymentMethod;
-
   @IsOptional()
+  paymentMethod?: PaymentMethod;
+
+  @IsEnum(ExpenseStatus)
+  @IsOptional()
+  expenseStatus?: ExpenseStatus;
+
   @IsString()
+  @IsOptional()
+  supplierId?: string;
+
+  @IsString()
+  @IsOptional()
+  mechanicId?: string;
+
+  @IsString()
+  @IsOptional()
   referenceNo?: string;
 
-  @IsOptional()
   @IsString()
-  notes?: string;
-
   @IsOptional()
+  imageUrl?: string;
+
+  @IsString()
+  @IsOptional()
+  note?: string;
+
   @IsDateString()
-  expenseDate?: string;
+  expenseDate: string;
 }

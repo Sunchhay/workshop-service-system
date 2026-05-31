@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowLeft, Pencil, Trash2 } from 'lucide-react';
+import { ArrowLeft, Pencil } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -13,28 +13,25 @@ import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useTranslation } from '@/lib/i18n/TranslationContext';
 
-import { useDeleteExpenseMutation, useGetExpenseQuery } from '../api';
-import type { ExpenseCategory, ExpensePaymentMethod } from '../types';
-import { DeleteExpenseDialog } from './dialogs/DeleteExpenseDialog';
+import { useGetExpenseQuery, useVoidExpenseMutation } from '../api';
+import type { ExpenseStatus, PaymentMethod } from '../types';
+import { VoidExpenseDialog } from './dialogs/VoidExpenseDialog';
 
-const categoryClass: Record<ExpenseCategory, string> = {
-  SUPPLIES: 'bg-blue-500/10 text-blue-700 border-blue-500/20 dark:text-blue-400',
-  UTILITIES: 'bg-amber-500/10 text-amber-700 border-amber-500/20 dark:text-amber-400',
-  RENT: 'bg-purple-500/10 text-purple-700 border-purple-500/20 dark:text-purple-400',
-  SALARY: 'bg-green-500/10 text-green-700 border-green-500/20 dark:text-green-400',
-  MAINTENANCE: 'bg-orange-500/10 text-orange-700 border-orange-500/20 dark:text-orange-400',
-  OTHER: 'bg-gray-500/10 text-gray-600 border-gray-500/20 dark:text-gray-400',
+const statusClass: Record<ExpenseStatus, string> = {
+  PAID: 'bg-green-500/10 text-green-700 border-green-500/20 dark:text-green-400',
+  UNPAID: 'bg-amber-500/10 text-amber-700 border-amber-500/20 dark:text-amber-400',
+  VOIDED: 'bg-gray-500/10 text-gray-600 border-gray-500/20 dark:text-gray-400',
 };
 
-const methodClass: Record<ExpensePaymentMethod, string> = {
+const methodClass: Record<PaymentMethod, string> = {
   CASH: 'bg-green-500/10 text-green-700 border-green-500/20 dark:text-green-400',
-  ABA: 'bg-blue-500/10 text-blue-700 border-blue-500/20 dark:text-blue-400',
-  BANK_TRANSFER: 'bg-cyan-500/10 text-cyan-700 border-cyan-500/20 dark:text-cyan-400',
-  CARD: 'bg-purple-500/10 text-purple-700 border-purple-500/20 dark:text-purple-400',
+  ACLEDA: 'bg-blue-500/10 text-blue-700 border-blue-500/20 dark:text-blue-400',
+  ABA: 'bg-indigo-500/10 text-indigo-700 border-indigo-500/20 dark:text-indigo-400',
+  BAKONG: 'bg-purple-500/10 text-purple-700 border-purple-500/20 dark:text-purple-400',
   OTHER: 'bg-gray-500/10 text-gray-600 border-gray-500/20 dark:text-gray-400',
 };
 
-function formatDate(d: string | null) {
+function formatDate(d: string | null | undefined) {
   if (!d) return '—';
   return new Date(d).toLocaleDateString(undefined, {
     year: 'numeric',
@@ -47,18 +44,19 @@ export function ExpenseDetailPage({ id }: { id: string }) {
   const { t } = useTranslation();
   const router = useRouter();
   const { data, isLoading } = useGetExpenseQuery(id);
-  const [deleteExpense, { isLoading: isDeleting }] = useDeleteExpenseMutation();
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [voidExpense, { isLoading: isVoiding }] = useVoidExpenseMutation();
+  const [voidDialogOpen, setVoidDialogOpen] = useState(false);
 
   const expense = data?.data;
 
-  const handleDeleteConfirm = async () => {
+  const handleVoidConfirm = async (voidReason: string) => {
     try {
-      await deleteExpense(id).unwrap();
-      toast.success(t('expenses.deleteSuccess'));
-      router.replace('/admin/expenses');
-    } catch {
-      toast.error(t('common.error'));
+      await voidExpense({ id, data: { voidReason } }).unwrap();
+      toast.success(t('expenses.voidSuccess'));
+      setVoidDialogOpen(false);
+    } catch (err: unknown) {
+      const message = (err as { data?: { message?: string } })?.data?.message ?? t('common.error');
+      toast.error(message);
     }
   };
 
@@ -85,43 +83,44 @@ export function ExpenseDetailPage({ id }: { id: string }) {
             <div className="flex items-start justify-between gap-3 flex-wrap">
               <div>
                 <div className="flex items-center gap-2 flex-wrap">
-                  <CardTitle className="font-mono">{expense.expenseNumber}</CardTitle>
-                  <Badge variant="outline" className={categoryClass[expense.category]}>
-                    {t(`expenseCategories.${expense.category}`)}
+                  <CardTitle className="font-mono">{expense.expenseNo}</CardTitle>
+                  <Badge variant="outline" className={statusClass[expense.expenseStatus]}>
+                    {t(`expenses.status${expense.expenseStatus.charAt(0) + expense.expenseStatus.slice(1).toLowerCase()}` as Parameters<typeof t>[0])}
                   </Badge>
-                  <Badge variant="outline" className={methodClass[expense.method]}>
-                    {t(`paymentMethods.${expense.method}`)}
-                  </Badge>
+                  {expense.paymentMethod && (
+                    <Badge variant="outline" className={methodClass[expense.paymentMethod]}>
+                      {t(`paymentMethods.${expense.paymentMethod}`)}
+                    </Badge>
+                  )}
                 </div>
-                <p className="text-sm text-muted-foreground mt-1 font-medium">
-                  {expense.description}
-                </p>
+                <p className="text-sm text-muted-foreground mt-1 font-medium">{expense.title}</p>
+                {expense.category && (
+                  <p className="text-xs text-muted-foreground mt-0.5">{expense.category}</p>
+                )}
               </div>
-              <div className="flex gap-2 flex-wrap">
+              {expense.expenseStatus !== 'VOIDED' && (
                 <Button asChild variant="outline" size="sm">
                   <Link href={`/admin/expenses/${id}/edit`}>
                     <Pencil className="h-3.5 w-3.5 mr-1.5" />
                     {t('common.edit')}
                   </Link>
                 </Button>
-              </div>
+              )}
             </div>
           </CardHeader>
 
           <CardContent className="space-y-4">
             <Separator />
 
-            {/* Amount — prominent */}
             <div>
               <p className="text-xs text-muted-foreground mb-1">{t('expenses.amount')}</p>
               <p className="text-2xl font-mono font-bold">
-                ${parseFloat(expense.amount).toFixed(2)}
+                ${parseFloat(String(expense.amount)).toFixed(2)}
               </p>
             </div>
 
             <Separator />
 
-            {/* Meta grid */}
             <div className="grid grid-cols-2 gap-4 text-sm sm:grid-cols-3">
               <div>
                 <p className="text-muted-foreground text-xs mb-1">{t('expenses.expenseDate')}</p>
@@ -133,41 +132,80 @@ export function ExpenseDetailPage({ id }: { id: string }) {
                   <p className="font-mono">{expense.referenceNo}</p>
                 </div>
               )}
-              <div>
-                <p className="text-muted-foreground text-xs mb-1">{t('expenses.createdBy')}</p>
-                <p>{expense.createdBy.name}</p>
-              </div>
+              {expense.supplier && (
+                <div>
+                  <p className="text-muted-foreground text-xs mb-1">{t('expenses.supplier')}</p>
+                  <p>{expense.supplier.name}</p>
+                </div>
+              )}
+              {expense.mechanic && (
+                <div>
+                  <p className="text-muted-foreground text-xs mb-1">{t('expenses.mechanic')}</p>
+                  <p>{expense.mechanic.name}</p>
+                </div>
+              )}
+              {expense.createdBy && (
+                <div>
+                  <p className="text-muted-foreground text-xs mb-1">{t('expenses.createdBy')}</p>
+                  <p>{expense.createdBy.name}</p>
+                </div>
+              )}
               <div>
                 <p className="text-muted-foreground text-xs mb-1">{t('expenses.createdAt')}</p>
                 <p>{formatDate(expense.createdAt)}</p>
               </div>
             </div>
 
-            {/* Notes */}
-            {expense.notes && (
+            {expense.imageUrl && (
               <>
                 <Separator />
-                <div className="text-sm">
-                  <p className="text-muted-foreground text-xs mb-1">{t('expenses.notes')}</p>
-                  <p className="whitespace-pre-line text-muted-foreground">{expense.notes}</p>
+                <div>
+                  <p className="text-muted-foreground text-xs mb-2">{t('expenses.imageUrl')}</p>
+                  <img
+                    src={expense.imageUrl}
+                    alt={expense.title}
+                    className="max-h-48 rounded-lg border object-contain"
+                  />
                 </div>
               </>
             )}
 
-            <Separator />
+            {expense.note && (
+              <>
+                <Separator />
+                <div className="text-sm">
+                  <p className="text-muted-foreground text-xs mb-1">{t('expenses.note')}</p>
+                  <p className="whitespace-pre-line text-muted-foreground">{expense.note}</p>
+                </div>
+              </>
+            )}
 
-            {/* Actions */}
-            <div className="flex flex-wrap gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setDeleteDialogOpen(true)}
-                className="border-destructive/30 text-destructive hover:bg-destructive/10"
-              >
-                <Trash2 className="h-3.5 w-3.5 mr-1.5" />
-                {t('common.delete')}
-              </Button>
-            </div>
+            {expense.expenseStatus === 'VOIDED' && expense.voidReason && (
+              <>
+                <Separator />
+                <div className="rounded-lg bg-destructive/5 border border-destructive/20 p-3 text-sm">
+                  <p className="text-destructive font-medium text-xs mb-1">{t('expenses.voidReason')}</p>
+                  <p className="text-muted-foreground">{expense.voidReason}</p>
+                  {expense.voidedAt && (
+                    <p className="text-xs text-muted-foreground mt-1">{formatDate(expense.voidedAt)}</p>
+                  )}
+                </div>
+              </>
+            )}
+
+            {expense.expenseStatus !== 'VOIDED' && (
+              <>
+                <Separator />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setVoidDialogOpen(true)}
+                  className="border-destructive/30 text-destructive hover:bg-destructive/10"
+                >
+                  {t('expenses.voidExpense')}
+                </Button>
+              </>
+            )}
           </CardContent>
         </Card>
       ) : (
@@ -175,12 +213,12 @@ export function ExpenseDetailPage({ id }: { id: string }) {
       )}
 
       {expense && (
-        <DeleteExpenseDialog
+        <VoidExpenseDialog
           expense={expense}
-          open={deleteDialogOpen}
-          onOpenChange={setDeleteDialogOpen}
-          onConfirm={handleDeleteConfirm}
-          isLoading={isDeleting}
+          open={voidDialogOpen}
+          onOpenChange={setVoidDialogOpen}
+          onConfirm={handleVoidConfirm}
+          isLoading={isVoiding}
         />
       )}
     </div>

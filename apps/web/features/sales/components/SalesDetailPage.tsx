@@ -1,7 +1,6 @@
 'use client';
 
-import { ArrowLeft, CheckCircle, Pencil, Trash2, XCircle } from 'lucide-react';
-import Link from 'next/link';
+import { ArrowLeft, Banknote, Printer, XCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -21,76 +20,111 @@ import {
 } from '@/components/ui/table';
 import { useTranslation } from '@/lib/i18n/TranslationContext';
 
-import { useCancelSaleMutation, useCompleteSaleMutation, useDeleteSaleMutation, useGetSaleQuery } from '../api';
-import type { SaleStatus } from '../types';
-import { CancelSaleDialog } from './dialogs/CancelSaleDialog';
-import { CompleteSaleDialog } from './dialogs/CompleteSaleDialog';
-import { DeleteSaleDialog } from './dialogs/DeleteSaleDialog';
+import {
+  useAddSalePaymentMutation,
+  useGetSaleQuery,
+  useMarkCommissionPaidMutation,
+  useVoidSaleMutation,
+} from '../api';
+import type {
+  AddSalePaymentRequest,
+  CommissionStatus,
+  PaymentStatus,
+  SalePaymentMethod,
+  SaleStatus,
+} from '../types';
+import { AddPaymentDialog } from './dialogs/AddPaymentDialog';
+import { MarkCommissionPaidDialog } from './dialogs/MarkCommissionPaidDialog';
+import { VoidSaleDialog } from './dialogs/VoidSaleDialog';
 
-const statusClass: Record<SaleStatus, string> = {
-  DRAFT: 'bg-gray-500/10 text-gray-600 border-gray-500/20 dark:text-gray-400',
-  COMPLETED: 'bg-green-500/10 text-green-700 border-green-500/20 dark:text-green-400',
-  CANCELLED: 'bg-red-500/10 text-red-700 border-red-500/20 dark:text-red-400',
+const paymentStatusClass: Record<PaymentStatus, string> = {
+  PAID: 'bg-green-500/10 text-green-700 border-green-500/20 dark:text-green-400',
+  PARTIAL: 'bg-amber-500/10 text-amber-700 border-amber-500/20 dark:text-amber-400',
+  UNPAID: 'bg-red-500/10 text-red-700 border-red-500/20 dark:text-red-400',
 };
 
-function formatDate(d: string | null) {
-  if (!d) return '—';
-  return new Date(d).toLocaleDateString(undefined, {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  });
+const saleStatusClass: Record<SaleStatus, string> = {
+  COMPLETED: 'bg-blue-500/10 text-blue-700 border-blue-500/20 dark:text-blue-400',
+  VOIDED: 'bg-gray-500/10 text-gray-600 border-gray-500/20 dark:text-gray-400',
+};
+
+const commissionStatusClass: Record<CommissionStatus, string> = {
+  NONE: 'bg-gray-500/10 text-gray-600 border-gray-500/20 dark:text-gray-400',
+  UNPAID: 'bg-amber-500/10 text-amber-700 border-amber-500/20 dark:text-amber-400',
+  PAID: 'bg-green-500/10 text-green-700 border-green-500/20 dark:text-green-400',
+};
+
+const methodClass: Record<SalePaymentMethod, string> = {
+  CASH: 'bg-green-500/10 text-green-700 border-green-500/20 dark:text-green-400',
+  ACLEDA: 'bg-blue-500/10 text-blue-700 border-blue-500/20 dark:text-blue-400',
+  ABA: 'bg-purple-500/10 text-purple-700 border-purple-500/20 dark:text-purple-400',
+  BAKONG: 'bg-teal-500/10 text-teal-700 border-teal-500/20 dark:text-teal-400',
+  OTHER: 'bg-gray-500/10 text-gray-600 border-gray-500/20 dark:text-gray-400',
+};
+
+function fmt(v: string | number) {
+  const n = parseFloat(String(v));
+  return isNaN(n) ? '0.00' : n.toFixed(2);
 }
 
-function fmt(v: string) {
-  const n = parseFloat(v);
-  return isNaN(n) ? '0.00' : n.toFixed(2);
+function formatDate(d: string | null | undefined) {
+  if (!d) return '—';
+  return new Date(d).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
 }
 
 export function SalesDetailPage({ id }: { id: string }) {
   const { t } = useTranslation();
   const router = useRouter();
-  const { data, isLoading } = useGetSaleQuery(id);
-  const [completeSale, { isLoading: isCompleting }] = useCompleteSaleMutation();
-  const [cancelSale, { isLoading: isCancelling }] = useCancelSaleMutation();
-  const [deleteSale, { isLoading: isDeleting }] = useDeleteSaleMutation();
 
-  const [completeDialogOpen, setCompleteDialogOpen] = useState(false);
-  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const { data, isLoading } = useGetSaleQuery(id);
+  const [voidSale, { isLoading: isVoiding }] = useVoidSaleMutation();
+  const [markCommissionPaid, { isLoading: isMarkingCommission }] = useMarkCommissionPaidMutation();
+  const [addSalePayment, { isLoading: isAddingPayment }] = useAddSalePaymentMutation();
+
+  const [voidDialogOpen, setVoidDialogOpen] = useState(false);
+  const [commissionDialogOpen, setCommissionDialogOpen] = useState(false);
+  const [addPaymentDialogOpen, setAddPaymentDialogOpen] = useState(false);
 
   const sale = data?.data;
 
-  const handleCompleteConfirm = async () => {
+  const handleVoidConfirm = async (voidReason: string) => {
     try {
-      await completeSale(id).unwrap();
-      toast.success(t('sales.completeSuccess'));
-      setCompleteDialogOpen(false);
+      await voidSale({ id, voidReason }).unwrap();
+      toast.success(t('sales.voidSuccess'));
+      setVoidDialogOpen(false);
     } catch (err: unknown) {
       const message = (err as { data?: { message?: string } })?.data?.message ?? t('common.error');
       toast.error(message);
     }
   };
 
-  const handleCancelConfirm = async () => {
+  const handleCommissionPaid = async () => {
     try {
-      await cancelSale({ id }).unwrap();
-      toast.success(t('sales.cancelSuccess'));
-      setCancelDialogOpen(false);
+      await markCommissionPaid(id).unwrap();
+      toast.success(t('sales.commissionPaidSuccess'));
+      setCommissionDialogOpen(false);
     } catch {
       toast.error(t('common.error'));
     }
   };
 
-  const handleDeleteConfirm = async () => {
+  const handleAddPayment = async (paymentData: AddSalePaymentRequest) => {
     try {
-      await deleteSale(id).unwrap();
-      toast.success(t('sales.deleteSuccess'));
-      router.replace('/admin/sales');
-    } catch {
-      toast.error(t('common.error'));
+      await addSalePayment({ saleId: id, data: paymentData }).unwrap();
+      toast.success(t('sales.addPaymentSuccess'));
+      setAddPaymentDialogOpen(false);
+    } catch (err: unknown) {
+      const message = (err as { data?: { message?: string } })?.data?.message ?? t('common.error');
+      toast.error(message);
     }
   };
+
+  const items = sale?.items ?? [];
+  const payments = sale?.payments ?? [];
+  const balanceAmount = parseFloat(String(sale?.balanceAmount ?? 0));
+  const canAddPayment = sale?.saleStatus === 'COMPLETED' && balanceAmount > 0;
+  const canVoid = sale?.saleStatus === 'COMPLETED';
+  const canMarkCommission = sale?.commissionStatus === 'UNPAID';
 
   return (
     <div className="space-y-4">
@@ -110,196 +144,324 @@ export function SalesDetailPage({ id }: { id: string }) {
           </CardContent>
         </Card>
       ) : sale ? (
-        <Card>
-          <CardHeader>
-            <div className="flex items-start justify-between gap-3 flex-wrap">
-              <div>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <CardTitle className="font-mono">{sale.saleNumber}</CardTitle>
-                  <Badge variant="outline" className={statusClass[sale.status]}>
-                    {t(`saleStatuses.${sale.status}`)}
-                  </Badge>
-                </div>
-                <p className="text-sm text-muted-foreground mt-1">
-                  {sale.customer
-                    ? `${sale.customer.name}${sale.customer.phone ? ` · ${sale.customer.phone}` : ''}`
-                    : t('sales.walkIn')}
-                </p>
-              </div>
-              {sale.status === 'DRAFT' && (
-                <Button asChild variant="outline" size="sm">
-                  <Link href={`/admin/sales/${id}/edit`}>
-                    <Pencil className="h-3.5 w-3.5 mr-1.5" />
-                    {t('common.edit')}
-                  </Link>
-                </Button>
-              )}
-            </div>
-          </CardHeader>
-
-          <CardContent className="space-y-4">
-            <Separator />
-
-            {/* Meta info */}
-            <div className="grid grid-cols-2 gap-4 text-sm sm:grid-cols-3">
-              <div>
-                <p className="text-muted-foreground text-xs mb-1">{t('sales.soldAt')}</p>
-                <p>{formatDate(sale.soldAt)}</p>
-              </div>
-              <div>
-                <p className="text-muted-foreground text-xs mb-1">{t('sales.createdBy')}</p>
-                <p>{sale.createdBy.name}</p>
-              </div>
-              <div>
-                <p className="text-muted-foreground text-xs mb-1">{t('sales.createdAt')}</p>
-                <p>{formatDate(sale.createdAt)}</p>
-              </div>
-            </div>
-
-            {/* Notes */}
-            {sale.notes && (
-              <>
-                <Separator />
-                <div className="text-sm">
-                  <p className="text-muted-foreground text-xs mb-1">{t('sales.notes')}</p>
-                  <p className="whitespace-pre-line text-muted-foreground">{sale.notes}</p>
-                </div>
-              </>
-            )}
-
-            <Separator />
-
-            {/* Items table */}
-            <div>
-              <p className="text-sm font-medium mb-3">{t('sales.items')}</p>
-              <div className="rounded-lg border overflow-hidden">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>{t('sales.product')}</TableHead>
-                      <TableHead className="text-right w-16">{t('sales.quantity')}</TableHead>
-                      <TableHead className="text-right w-28">{t('sales.unitPrice')}</TableHead>
-                      <TableHead className="text-right w-28">{t('sales.itemDiscount')}</TableHead>
-                      <TableHead className="text-right w-28">{t('sales.totalPrice')}</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {sale.items.map((item) => (
-                      <TableRow key={item.id}>
-                        <TableCell>
-                          <p className="text-sm font-medium">
-                            {item.description ?? item.product.name}
-                          </p>
-                          <p className="text-xs text-muted-foreground">{item.product.code}</p>
-                        </TableCell>
-                        <TableCell className="text-right font-mono text-sm">
-                          {fmt(item.quantity)} {item.product.unit}
-                        </TableCell>
-                        <TableCell className="text-right font-mono text-sm">
-                          ${fmt(item.unitPrice)}
-                        </TableCell>
-                        <TableCell className="text-right font-mono text-sm text-muted-foreground">
-                          {parseFloat(item.discountAmount) > 0
-                            ? `-$${fmt(item.discountAmount)}`
-                            : '—'}
-                        </TableCell>
-                        <TableCell className="text-right font-mono text-sm font-medium">
-                          ${fmt(item.totalPrice)}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            </div>
-
-            <Separator />
-
-            {/* Totals */}
-            <div className="flex justify-end">
-              <div className="w-full sm:w-64 space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">{t('sales.subtotal')}</span>
-                  <span className="font-mono">${fmt(sale.subtotal)}</span>
-                </div>
-                {parseFloat(sale.discountAmount) > 0 && (
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">{t('sales.discountAmount')}</span>
-                    <span className="font-mono text-destructive">-${fmt(sale.discountAmount)}</span>
+        <>
+          {/* Invoice header card */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-start justify-between gap-3 flex-wrap">
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <CardTitle className="font-mono">{sale.invoiceNo}</CardTitle>
+                    <Badge variant="outline" className={paymentStatusClass[sale.paymentStatus]}>
+                      {t(`paymentStatuses.${sale.paymentStatus}`)}
+                    </Badge>
+                    <Badge variant="outline" className={saleStatusClass[sale.saleStatus]}>
+                      {t(`saleStatuses.${sale.saleStatus}`)}
+                    </Badge>
                   </div>
-                )}
-                <Separator />
-                <div className="flex justify-between font-semibold">
-                  <span>{t('sales.totalAmount')}</span>
-                  <span className="font-mono">${fmt(sale.totalAmount)}</span>
+                  <p className="text-sm text-muted-foreground mt-1">{formatDate(sale.createdAt)}</p>
                 </div>
-              </div>
-            </div>
-
-            <Separator />
-
-            {/* Actions */}
-            <div className="flex flex-wrap gap-2">
-              {sale.status === 'DRAFT' && (
-                <Button
-                  size="sm"
-                  onClick={() => setCompleteDialogOpen(true)}
-                >
-                  <CheckCircle className="h-3.5 w-3.5 mr-1.5" />
-                  {t('sales.completeSale')}
-                </Button>
-              )}
-              {sale.status !== 'CANCELLED' && (
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setCancelDialogOpen(true)}
-                  className="border-destructive/30 text-destructive hover:bg-destructive/10"
+                  onClick={() => window.print()}
                 >
-                  <XCircle className="h-3.5 w-3.5 mr-1.5" />
-                  {t('sales.confirmCancelTitle')}
+                  <Printer className="h-3.5 w-3.5 mr-1.5" />
+                  {t('sales.print')}
                 </Button>
+              </div>
+            </CardHeader>
+
+            <CardContent className="space-y-4">
+              <Separator />
+
+              {/* Customer + Mechanic */}
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 text-sm">
+                <div>
+                  <p className="text-muted-foreground text-xs mb-1">{t('sales.customer')}</p>
+                  {sale.customer ? (
+                    <>
+                      <p className="font-medium">{sale.customer.name}</p>
+                      <p className="text-xs text-muted-foreground">{sale.customer.phone}</p>
+                    </>
+                  ) : (
+                    <p className="text-muted-foreground">—</p>
+                  )}
+                </div>
+                <div>
+                  <p className="text-muted-foreground text-xs mb-1">{t('sales.mechanic')}</p>
+                  {sale.mechanic ? (
+                    <p className="font-medium">{sale.mechanic.name}</p>
+                  ) : (
+                    <p className="text-muted-foreground">—</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Commission info */}
+              {sale.commissionStatus !== 'NONE' && (
+                <>
+                  <Separator />
+                  <div className="space-y-2 text-sm">
+                    <div className="flex items-center justify-between">
+                      <p className="text-muted-foreground text-xs">{t('sales.commissionStatus')}</p>
+                      <Badge variant="outline" className={commissionStatusClass[sale.commissionStatus]}>
+                        {t(`commissionStatuses.${sale.commissionStatus}`)}
+                      </Badge>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-muted-foreground text-xs mb-1">{t('sales.commissionAmount')}</p>
+                        <p className="font-mono font-medium">${fmt(sale.commissionAmount)}</p>
+                      </div>
+                      {sale.commissionNote && (
+                        <div>
+                          <p className="text-muted-foreground text-xs mb-1">{t('sales.commissionNote')}</p>
+                          <p>{sale.commissionNote}</p>
+                        </div>
+                      )}
+                      {sale.commissionPaidAt && (
+                        <div>
+                          <p className="text-muted-foreground text-xs mb-1">{t('sales.commissionPaidAt')}</p>
+                          <p>{formatDate(sale.commissionPaidAt)}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </>
               )}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setDeleteDialogOpen(true)}
-                className="border-destructive/30 text-destructive hover:bg-destructive/10"
-              >
-                <Trash2 className="h-3.5 w-3.5 mr-1.5" />
-                {t('common.delete')}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+
+              {/* Note */}
+              {sale.note && (
+                <>
+                  <Separator />
+                  <div className="text-sm">
+                    <p className="text-muted-foreground text-xs mb-1">{t('sales.note')}</p>
+                    <p className="whitespace-pre-line text-muted-foreground">{sale.note}</p>
+                  </div>
+                </>
+              )}
+
+              {/* Void info */}
+              {sale.saleStatus === 'VOIDED' && (
+                <>
+                  <Separator />
+                  <div className="rounded-lg bg-destructive/5 border border-destructive/20 px-4 py-3 text-sm space-y-1">
+                    <p className="text-xs text-muted-foreground uppercase font-medium">{t('sales.voidedInfo')}</p>
+                    {sale.voidReason && (
+                      <p className="text-destructive">{sale.voidReason}</p>
+                    )}
+                    <p className="text-xs text-muted-foreground">{formatDate(sale.voidedAt)}</p>
+                  </div>
+                </>
+              )}
+
+              <Separator />
+
+              {/* Timestamps */}
+              <div className="grid grid-cols-2 gap-4 text-sm sm:grid-cols-3">
+                <div>
+                  <p className="text-muted-foreground text-xs mb-1">{t('sales.createdBy')}</p>
+                  <p>{sale.createdBy?.name ?? '—'}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground text-xs mb-1">{t('sales.createdAt')}</p>
+                  <p>{formatDate(sale.createdAt)}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground text-xs mb-1">{t('sales.updatedAt')}</p>
+                  <p>{formatDate(sale.updatedAt)}</p>
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Actions */}
+              <div className="flex flex-wrap gap-2">
+                {canMarkCommission && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCommissionDialogOpen(true)}
+                  >
+                    <Banknote className="h-3.5 w-3.5 mr-1.5" />
+                    {t('sales.markCommissionPaid')}
+                  </Button>
+                )}
+                {canVoid && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setVoidDialogOpen(true)}
+                    className="border-destructive/30 text-destructive hover:bg-destructive/10"
+                  >
+                    <XCircle className="h-3.5 w-3.5 mr-1.5" />
+                    {t('sales.voidSale')}
+                  </Button>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Items card */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">{t('sales.items')}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {items.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-4">—</p>
+              ) : (
+                <div className="rounded-lg border overflow-hidden">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>{t('sales.itemType')}</TableHead>
+                        <TableHead>{t('sales.nameSnapshot')}</TableHead>
+                        <TableHead className="text-right">{t('sales.unitPrice')}</TableHead>
+                        <TableHead className="text-right">{t('sales.quantity')}</TableHead>
+                        <TableHead className="text-right">{t('sales.total')}</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {items.map((item) => (
+                        <TableRow key={item.id}>
+                          <TableCell>
+                            <Badge variant="outline" className="text-xs">
+                              {t(`itemTypes.${item.itemType}`)}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <p className="font-medium text-sm">{item.nameSnapshot}</p>
+                            {item.note && (
+                              <p className="text-xs text-muted-foreground">{item.note}</p>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-right font-mono text-sm">
+                            ${fmt(item.unitPrice)}
+                          </TableCell>
+                          <TableCell className="text-right font-mono text-sm">
+                            {fmt(item.quantity)}
+                          </TableCell>
+                          <TableCell className="text-right font-mono text-sm font-medium">
+                            ${fmt(item.total)}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+
+              {/* Totals */}
+              <div className="flex justify-end mt-4">
+                <div className="w-full sm:w-64 space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">{t('sales.subtotal')}</span>
+                    <span className="font-mono">${fmt(sale.subtotal)}</span>
+                  </div>
+                  <Separator />
+                  <div className="flex justify-between font-semibold">
+                    <span>{t('sales.grandTotal')}</span>
+                    <span className="font-mono">${fmt(sale.grandTotal)}</span>
+                  </div>
+                  <div className="flex justify-between text-green-700 dark:text-green-400">
+                    <span className="text-muted-foreground">{t('sales.paidAmount')}</span>
+                    <span className="font-mono">${fmt(sale.paidAmount)}</span>
+                  </div>
+                  <div className={`flex justify-between ${balanceAmount > 0 ? 'text-amber-700 dark:text-amber-400 font-semibold' : ''}`}>
+                    <span className="text-muted-foreground">{t('sales.balanceAmount')}</span>
+                    <span className="font-mono">${fmt(sale.balanceAmount)}</span>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Payments card */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between gap-3 flex-wrap">
+                <CardTitle className="text-base">{t('sales.payments')}</CardTitle>
+                {canAddPayment && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setAddPaymentDialogOpen(true)}
+                  >
+                    {t('sales.addPayment')}
+                  </Button>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent>
+              {payments.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  {t('payments.noPaymentHistory')}
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  {payments.map((pay) => (
+                    <div
+                      key={pay.id}
+                      className="flex items-center justify-between rounded-lg border px-3 py-2 text-sm"
+                    >
+                      <div className="flex items-center gap-2 min-w-0">
+                        <Badge
+                          variant="outline"
+                          className={`${methodClass[pay.paymentMethod]} text-[10px] shrink-0`}
+                        >
+                          {t(`paymentMethods.${pay.paymentMethod}`)}
+                        </Badge>
+                        {pay.referenceNo && (
+                          <span className="text-xs text-muted-foreground truncate hidden sm:block">
+                            {pay.referenceNo}
+                          </span>
+                        )}
+                        {pay.note && (
+                          <span className="text-xs text-muted-foreground truncate hidden sm:block">
+                            {pay.note}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-3 shrink-0">
+                        <span className="text-xs text-muted-foreground">
+                          {formatDate(pay.paidAt)}
+                        </span>
+                        <span className="font-mono font-medium">${fmt(pay.amount)}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </>
       ) : (
         <p className="text-muted-foreground">{t('common.error')}</p>
       )}
 
+      <VoidSaleDialog
+        open={voidDialogOpen}
+        onOpenChange={setVoidDialogOpen}
+        onConfirm={handleVoidConfirm}
+        isLoading={isVoiding}
+      />
+      <MarkCommissionPaidDialog
+        open={commissionDialogOpen}
+        onOpenChange={setCommissionDialogOpen}
+        onConfirm={handleCommissionPaid}
+        isLoading={isMarkingCommission}
+      />
       {sale && (
-        <>
-          <CompleteSaleDialog
-            sale={sale}
-            open={completeDialogOpen}
-            onOpenChange={setCompleteDialogOpen}
-            onConfirm={handleCompleteConfirm}
-            isLoading={isCompleting}
-          />
-          <CancelSaleDialog
-            sale={sale}
-            open={cancelDialogOpen}
-            onOpenChange={setCancelDialogOpen}
-            onConfirm={handleCancelConfirm}
-            isLoading={isCancelling}
-          />
-          <DeleteSaleDialog
-            sale={sale}
-            open={deleteDialogOpen}
-            onOpenChange={setDeleteDialogOpen}
-            onConfirm={handleDeleteConfirm}
-            isLoading={isDeleting}
-          />
-        </>
+        <AddPaymentDialog
+          saleId={sale.id}
+          balanceAmount={balanceAmount}
+          open={addPaymentDialogOpen}
+          onOpenChange={setAddPaymentDialogOpen}
+          onConfirm={handleAddPayment}
+          isLoading={isAddingPayment}
+        />
       )}
     </div>
   );

@@ -6,16 +6,17 @@ import type {
   GetServicesResponse,
   ServiceQuery,
   UpdateServiceRequest,
+  UpdateServiceStatusRequest,
 } from './types';
 
 const servicesApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getServices: builder.query<GetServicesResponse, ServiceQuery>({
-      query: ({ search, priceType, isActive, page = 1, limit = 20 }) => {
+      query: ({ search, status, category, page = 1, limit = 20 }) => {
         const params = new URLSearchParams();
         if (search) params.set('search', search);
-        if (priceType) params.set('priceType', priceType);
-        if (isActive !== undefined) params.set('isActive', String(isActive));
+        if (status) params.set('status', status);
+        if (category) params.set('category', category);
         params.set('page', String(page));
         params.set('limit', String(limit));
         return `/services?${params}`;
@@ -50,19 +51,19 @@ const servicesApi = baseApi.injectEndpoints({
     }),
     updateServiceStatus: builder.mutation<
       GetServiceResponse,
-      { id: string; isActive: boolean }
+      { id: string; data: UpdateServiceStatusRequest }
     >({
-      query: ({ id, isActive }) => ({
+      query: ({ id, data }) => ({
         url: `/services/${id}/status`,
         method: 'PATCH',
-        body: { isActive },
+        body: data,
       }),
       invalidatesTags: (_result, _error, { id }) => [
         'Service',
         { type: 'Service', id },
       ],
     }),
-    deleteService: builder.mutation<{ success: boolean; data: null }, string>({
+    deleteService: builder.mutation<GetServiceResponse, string>({
       query: (id) => ({
         url: `/services/${id}`,
         method: 'DELETE',

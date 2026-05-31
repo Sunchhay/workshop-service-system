@@ -1,149 +1,193 @@
 import type { ApiResponse } from '@/lib/api/types';
 
-export interface ReportSummary {
-  totalCustomers: number;
-  totalServiceJobs: number;
-  totalInvoices: number;
-  invoiceTotal: string;
-  paymentTotal: string;
-  unpaidTotal: string;
-  salesTotal: string;
-  expenseTotal: string;
-  profitEstimate: string;
-  lowStockCount: number;
-}
+export type PaymentStatus = 'PAID' | 'UNPAID' | 'PARTIAL';
+export type SaleStatus = 'COMPLETED' | 'VOIDED';
+export type CommissionStatus = 'NONE' | 'UNPAID' | 'PAID';
+export type PaymentMethod = 'CASH' | 'ACLEDA' | 'ABA' | 'BAKONG' | 'OTHER';
+export type ExpenseStatus = 'PAID' | 'UNPAID' | 'VOIDED';
 
-export interface ReportServiceJob {
+export interface ReportSale {
   id: string;
-  jobCode: string;
-  status: string;
-  priority: string;
-  partDescription: string;
+  invoiceNo: string;
+  grandTotal: string | number;
+  paidAmount: string | number;
+  balanceAmount: string | number;
+  paymentStatus: PaymentStatus;
+  saleStatus: SaleStatus;
   createdAt: string;
-  completedAt: string | null;
-  customer: { id: string; name: string; phone: string };
-  assignedTo: { id: string; name: string } | null;
-  _count: { items: number };
-}
-
-export interface ReportInvoice {
-  id: string;
-  invoiceNumber: string;
-  status: string;
-  subtotal: string;
-  discountAmount: string;
-  taxAmount: string;
-  totalAmount: string;
-  paidAmount: string;
-  dueAmount: string;
-  issuedAt: string;
-  dueDate: string | null;
-  customer: { id: string; name: string; phone: string };
+  customer?: { id: string; name: string; phone?: string } | null;
+  mechanic?: { id: string; name: string } | null;
 }
 
 export interface ReportPayment {
   id: string;
-  paymentNumber: string;
-  amount: string;
-  method: string;
-  referenceNo: string | null;
+  saleId: string;
+  paymentMethod: PaymentMethod;
+  amount: string | number;
+  referenceNo?: string | null;
+  note?: string | null;
   paidAt: string;
-  invoice: { id: string; invoiceNumber: string };
-  customer: { id: string; name: string };
-  createdBy: { id: string; name: string };
-}
-
-export interface ReportSale {
-  id: string;
-  saleNumber: string;
-  status: string;
-  subtotal: string;
-  discountAmount: string;
-  totalAmount: string;
-  soldAt: string;
-  customer: { id: string; name: string } | null;
-  _count: { items: number };
+  createdAt: string;
+  sale?: { id: string; invoiceNo: string } | null;
 }
 
 export interface ReportExpense {
   id: string;
-  expenseNumber: string;
+  expenseNo: string;
+  title: string;
   category: string;
-  description: string;
-  amount: string;
-  method: string;
-  referenceNo: string | null;
+  amount: string | number;
+  paymentMethod: PaymentMethod;
+  expenseStatus: ExpenseStatus;
   expenseDate: string;
-  createdBy: { id: string; name: string };
+  supplier?: { id: string; name: string } | null;
+  mechanic?: { id: string; name: string } | null;
 }
 
-export interface ReportProfit {
-  invoiceTotal: string;
-  salesTotal: string;
-  paymentReceived: string;
-  expenseTotal: string;
-  estimatedProfit: string;
-  unpaidAmount: string;
+export interface ReportProfitSummary {
+  totalSales: number | string;
+  totalExpenses: number | string;
+  estimatedProfit: number | string;
 }
 
-export interface ReportUnpaidInvoice {
+export interface ReportMechanicCommission {
   id: string;
-  invoiceNumber: string;
-  status: string;
-  totalAmount: string;
-  paidAmount: string;
-  dueAmount: string;
-  issuedAt: string;
-  dueDate: string | null;
-  customer: { id: string; name: string; phone: string };
+  invoiceNo: string;
+  commissionAmount: string | number;
+  commissionStatus: CommissionStatus;
+  commissionPaidAt?: string | null;
+  createdAt: string;
+  mechanic?: { id: string; name: string } | null;
+  customer?: { id: string; name: string } | null;
 }
 
-export interface ReportProduct {
+export interface ReportCustomerDebt {
   id: string;
-  code: string;
-  name: string;
-  category: string | null;
-  componentPartType: string | null;
-  supplier: string | null;
-  stockQuantity: number;
-  reorderLevel: number;
-  costPrice: string;
-  sellingPrice: string;
-  isActive: boolean;
-  isLowStock: boolean;
+  invoiceNo: string;
+  grandTotal: string | number;
+  paidAmount: string | number;
+  balanceAmount: string | number;
+  paymentStatus: PaymentStatus;
+  createdAt: string;
+  customer?: { id: string; name: string; phone?: string } | null;
 }
 
-export interface ReportLowStockProduct {
-  id: string;
-  code: string;
-  name: string;
-  category: string | null;
-  componentPartType: string | null;
-  supplier: string | null;
-  stockQuantity: number;
-  reorderLevel: number;
+export interface ReportServiceUsage {
+  serviceId?: string | null;
+  nameSnapshot?: string | null;
+  name?: string;
+  totalQuantity?: number;
+  quantity?: number;
+  totalRevenue?: string | number;
+  total?: string | number;
 }
 
-export interface ReportQuery {
-  fromDate?: string;
-  toDate?: string;
+export interface ReportProductSales {
+  productId?: string | null;
+  nameSnapshot?: string | null;
+  name?: string;
+  totalQuantity?: number;
+  quantity?: number;
+  totalRevenue?: string | number;
+  total?: string | number;
+}
+
+export interface ReportMeta {
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+export interface ReportListResult<T, TSummary = unknown> {
+  items: T[];
+  meta?: ReportMeta;
+  summary?: TSummary;
+}
+
+export interface ReportSalesSummary {
+  totalSales: number;
+  totalPaid: number;
+  totalBalance: number;
+  totalOrders: number;
+}
+
+export interface ReportExpensesSummary {
+  totalExpenses: number;
+}
+
+export interface ReportCommissionSummary {
+  totalCommission: number;
+  paidCommission: number;
+  unpaidCommission: number;
+}
+
+export interface ReportDebtSummary {
+  totalDebt: number;
+}
+
+export interface ReportPaymentGrouped {
+  paymentMethod: PaymentMethod;
+  totalAmount: number;
+  transactionCount: number;
+}
+
+export interface ReportPaymentsResult extends ReportListResult<ReportPayment> {
+  grouped?: ReportPaymentGrouped[];
+}
+
+export interface ReportSaleQuery {
+  dateFrom?: string;
+  dateTo?: string;
+  paymentStatus?: PaymentStatus;
+  saleStatus?: SaleStatus;
   customerId?: string;
-  status?: string;
-  paymentMethod?: string;
-  category?: string;
-  priority?: string;
-  componentPartType?: string;
-  isActive?: boolean;
-  isLowStock?: boolean;
+  mechanicId?: string;
+  page?: number;
+  limit?: number;
 }
 
-export type GetReportSummaryResponse = ApiResponse<ReportSummary>;
-export type GetReportServiceJobsResponse = ApiResponse<ReportServiceJob[]>;
-export type GetReportInvoicesResponse = ApiResponse<ReportInvoice[]>;
-export type GetReportPaymentsResponse = ApiResponse<ReportPayment[]>;
-export type GetReportSalesResponse = ApiResponse<ReportSale[]>;
-export type GetReportExpensesResponse = ApiResponse<ReportExpense[]>;
-export type GetReportProfitResponse = ApiResponse<ReportProfit>;
-export type GetReportUnpaidBalancesResponse = ApiResponse<ReportUnpaidInvoice[]>;
-export type GetReportProductsResponse = ApiResponse<ReportProduct[]>;
-export type GetReportLowStockResponse = ApiResponse<ReportLowStockProduct[]>;
+export interface ReportPaymentQuery {
+  dateFrom?: string;
+  dateTo?: string;
+  paymentMethod?: PaymentMethod;
+  page?: number;
+  limit?: number;
+}
+
+export interface ReportExpenseQuery {
+  dateFrom?: string;
+  dateTo?: string;
+  expenseStatus?: ExpenseStatus;
+  paymentMethod?: PaymentMethod;
+  supplierId?: string;
+  mechanicId?: string;
+  category?: string;
+  page?: number;
+  limit?: number;
+}
+
+export interface ReportCommissionQuery {
+  dateFrom?: string;
+  dateTo?: string;
+  mechanicId?: string;
+  commissionStatus?: CommissionStatus;
+  page?: number;
+  limit?: number;
+}
+
+export interface ReportDateQuery {
+  dateFrom?: string;
+  dateTo?: string;
+  page?: number;
+  limit?: number;
+}
+
+export type GetReportSalesResponse = ApiResponse<ReportListResult<ReportSale, ReportSalesSummary> | ReportSale[]>;
+export type GetReportPaymentsResponse = ApiResponse<ReportPaymentsResult | ReportPayment[]>;
+export type GetReportExpensesResponse = ApiResponse<ReportListResult<ReportExpense, ReportExpensesSummary> | ReportExpense[]>;
+export type GetReportProfitSummaryResponse = ApiResponse<ReportProfitSummary>;
+export type GetReportMechanicCommissionsResponse = ApiResponse<ReportListResult<ReportMechanicCommission, ReportCommissionSummary> | ReportMechanicCommission[]>;
+export type GetReportCustomerDebtsResponse = ApiResponse<ReportListResult<ReportCustomerDebt, ReportDebtSummary> | ReportCustomerDebt[]>;
+export type GetReportServiceUsageResponse = ApiResponse<ReportListResult<ReportServiceUsage> | ReportServiceUsage[]>;
+export type GetReportProductSalesResponse = ApiResponse<ReportListResult<ReportProductSales> | ReportProductSales[]>;

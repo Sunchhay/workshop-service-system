@@ -1,54 +1,73 @@
-import type { ApiResponse } from '@/lib/api/types';
+import type { ApiPaginatedResponse, ApiResponse } from '@/lib/api/types';
 
-export type ExpenseCategory = 'SUPPLIES' | 'UTILITIES' | 'RENT' | 'SALARY' | 'MAINTENANCE' | 'OTHER';
-export type ExpensePaymentMethod = 'CASH' | 'ABA' | 'BANK_TRANSFER' | 'CARD' | 'OTHER';
-
-export interface ExpenseCreatedBy {
-  id: string;
-  name: string;
-}
+export type PaymentMethod = 'CASH' | 'ACLEDA' | 'ABA' | 'BAKONG' | 'OTHER';
+export type ExpenseStatus = 'PAID' | 'UNPAID' | 'VOIDED';
 
 export interface Expense {
   id: string;
-  expenseNumber: string;
-  category: ExpenseCategory;
-  description: string;
-  amount: string;
-  method: ExpensePaymentMethod;
-  referenceNo: string | null;
-  notes: string | null;
+  expenseNo: string;
+  title: string;
+  category?: string | null;
+  amount: string | number;
+  paymentMethod?: PaymentMethod | null;
+  expenseStatus: ExpenseStatus;
+  supplierId?: string | null;
+  mechanicId?: string | null;
+  referenceNo?: string | null;
+  imageUrl?: string | null;
+  note?: string | null;
   expenseDate: string;
   createdById: string;
+  voidReason?: string | null;
+  voidedAt?: string | null;
+  voidedById?: string | null;
   createdAt: string;
   updatedAt: string;
-  createdBy: ExpenseCreatedBy;
+  supplier?: { id: string; name: string; phone?: string | null } | null;
+  mechanic?: { id: string; name: string; phone?: string | null; customerType?: string } | null;
+  createdBy?: { id: string; name: string } | null;
+  voidedBy?: { id: string; name: string } | null;
 }
 
 export interface CreateExpenseRequest {
-  category: ExpenseCategory;
-  description: string;
+  title: string;
   amount: number;
-  method: ExpensePaymentMethod;
+  expenseDate: string;
+  category?: string;
+  paymentMethod?: PaymentMethod;
+  expenseStatus?: ExpenseStatus;
+  supplierId?: string;
+  mechanicId?: string;
   referenceNo?: string;
-  notes?: string;
-  expenseDate?: string;
+  imageUrl?: string;
+  note?: string;
 }
 
 export interface UpdateExpenseRequest {
-  category?: ExpenseCategory;
-  description?: string;
+  title?: string;
   amount?: number;
-  method?: ExpensePaymentMethod;
-  referenceNo?: string;
-  notes?: string;
   expenseDate?: string;
+  category?: string;
+  paymentMethod?: PaymentMethod;
+  expenseStatus?: ExpenseStatus;
+  supplierId?: string;
+  mechanicId?: string;
+  referenceNo?: string;
+  imageUrl?: string;
+  note?: string;
+}
+
+export interface VoidExpenseRequest {
+  voidReason: string;
 }
 
 export interface ExpenseQuery {
   search?: string;
-  category?: ExpenseCategory;
-  method?: ExpensePaymentMethod;
-  createdById?: string;
+  expenseStatus?: ExpenseStatus;
+  paymentMethod?: PaymentMethod;
+  category?: string;
+  supplierId?: string;
+  mechanicId?: string;
   dateFrom?: string;
   dateTo?: string;
   page?: number;
@@ -60,13 +79,8 @@ export interface ExpensesMeta {
   page: number;
   limit: number;
   totalPages: number;
-  totalAmount: string;
+  totalAmount?: string;
 }
 
-export interface GetExpensesResponse {
-  success: boolean;
-  data: Expense[];
-  meta: ExpensesMeta;
-}
-
+export type GetExpensesResponse = ApiPaginatedResponse<Expense> & { meta: ExpensesMeta };
 export type GetExpenseResponse = ApiResponse<Expense>;

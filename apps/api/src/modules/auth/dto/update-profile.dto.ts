@@ -12,5 +12,5 @@ export class UpdateProfileDto {
 
   @IsString()
   @IsOptional()
-  avatarUrl?: string | null;
+  imageUrl?: string | null;
 }

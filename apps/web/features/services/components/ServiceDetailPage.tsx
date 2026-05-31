@@ -18,26 +18,12 @@ import {
   useGetServiceQuery,
   useUpdateServiceStatusMutation,
 } from '../api';
-import type { PriceType, Service } from '../types';
+import type { RecordStatus, Service } from '../types';
 import { DeleteServiceDialog } from './dialogs/DeleteServiceDialog';
 import { DisableServiceDialog } from './dialogs/DisableServiceDialog';
 
 interface ServiceDetailPageProps {
   id: string;
-}
-
-const priceTypeClass: Record<PriceType, string> = {
-  FIXED: 'bg-blue-500/10 text-blue-600 border-blue-500/20 dark:text-blue-400',
-  CATALOG_BASED:
-    'bg-amber-500/10 text-amber-700 border-amber-500/20 dark:text-amber-400',
-  CUSTOM:
-    'bg-purple-500/10 text-purple-700 border-purple-500/20 dark:text-purple-400',
-};
-
-function formatPrice(price: string | null): string {
-  if (!price) return '—';
-  const num = parseFloat(price);
-  return isNaN(num) ? '—' : num.toFixed(2);
 }
 
 function formatDate(dateStr: string) {
@@ -64,9 +50,11 @@ export function ServiceDetailPage({ id }: ServiceDetailPageProps) {
   const handleStatusConfirm = async () => {
     if (!service) return;
     try {
-      await updateStatus({ id, isActive: !service.isActive }).unwrap();
+      const nextStatus: RecordStatus =
+        service.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
+      await updateStatus({ id, data: { status: nextStatus } }).unwrap();
       toast.success(
-        service.isActive
+        service.status === 'ACTIVE'
           ? t('services.disabledSuccess')
           : t('services.enabledSuccess'),
       );
@@ -111,14 +99,14 @@ export function ServiceDetailPage({ id }: ServiceDetailPageProps) {
               <div className="flex items-start justify-between gap-3 flex-wrap">
                 <div>
                   <div className="flex items-center gap-2 flex-wrap">
-                    <CardTitle>{service.nameEn}</CardTitle>
+                    <CardTitle>{service.name}</CardTitle>
                     <Badge variant="outline" className="font-mono text-xs">
                       {service.code}
                     </Badge>
                   </div>
-                  {service.nameKh && (
+                  {service.nameEn && (
                     <p className="text-sm text-muted-foreground mt-1">
-                      {service.nameKh}
+                      {service.nameEn}
                     </p>
                   )}
                 </div>
@@ -135,45 +123,20 @@ export function ServiceDetailPage({ id }: ServiceDetailPageProps) {
               <Separator />
 
               <div className="grid grid-cols-2 gap-4 text-sm sm:grid-cols-3">
-                {/* Price type */}
-                <div>
-                  <p className="text-muted-foreground text-xs mb-1">
-                    {t('services.priceType')}
-                  </p>
-                  <Badge
-                    variant="outline"
-                    className={priceTypeClass[service.priceType]}
-                  >
-                    {t(`priceTypes.${service.priceType}`)}
-                  </Badge>
-                </div>
-
-                {/* Default price */}
-                {service.priceType === 'FIXED' && (
-                  <div>
-                    <p className="text-muted-foreground text-xs mb-1">
-                      {t('services.defaultPrice')}
-                    </p>
-                    <p className="font-mono font-medium">
-                      {formatPrice(service.defaultPrice)}
-                    </p>
-                  </div>
-                )}
-
                 {/* Status */}
                 <div>
                   <p className="text-muted-foreground text-xs mb-1">
                     {t('services.statusLabel')}
                   </p>
                   <Badge
-                    variant={service.isActive ? 'default' : 'outline'}
+                    variant={service.status === 'ACTIVE' ? 'default' : 'outline'}
                     className={
-                      service.isActive
+                      service.status === 'ACTIVE'
                         ? 'bg-green-500/10 text-green-700 border-green-500/20 dark:text-green-400'
                         : 'text-muted-foreground'
                     }
                   >
-                    {t(service.isActive ? 'common.active' : 'common.inactive')}
+                    {t(service.status === 'ACTIVE' ? 'common.active' : 'common.inactive')}
                   </Badge>
                 </div>
 
@@ -184,16 +147,6 @@ export function ServiceDetailPage({ id }: ServiceDetailPageProps) {
                       {t('services.category')}
                     </p>
                     <p>{service.category}</p>
-                  </div>
-                )}
-
-                {/* Related component */}
-                {service.relatedComponent && (
-                  <div>
-                    <p className="text-muted-foreground text-xs mb-1">
-                      {t('services.relatedComponent')}
-                    </p>
-                    <p>{service.relatedComponent}</p>
                   </div>
                 )}
 
@@ -233,12 +186,12 @@ export function ServiceDetailPage({ id }: ServiceDetailPageProps) {
                   size="sm"
                   onClick={() => setStatusDialogOpen(true)}
                   className={
-                    service.isActive
+                    service.status === 'ACTIVE'
                       ? 'border-destructive/30 text-destructive hover:bg-destructive/10'
                       : 'border-green-500/30 text-green-700 hover:bg-green-500/10 dark:text-green-400'
                   }
                 >
-                  {service.isActive
+                  {service.status === 'ACTIVE'
                     ? t('services.confirmDisableTitle')
                     : t('services.confirmEnableTitle')}
                 </Button>

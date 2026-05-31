@@ -4,6 +4,7 @@ import type {
   GetPublicSettingsResponse,
   GetSettingsGroupResponse,
   GetSettingsResponse,
+  UpdateSettingRequest,
   UpdateSettingResponse,
   UpdateSettingsGroupResponse,
 } from './types';
@@ -23,12 +24,12 @@ const settingsApi = baseApi.injectEndpoints({
     }),
     updateSetting: builder.mutation<
       UpdateSettingResponse,
-      { key: string; value: string | null }
+      { key: string; data: UpdateSettingRequest }
     >({
-      query: ({ key, value }) => ({
+      query: ({ key, data }) => ({
         url: `/settings/${key}`,
         method: 'PATCH',
-        body: { value },
+        body: data,
       }),
       invalidatesTags: ['Setting'],
     }),

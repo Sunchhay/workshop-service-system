@@ -8,7 +8,6 @@ import {
   createPaginatedResponse,
   createResponse,
 } from '../../common/types/api-response.type';
-import { PriceType } from '../../generated/prisma/enums';
 import type { CreateServiceDto } from './dto/create-service.dto';
 import type { QueryServiceDto } from './dto/query-service.dto';
 import type {
@@ -22,14 +21,12 @@ export class ServicesService {
   constructor(private readonly servicesRepository: ServicesRepository) {}
 
   async create(dto: CreateServiceDto) {
-    if (dto.priceType === PriceType.FIXED && dto.defaultPrice === undefined) {
-      throw new BadRequestException(
-        'Default price is required for fixed price services',
-      );
+    const duplicate = await this.servicesRepository.findByCode(dto.code);
+    if (duplicate) {
+      throw new BadRequestException(`Service "${dto.code}" already exists`);
     }
 
-    const code = await this.servicesRepository.generateCode();
-    const service = await this.servicesRepository.create({ ...dto, code });
+    const service = await this.servicesRepository.create(dto);
     return createResponse(service, 'Service created');
   }
 
@@ -49,16 +46,12 @@ export class ServicesService {
   }
 
   async update(id: string, dto: UpdateServiceDto) {
-    const current = await this.findOne(id);
+    await this.findOne(id);
 
-    // When switching to FIXED price type, a price must exist (either provided in dto or already stored)
-    if (dto.priceType === PriceType.FIXED) {
-      const hasPrice =
-        dto.defaultPrice !== undefined || current.defaultPrice !== null;
-      if (!hasPrice) {
-        throw new BadRequestException(
-          'Default price is required for fixed price services',
-        );
+    if (dto.code !== undefined) {
+      const duplicate = await this.servicesRepository.findByCode(dto.code, id);
+      if (duplicate) {
+        throw new BadRequestException(`Service "${dto.code}" already exists`);
       }
     }
 
@@ -68,13 +61,13 @@ export class ServicesService {
 
   async updateStatus(id: string, dto: UpdateServiceStatusDto) {
     await this.findOne(id);
-    const service = await this.servicesRepository.updateStatus(id, dto.isActive);
+    const service = await this.servicesRepository.updateStatus(id, dto.status);
     return createResponse(service, 'Service status updated');
   }
 
   async remove(id: string) {
     await this.findOne(id);
-    await this.servicesRepository.softDelete(id);
-    return createResponse(null, 'Service deleted');
+    const service = await this.servicesRepository.deactivate(id);
+    return createResponse(service, 'Service deactivated');
   }
 }

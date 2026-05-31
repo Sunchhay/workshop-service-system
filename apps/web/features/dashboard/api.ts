@@ -2,9 +2,10 @@ import { baseApi } from '@/lib/api/baseApi';
 
 import type {
   GetDashboardSummaryResponse,
-  GetLowStockProductsResponse,
-  GetRecentServiceJobsResponse,
-  GetRecentTransactionsResponse,
+  GetPaymentSummaryResponse,
+  GetRecentSalesResponse,
+  GetTopProductsResponse,
+  GetTopServicesResponse,
 } from './types';
 
 const dashboardApi = baseApi.injectEndpoints({
@@ -13,19 +14,22 @@ const dashboardApi = baseApi.injectEndpoints({
       query: () => '/dashboard/summary',
       keepUnusedDataFor: 300,
     }),
-    getRecentServiceJobs: builder.query<GetRecentServiceJobsResponse, void>({
-      query: () => '/dashboard/recent-service-jobs',
-      providesTags: ['ServiceJob'],
+    getRecentSales: builder.query<GetRecentSalesResponse, void>({
+      query: () => '/dashboard/recent-sales',
+      providesTags: ['Sale'],
       keepUnusedDataFor: 300,
     }),
-    getRecentTransactions: builder.query<GetRecentTransactionsResponse, void>({
-      query: () => '/dashboard/recent-transactions',
+    getTopServices: builder.query<GetTopServicesResponse, void>({
+      query: () => '/dashboard/top-services',
+      keepUnusedDataFor: 300,
+    }),
+    getTopProducts: builder.query<GetTopProductsResponse, void>({
+      query: () => '/dashboard/top-products',
+      keepUnusedDataFor: 300,
+    }),
+    getPaymentSummary: builder.query<GetPaymentSummaryResponse, void>({
+      query: () => '/dashboard/payment-summary',
       providesTags: ['Payment'],
-      keepUnusedDataFor: 300,
-    }),
-    getLowStockProducts: builder.query<GetLowStockProductsResponse, void>({
-      query: () => '/dashboard/low-stock-products',
-      providesTags: ['Product'],
       keepUnusedDataFor: 300,
     }),
   }),
@@ -33,7 +37,8 @@ const dashboardApi = baseApi.injectEndpoints({
 
 export const {
   useGetDashboardSummaryQuery,
-  useGetRecentServiceJobsQuery,
-  useGetRecentTransactionsQuery,
-  useGetLowStockProductsQuery,
+  useGetRecentSalesQuery,
+  useGetTopServicesQuery,
+  useGetTopProductsQuery,
+  useGetPaymentSummaryQuery,
 } = dashboardApi;

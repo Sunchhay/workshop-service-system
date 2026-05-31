@@ -1,91 +1,112 @@
 import type { ApiPaginatedResponse, ApiResponse } from '@/lib/api/types';
 
-export type ReferenceSourceType =
-  | 'MOM_NOTEBOOK'
-  | 'SUPPLIER_INFO'
-  | 'REAL_MEASUREMENT'
-  | 'SERVICE_HISTORY'
-  | 'SERVICE_MANUAL'
-  | 'OTHER';
-
-export type VerificationStatus =
-  | 'DRAFT'
-  | 'PENDING_REVIEW'
-  | 'VERIFIED'
-  | 'OLD_DATA';
-
-export interface MeasurementDetail {
-  label: string;
-  value: string;
-  unit: string;
-}
+export type RecordStatus = 'ACTIVE' | 'INACTIVE';
 
 export interface ReferenceBookMachineModel {
   id: string;
-  brand: string;
-  model: string;
-  category: string | null;
+  code: string;
+  brand?: string | null;
+  modelName: string;
+  machineType?: string | null;
 }
 
-export interface ReferenceBook {
+export interface ReferenceBookItem {
   id: string;
-  machineModelId: string | null;
-  machineModel: ReferenceBookMachineModel | null;
-  componentType: string | null;
-  partName: string;
-  partCode: string | null;
-  standardSize: string | null; // Prisma Decimal → string
-  wearLimit: string | null;
-  serviceLimit: string | null;
-  unit: string;
-  measurementDetails: MeasurementDetail[] | null;
-  sourceType: ReferenceSourceType;
-  verificationStatus: VerificationStatus;
-  notes: string | null;
-  isActive: boolean;
+  referenceBookSectionId: string;
+  label: string;
+  value?: string | null;
+  unit?: string | null;
+  note?: string | null;
+  sortOrder: number;
   createdAt: string;
   updatedAt: string;
 }
 
-export interface CreateReferenceBookRequest {
+export interface ReferenceBookSection {
+  id: string;
+  referenceBookId: string;
+  name: string;
+  description?: string | null;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+  items?: ReferenceBookItem[];
+}
+
+export interface ReferenceBook {
+  id: string;
+  title: string;
+  category?: string | null;
   machineModelId?: string | null;
-  componentType?: string;
-  partName: string;
-  partCode?: string;
-  standardSize?: number;
-  wearLimit?: number;
-  serviceLimit?: number;
-  unit?: string;
-  measurementDetails?: MeasurementDetail[];
-  sourceType?: ReferenceSourceType;
-  verificationStatus?: VerificationStatus;
-  notes?: string;
+  summary?: string | null;
+  imageUrl?: string | null;
+  fileUrl?: string | null;
+  status: RecordStatus;
+  createdById: string;
+  createdAt: string;
+  updatedAt: string;
+  machineModel?: ReferenceBookMachineModel | null;
+  sections?: ReferenceBookSection[];
+}
+
+export interface CreateReferenceBookRequest {
+  title: string;
+  category?: string;
+  machineModelId?: string;
+  summary?: string;
+  imageUrl?: string;
+  fileUrl?: string;
+  status?: RecordStatus;
 }
 
 export interface UpdateReferenceBookRequest {
+  title?: string;
+  category?: string;
   machineModelId?: string | null;
-  componentType?: string;
-  partName?: string;
-  partCode?: string;
-  standardSize?: number | null;
-  wearLimit?: number | null;
-  serviceLimit?: number | null;
+  summary?: string;
+  imageUrl?: string;
+  fileUrl?: string;
+  status?: RecordStatus;
+}
+
+export interface CreateSectionRequest {
+  name: string;
+  description?: string;
+  sortOrder?: number;
+}
+
+export interface UpdateSectionRequest {
+  name?: string;
+  description?: string;
+  sortOrder?: number;
+}
+
+export interface CreateItemRequest {
+  label: string;
+  value?: string;
   unit?: string;
-  measurementDetails?: MeasurementDetail[];
-  sourceType?: ReferenceSourceType;
-  notes?: string;
+  note?: string;
+  sortOrder?: number;
+}
+
+export interface UpdateItemRequest {
+  label?: string;
+  value?: string;
+  unit?: string;
+  note?: string;
+  sortOrder?: number;
 }
 
 export interface ReferenceBookQuery {
   search?: string;
+  category?: string;
   machineModelId?: string;
-  componentType?: string;
-  sourceType?: ReferenceSourceType;
-  verificationStatus?: VerificationStatus;
-  isActive?: boolean;
+  status?: RecordStatus;
   page?: number;
   limit?: number;
 }
 
 export type GetReferenceBooksResponse = ApiPaginatedResponse<ReferenceBook>;
 export type GetReferenceBookResponse = ApiResponse<ReferenceBook>;
+export type GetSectionResponse = ApiResponse<ReferenceBookSection>;
+export type GetItemResponse = ApiResponse<ReferenceBookItem>;

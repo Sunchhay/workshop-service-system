@@ -6,17 +6,31 @@ import type {
   GetExpenseResponse,
   GetExpensesResponse,
   UpdateExpenseRequest,
+  VoidExpenseRequest,
 } from './types';
 
 const expensesApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getExpenses: builder.query<GetExpensesResponse, ExpenseQuery>({
-      query: ({ search, category, method, createdById, dateFrom, dateTo, page = 1, limit = 20 }) => {
+      query: ({
+        search,
+        expenseStatus,
+        paymentMethod,
+        category,
+        supplierId,
+        mechanicId,
+        dateFrom,
+        dateTo,
+        page = 1,
+        limit = 20,
+      }) => {
         const params = new URLSearchParams();
         if (search) params.set('search', search);
+        if (expenseStatus) params.set('expenseStatus', expenseStatus);
+        if (paymentMethod) params.set('paymentMethod', paymentMethod);
         if (category) params.set('category', category);
-        if (method) params.set('method', method);
-        if (createdById) params.set('createdById', createdById);
+        if (supplierId) params.set('supplierId', supplierId);
+        if (mechanicId) params.set('mechanicId', mechanicId);
         if (dateFrom) params.set('dateFrom', dateFrom);
         if (dateTo) params.set('dateTo', dateTo);
         params.set('page', String(page));
@@ -37,9 +51,9 @@ const expensesApi = baseApi.injectEndpoints({
       query: ({ id, data }) => ({ url: `/expenses/${id}`, method: 'PATCH', body: data }),
       invalidatesTags: (_result, _error, { id }) => ['Expense', { type: 'Expense', id }],
     }),
-    deleteExpense: builder.mutation<{ success: boolean; data: null }, string>({
-      query: (id) => ({ url: `/expenses/${id}`, method: 'DELETE' }),
-      invalidatesTags: ['Expense'],
+    voidExpense: builder.mutation<GetExpenseResponse, { id: string; data: VoidExpenseRequest }>({
+      query: ({ id, data }) => ({ url: `/expenses/${id}/void`, method: 'POST', body: data }),
+      invalidatesTags: (_result, _error, { id }) => ['Expense', { type: 'Expense', id }],
     }),
   }),
 });
@@ -49,5 +63,5 @@ export const {
   useGetExpenseQuery,
   useCreateExpenseMutation,
   useUpdateExpenseMutation,
-  useDeleteExpenseMutation,
+  useVoidExpenseMutation,
 } = expensesApi;

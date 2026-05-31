@@ -1,88 +1,80 @@
 import type { ApiPaginatedResponse, ApiResponse } from '@/lib/api/types';
 
-export type SaleStatus = 'DRAFT' | 'COMPLETED' | 'CANCELLED';
-
-export interface SaleProduct {
-  id: string;
-  code: string;
-  name: string;
-  unit: string;
-  stockQuantity: number;
-}
+export type PaymentStatus = 'PAID' | 'UNPAID' | 'PARTIAL';
+export type SaleStatus = 'COMPLETED' | 'VOIDED';
+export type CommissionStatus = 'NONE' | 'UNPAID' | 'PAID';
+export type SaleItemType = 'SERVICE' | 'PRODUCT';
+export type SalePaymentMethod = 'CASH' | 'ACLEDA' | 'ABA' | 'BAKONG' | 'OTHER';
 
 export interface SaleItem {
   id: string;
   saleId: string;
-  productId: string;
-  description: string | null;
-  quantity: string;
-  unitPrice: string;
-  discountAmount: string;
-  totalPrice: string;
+  itemType: SaleItemType;
+  serviceId?: string | null;
+  productId?: string | null;
+  machineModelId?: string | null;
+  nameSnapshot: string;
+  unitPrice: string | number;
+  quantity: string | number;
+  total: string | number;
+  note?: string | null;
   createdAt: string;
-  updatedAt: string;
-  product: SaleProduct;
 }
 
-export interface SaleCustomer {
+export interface SalePayment {
   id: string;
-  code: string;
-  name: string;
-  phone: string | null;
-}
-
-export interface SaleCreatedBy {
-  id: string;
-  name: string;
+  saleId: string;
+  paymentMethod: SalePaymentMethod;
+  amount: string | number;
+  referenceNo?: string | null;
+  note?: string | null;
+  paidAt: string;
+  createdAt: string;
 }
 
 export interface Sale {
   id: string;
-  saleNumber: string;
-  customerId: string | null;
-  status: SaleStatus;
-  subtotal: string;
-  discountAmount: string;
-  totalAmount: string;
-  notes: string | null;
-  soldAt: string;
+  invoiceNo: string;
+  customerId?: string | null;
+  mechanicId?: string | null;
   createdById: string;
+  subtotal: string | number;
+  grandTotal: string | number;
+  paidAmount: string | number;
+  balanceAmount: string | number;
+  commissionAmount: string | number;
+  commissionNote?: string | null;
+  commissionStatus: CommissionStatus;
+  commissionPaidAt?: string | null;
+  paymentStatus: PaymentStatus;
+  saleStatus: SaleStatus;
+  note?: string | null;
+  voidReason?: string | null;
+  voidedAt?: string | null;
+  voidedById?: string | null;
   createdAt: string;
   updatedAt: string;
-  customer: SaleCustomer | null;
-  createdBy: SaleCreatedBy;
-  items: SaleItem[];
+  customer?: { id: string; name: string; phone: string; customerType: string } | null;
+  mechanic?: { id: string; name: string; phone: string; customerType: string } | null;
+  createdBy?: { id: string; name: string } | null;
+  items?: SaleItem[];
+  payments?: SalePayment[];
 }
 
-export interface CreateSaleItemRequest {
-  productId: string;
-  description?: string;
-  quantity: number;
-  unitPrice: number;
-  discountAmount?: number;
-}
-
-export interface CreateSaleRequest {
-  customerId?: string;
-  status?: SaleStatus;
-  discountAmount?: number;
-  notes?: string;
-  soldAt?: string;
-  items: CreateSaleItemRequest[];
-}
-
-export interface UpdateSaleRequest {
-  customerId?: string;
-  discountAmount?: number;
-  notes?: string;
-  soldAt?: string;
-  items?: CreateSaleItemRequest[];
+export interface AddSalePaymentRequest {
+  paymentMethod: SalePaymentMethod;
+  amount: number;
+  referenceNo?: string;
+  note?: string;
+  paidAt?: string;
 }
 
 export interface SaleQuery {
   search?: string;
-  status?: SaleStatus;
+  paymentStatus?: PaymentStatus;
+  saleStatus?: SaleStatus;
   customerId?: string;
+  mechanicId?: string;
   dateFrom?: string;
   dateTo?: string;
   page?: number;

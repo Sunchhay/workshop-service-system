@@ -1,18 +1,18 @@
 import {
   BarChart3,
   BookOpen,
-  ClipboardList,
   Cpu,
-  CreditCard,
-  FileText,
+  DollarSign,
+  History,
   LayoutDashboard,
   MoreHorizontal,
   Package,
   Settings,
   ShoppingCart,
   Tag,
+  Tags,
   TrendingDown,
-  User,
+  Truck,
   UserCog,
   Users,
   Wrench,
@@ -37,35 +37,44 @@ export function isActiveRoute(
   return pathname === href || pathname.startsWith(href + '/');
 }
 
-// Desktop sidebar — primary section
+// Desktop sidebar — main section
 export const MAIN_NAV: NavItem[] = [
   { labelKey: 'nav.dashboard', href: '/admin', icon: LayoutDashboard, exact: true },
-  { labelKey: 'nav.serviceJobs', href: '/admin/service-jobs', icon: ClipboardList },
-  { labelKey: 'nav.customers', href: '/admin/customers', icon: Users },
-  { labelKey: 'nav.products', href: '/admin/products', icon: Package },
-  { labelKey: 'nav.invoices', href: '/admin/invoices', icon: FileText },
-  { labelKey: 'nav.payments', href: '/admin/payments', icon: CreditCard },
+  { labelKey: 'nav.cart', href: '/admin/carts', icon: ShoppingCart },
+  { labelKey: 'nav.sales', href: '/admin/sales', icon: History },
 ];
 
 // Desktop sidebar — management section
 export const MANAGEMENT_NAV: NavItem[] = [
-  { labelKey: 'nav.services', href: '/admin/services', icon: Wrench },
-  { labelKey: 'nav.priceCatalog', href: '/admin/price-catalog', icon: Tag },
+  { labelKey: 'nav.customers', href: '/admin/customers', icon: Users },
   { labelKey: 'nav.machineModels', href: '/admin/machine-models', icon: Cpu },
-  { labelKey: 'nav.referenceBook', href: '/admin/reference-book', icon: BookOpen },
-  { labelKey: 'nav.directSales', href: '/admin/sales', icon: ShoppingCart },
+  { labelKey: 'nav.services', href: '/admin/services', icon: Wrench },
+  { labelKey: 'nav.servicePrices', href: '/admin/service-prices', icon: Tag },
+  { labelKey: 'nav.products', href: '/admin/products', icon: Package },
+  { labelKey: 'nav.productPrices', href: '/admin/product-prices', icon: Tags },
+  { labelKey: 'nav.suppliers', href: '/admin/suppliers', icon: Truck },
+  { labelKey: 'nav.productSupplierPrices', href: '/admin/product-supplier-prices', icon: DollarSign },
+];
+
+// Desktop sidebar — operations section
+export const OPERATIONS_NAV: NavItem[] = [
   { labelKey: 'nav.expenses', href: '/admin/expenses', icon: TrendingDown },
+  { labelKey: 'nav.referenceBook', href: '/admin/reference-book', icon: BookOpen },
+];
+
+// Desktop sidebar — system section
+export const SYSTEM_NAV: NavItem[] = [
   { labelKey: 'nav.reports', href: '/admin/reports', icon: BarChart3 },
-  { labelKey: 'nav.settings', href: '/admin/settings', icon: Settings },
   { labelKey: 'nav.users', href: '/admin/users', icon: UserCog },
+  { labelKey: 'nav.settings', href: '/admin/settings', icon: Settings },
 ];
 
 // Mobile bottom tabs (4 items + More button)
 export const MOBILE_BOTTOM_NAV: NavItem[] = [
   { labelKey: 'nav.dashboard', href: '/admin', icon: LayoutDashboard, exact: true },
-  { labelKey: 'nav.serviceJobs', href: '/admin/service-jobs', icon: ClipboardList },
+  { labelKey: 'nav.cart', href: '/admin/carts', icon: ShoppingCart },
   { labelKey: 'nav.customers', href: '/admin/customers', icon: Users },
-  { labelKey: 'nav.products', href: '/admin/products', icon: Package },
+  { labelKey: 'nav.sales', href: '/admin/sales', icon: History },
 ];
 
 // Placeholder so the More tab icon is accessible from navConfig if needed
@@ -73,23 +82,24 @@ export const MORE_ICON = MoreHorizontal;
 
 // Mobile More sheet — all secondary items
 export const MORE_MENU_NAV: NavItem[] = [
-  { labelKey: 'nav.services', href: '/admin/services', icon: Wrench },
-  { labelKey: 'nav.priceCatalog', href: '/admin/price-catalog', icon: Tag },
   { labelKey: 'nav.machineModels', href: '/admin/machine-models', icon: Cpu },
-  { labelKey: 'nav.referenceBook', href: '/admin/reference-book', icon: BookOpen },
-  { labelKey: 'nav.invoices', href: '/admin/invoices', icon: FileText },
-  { labelKey: 'nav.payments', href: '/admin/payments', icon: CreditCard },
-  { labelKey: 'nav.directSales', href: '/admin/sales', icon: ShoppingCart },
+  { labelKey: 'nav.services', href: '/admin/services', icon: Wrench },
+  { labelKey: 'nav.servicePrices', href: '/admin/service-prices', icon: Tag },
+  { labelKey: 'nav.products', href: '/admin/products', icon: Package },
+  { labelKey: 'nav.productPrices', href: '/admin/product-prices', icon: Tags },
+  { labelKey: 'nav.suppliers', href: '/admin/suppliers', icon: Truck },
+  { labelKey: 'nav.productSupplierPrices', href: '/admin/product-supplier-prices', icon: DollarSign },
   { labelKey: 'nav.expenses', href: '/admin/expenses', icon: TrendingDown },
+  { labelKey: 'nav.referenceBook', href: '/admin/reference-book', icon: BookOpen },
   { labelKey: 'nav.reports', href: '/admin/reports', icon: BarChart3 },
-  { labelKey: 'nav.settings', href: '/admin/settings', icon: Settings },
   { labelKey: 'nav.users', href: '/admin/users', icon: UserCog },
+  { labelKey: 'nav.settings', href: '/admin/settings', icon: Settings },
 ];
 
 // All items combined — used for active-title lookup
 export const ALL_NAV: NavItem[] = [
   ...MAIN_NAV,
   ...MANAGEMENT_NAV,
-  { labelKey: 'nav.profile', href: '/admin/profile', icon: User, exact: true },
-  { labelKey: 'auth.changePassword', href: '/admin/profile/change-password', icon: User },
+  ...OPERATIONS_NAV,
+  ...SYSTEM_NAV,
 ];

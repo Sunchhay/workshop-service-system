@@ -8,7 +8,6 @@ import {
   createPaginatedResponse,
   createResponse,
 } from '../../common/types/api-response.type';
-import type { AdjustStockDto } from './dto/adjust-stock.dto';
 import type { CreateProductDto } from './dto/create-product.dto';
 import type { QueryProductDto } from './dto/query-product.dto';
 import type {
@@ -22,8 +21,12 @@ export class ProductsService {
   constructor(private readonly productsRepository: ProductsRepository) {}
 
   async create(dto: CreateProductDto) {
-    const code = await this.productsRepository.generateCode();
-    const product = await this.productsRepository.create({ ...dto, code });
+    const duplicate = await this.productsRepository.findByCode(dto.code);
+    if (duplicate) {
+      throw new BadRequestException(`Product "${dto.code}" already exists`);
+    }
+
+    const product = await this.productsRepository.create(dto);
     return createResponse(product, 'Product created');
   }
 
@@ -44,31 +47,27 @@ export class ProductsService {
 
   async update(id: string, dto: UpdateProductDto) {
     await this.findOne(id);
+
+    if (dto.code !== undefined) {
+      const duplicate = await this.productsRepository.findByCode(dto.code, id);
+      if (duplicate) {
+        throw new BadRequestException(`Product "${dto.code}" already exists`);
+      }
+    }
+
     const product = await this.productsRepository.update(id, dto);
     return createResponse(product, 'Product updated');
   }
 
   async updateStatus(id: string, dto: UpdateProductStatusDto) {
     await this.findOne(id);
-    const product = await this.productsRepository.updateStatus(id, dto.isActive);
+    const product = await this.productsRepository.updateStatus(id, dto.status);
     return createResponse(product, 'Product status updated');
-  }
-
-  async adjustStock(id: string, dto: AdjustStockDto) {
-    const product = await this.findOne(id);
-    const newQty = product.stockQuantity + dto.quantityChange;
-    if (newQty < 0) {
-      throw new BadRequestException(
-        'Stock adjustment would result in negative quantity',
-      );
-    }
-    const updated = await this.productsRepository.adjustStock(id, newQty);
-    return createResponse(updated, 'Stock adjusted');
   }
 
   async remove(id: string) {
     await this.findOne(id);
-    await this.productsRepository.softDelete(id);
-    return createResponse(null, 'Product deleted');
+    const product = await this.productsRepository.deactivate(id);
+    return createResponse(product, 'Product deactivated');
   }
 }

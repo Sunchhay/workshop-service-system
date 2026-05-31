@@ -61,8 +61,8 @@ export function CustomerEditPage({ id }: CustomerEditPageProps) {
                 <Skeleton className="h-11 w-full" />
                 <Skeleton className="h-11 w-full" />
                 <Skeleton className="h-11 w-full" />
+                <Skeleton className="h-11 w-full" />
               </div>
-              <Skeleton className="h-20 w-full" />
               <Skeleton className="h-20 w-full" />
             </div>
           ) : data?.data ? (
@@ -71,10 +71,10 @@ export function CustomerEditPage({ id }: CustomerEditPageProps) {
               defaultValues={{
                 name: data.data.name,
                 phone: data.data.phone,
-                email: data.data.email ?? '',
-                address: data.data.address ?? '',
+                imageUrl: data.data.imageUrl ?? '',
                 customerType: data.data.customerType,
-                notes: data.data.notes ?? '',
+                note: data.data.note ?? '',
+                status: data.data.status,
               }}
               onSubmit={handleSubmit}
               isLoading={isUpdating}

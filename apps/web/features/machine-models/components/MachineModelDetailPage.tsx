@@ -49,9 +49,14 @@ export function MachineModelDetailPage({ id }: MachineModelDetailPageProps) {
   const handleStatusConfirm = async () => {
     if (!model) return;
     try {
-      await updateStatus({ id, isActive: !model.isActive }).unwrap();
+      await updateStatus({
+        id,
+        data: {
+          status: model.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE',
+        },
+      }).unwrap();
       toast.success(
-        model.isActive
+        model.status === 'ACTIVE'
           ? t('machineModels.disabledSuccess')
           : t('machineModels.enabledSuccess'),
       );
@@ -94,20 +99,22 @@ export function MachineModelDetailPage({ id }: MachineModelDetailPageProps) {
           <Card>
             <CardHeader>
               <div className="flex items-start justify-between gap-3 flex-wrap">
-                <div>
-                  <CardTitle>
-                    {model.brand} {model.model}
-                  </CardTitle>
-                  {model.category && (
-                    <div className="mt-1">
-                      <Badge
-                        variant="outline"
-                        className="bg-blue-500/10 text-blue-700 border-blue-500/20 dark:text-blue-400"
-                      >
-                        {model.category}
-                      </Badge>
+                <div className="flex items-center gap-3">
+                  {model.imageUrl ? (
+                    <img
+                      src={model.imageUrl}
+                      alt={model.modelName}
+                      className="h-12 w-12 rounded-md object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-12 w-12 items-center justify-center rounded-md bg-primary/10 text-base font-semibold text-primary">
+                      {model.code.slice(0, 2).toUpperCase()}
                     </div>
                   )}
+                  <div>
+                    <CardTitle>{model.modelName}</CardTitle>
+                    <p className="text-sm text-muted-foreground mt-1">{model.code}</p>
+                  </div>
                 </div>
                 <Button asChild variant="outline" size="sm">
                   <Link href={`/admin/machine-models/${id}/edit`}>
@@ -122,48 +129,57 @@ export function MachineModelDetailPage({ id }: MachineModelDetailPageProps) {
               <Separator />
 
               <div className="grid grid-cols-2 gap-4 text-sm sm:grid-cols-3">
-                {/* Status */}
                 <div>
                   <p className="text-muted-foreground text-xs mb-1">
                     {t('machineModels.statusLabel')}
                   </p>
                   <Badge
-                    variant={model.isActive ? 'default' : 'outline'}
+                    variant={model.status === 'ACTIVE' ? 'default' : 'outline'}
                     className={
-                      model.isActive
+                      model.status === 'ACTIVE'
                         ? 'bg-green-500/10 text-green-700 border-green-500/20 dark:text-green-400'
                         : 'text-muted-foreground'
                     }
                   >
-                    {t(model.isActive ? 'common.active' : 'common.inactive')}
+                    {t(model.status === 'ACTIVE' ? 'common.active' : 'common.inactive')}
                   </Badge>
                 </div>
 
-                {/* Brand */}
+                <div>
+                  <p className="text-muted-foreground text-xs mb-1">
+                    {t('machineModels.code')}
+                  </p>
+                  <p className="font-medium">{model.code}</p>
+                </div>
+
                 <div>
                   <p className="text-muted-foreground text-xs mb-1">
                     {t('machineModels.brand')}
                   </p>
-                  <p className="font-medium">{model.brand}</p>
+                  <p>{model.brand ?? '—'}</p>
                 </div>
 
-                {/* Model */}
                 <div>
                   <p className="text-muted-foreground text-xs mb-1">
-                    {t('machineModels.model')}
+                    {t('machineModels.modelName')}
                   </p>
-                  <p className="font-medium">{model.model}</p>
+                  <p className="font-medium">{model.modelName}</p>
                 </div>
 
-                {/* Category */}
                 <div>
                   <p className="text-muted-foreground text-xs mb-1">
-                    {t('machineModels.category')}
+                    {t('machineModels.machineType')}
                   </p>
-                  <p>{model.category ?? '—'}</p>
+                  <p>{model.machineType ?? '—'}</p>
                 </div>
 
-                {/* Description */}
+                <div>
+                  <p className="text-muted-foreground text-xs mb-1">
+                    {t('machineModels.year')}
+                  </p>
+                  <p>{model.year ?? '—'}</p>
+                </div>
+
                 {model.description && (
                   <div className="col-span-2 sm:col-span-3">
                     <p className="text-muted-foreground text-xs mb-1">
@@ -175,7 +191,6 @@ export function MachineModelDetailPage({ id }: MachineModelDetailPageProps) {
                   </div>
                 )}
 
-                {/* Timestamps */}
                 <div>
                   <p className="text-muted-foreground text-xs mb-1">
                     {t('machineModels.createdAt')}
@@ -192,7 +207,7 @@ export function MachineModelDetailPage({ id }: MachineModelDetailPageProps) {
 
               <Separator />
 
-              {/* Placeholder sections for future relations */}
+              {/* Placeholder sections */}
               <div className="space-y-3">
                 <div className="rounded-lg border border-dashed p-4">
                   <p className="text-sm font-medium text-muted-foreground mb-1">
@@ -221,12 +236,12 @@ export function MachineModelDetailPage({ id }: MachineModelDetailPageProps) {
                   size="sm"
                   onClick={() => setStatusDialogOpen(true)}
                   className={
-                    model.isActive
+                    model.status === 'ACTIVE'
                       ? 'border-destructive/30 text-destructive hover:bg-destructive/10'
                       : 'border-green-500/30 text-green-700 hover:bg-green-500/10 dark:text-green-400'
                   }
                 >
-                  {model.isActive
+                  {model.status === 'ACTIVE'
                     ? t('machineModels.confirmDisableTitle')
                     : t('machineModels.confirmEnableTitle')}
                 </Button>
@@ -237,7 +252,7 @@ export function MachineModelDetailPage({ id }: MachineModelDetailPageProps) {
                   className="border-destructive/30 text-destructive hover:bg-destructive/10"
                 >
                   <Trash2 className="h-3.5 w-3.5 mr-1.5" />
-                  {t('common.delete')}
+                  {t('machineModels.confirmDeleteTitle')}
                 </Button>
               </div>
             </CardContent>

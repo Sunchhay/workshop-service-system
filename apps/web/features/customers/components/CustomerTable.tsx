@@ -26,12 +26,8 @@ import { useTranslation } from '@/lib/i18n/TranslationContext';
 import type { Customer, CustomerType } from '../types';
 
 const typeClass: Record<CustomerType, string> = {
-  NORMAL: 'text-muted-foreground',
-  VIP: 'bg-amber-500/10 text-amber-700 border-amber-500/20 dark:text-amber-400',
-  WHOLESALE:
-    'bg-blue-500/10 text-blue-600 border-blue-500/20 dark:text-blue-400',
-  PARTNER:
-    'bg-green-500/10 text-green-700 border-green-500/20 dark:text-green-400',
+  OWNER: 'bg-blue-500/10 text-blue-600 border-blue-500/20 dark:text-blue-400',
+  MECHANIC: 'bg-amber-500/10 text-amber-700 border-amber-500/20 dark:text-amber-400',
 };
 
 interface CustomerTableProps {
@@ -61,11 +57,12 @@ export function CustomerTable({
       <Table>
         <TableHeader>
           <TableRow>
+            <TableHead className="w-12">{t('customers.imageUrl')}</TableHead>
             <TableHead>{t('customers.name')}</TableHead>
             <TableHead>{t('customers.phone')}</TableHead>
             <TableHead>{t('customers.customerType')}</TableHead>
+            <TableHead>{t('customers.lastPurchasedAt')}</TableHead>
             <TableHead>{t('customers.statusLabel')}</TableHead>
-            <TableHead>{t('customers.createdAt')}</TableHead>
             <TableHead className="w-12" />
           </TableRow>
         </TableHeader>
@@ -73,7 +70,7 @@ export function CustomerTable({
           {customers.length === 0 ? (
             <TableRow>
               <TableCell
-                colSpan={6}
+                colSpan={7}
                 className="text-center text-muted-foreground py-10"
               >
                 {t('customers.noCustomers')}
@@ -87,22 +84,23 @@ export function CustomerTable({
                 onClick={() => router.push(`/admin/customers/${customer.id}`)}
               >
                 <TableCell>
-                  <div>
-                    <p className="font-medium">{customer.name}</p>
-                    <p className="text-xs text-muted-foreground font-mono">
-                      {customer.code}
-                    </p>
-                  </div>
+                  {customer.imageUrl ? (
+                    <img
+                      src={customer.imageUrl}
+                      alt={customer.name}
+                      className="h-8 w-8 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
+                      {customer.name.slice(0, 2).toUpperCase()}
+                    </div>
+                  )}
                 </TableCell>
                 <TableCell>
-                  <div>
-                    <p>{customer.phone}</p>
-                    {customer.email && (
-                      <p className="text-xs text-muted-foreground">
-                        {customer.email}
-                      </p>
-                    )}
-                  </div>
+                  <p className="font-medium">{customer.name}</p>
+                </TableCell>
+                <TableCell>
+                  <p>{customer.phone}</p>
                 </TableCell>
                 <TableCell>
                   <Badge
@@ -112,20 +110,20 @@ export function CustomerTable({
                     {t(`customerTypes.${customer.customerType}`)}
                   </Badge>
                 </TableCell>
+                <TableCell className="text-muted-foreground text-sm">
+                  {customer.lastPurchasedAt ? formatDate(customer.lastPurchasedAt) : '—'}
+                </TableCell>
                 <TableCell>
                   <Badge
-                    variant={customer.isActive ? 'default' : 'outline'}
+                    variant={customer.status === 'ACTIVE' ? 'default' : 'outline'}
                     className={
-                      customer.isActive
+                      customer.status === 'ACTIVE'
                         ? 'bg-green-500/10 text-green-700 border-green-500/20 dark:text-green-400'
                         : 'text-muted-foreground'
                     }
                   >
-                    {t(customer.isActive ? 'common.active' : 'common.inactive')}
+                    {t(customer.status === 'ACTIVE' ? 'common.active' : 'common.inactive')}
                   </Badge>
-                </TableCell>
-                <TableCell className="text-muted-foreground text-sm">
-                  {formatDate(customer.createdAt)}
                 </TableCell>
                 <TableCell onClick={(e) => e.stopPropagation()}>
                   <DropdownMenu>
@@ -149,12 +147,12 @@ export function CustomerTable({
                       <DropdownMenuItem
                         onClick={() => onToggleStatus(customer)}
                         className={
-                          customer.isActive
+                          customer.status === 'ACTIVE'
                             ? 'text-destructive focus:text-destructive'
                             : 'text-green-600 focus:text-green-600'
                         }
                       >
-                        {customer.isActive
+                        {customer.status === 'ACTIVE'
                           ? t('customers.confirmDisableTitle')
                           : t('customers.confirmEnableTitle')}
                       </DropdownMenuItem>
@@ -162,7 +160,7 @@ export function CustomerTable({
                         onClick={() => onDelete(customer)}
                         className="text-destructive focus:text-destructive"
                       >
-                        {t('common.delete')}
+                        {t('customers.confirmDeleteTitle')}
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>

@@ -1,5 +1,5 @@
-import { Injectable } from '@nestjs/common';
-import { createResponse } from '../../common/types/api-response.type';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { createPaginatedResponse, createResponse } from '../../common/types/api-response.type';
 import type { QuerySettingDto } from './dto/query-setting.dto';
 import type { UpdateSettingDto } from './dto/update-setting.dto';
 import type { UpdateSettingsGroupDto } from './dto/update-settings-group.dto';
@@ -10,7 +10,14 @@ export class SettingsService {
   constructor(private readonly settingsRepository: SettingsRepository) {}
 
   async findAll(dto: QuerySettingDto) {
-    const data = await this.settingsRepository.findAll(dto);
+    const { page = 1, limit = 100 } = dto;
+    const { data, total } = await this.settingsRepository.findAll(dto);
+    return createPaginatedResponse(data, total, page, limit);
+  }
+
+  async findByKey(key: string) {
+    const data = await this.settingsRepository.findByKey(key);
+    if (!data) throw new NotFoundException(`Setting with key "${key}" not found`);
     return createResponse(data);
   }
 
@@ -25,12 +32,12 @@ export class SettingsService {
   }
 
   async updateOne(key: string, dto: UpdateSettingDto) {
-    const data = await this.settingsRepository.upsertOne(key, dto.value ?? null);
+    const data = await this.settingsRepository.updateByKey(key, dto);
     return createResponse(data);
   }
 
   async updateGroup(group: string, dto: UpdateSettingsGroupDto) {
-    const data = await this.settingsRepository.upsertGroup(group, dto.settings);
+    const data = await this.settingsRepository.bulkUpdate(dto.settings, group);
     return createResponse(data);
   }
 }

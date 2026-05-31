@@ -29,38 +29,16 @@ import { useTranslation } from '@/lib/i18n/TranslationContext';
 import {
   useDeleteReferenceBookMutation,
   useGetReferenceBooksQuery,
-  useUpdateReferenceBookStatusMutation,
-  useUpdateReferenceBookVerificationMutation,
+  useUpdateReferenceBookMutation,
 } from '../api';
-import type {
-  ReferenceBook,
-  ReferenceSourceType,
-  VerificationStatus,
-} from '../types';
+import type { ReferenceBook, RecordStatus } from '../types';
 import { DeleteReferenceBookDialog } from './dialogs/DeleteReferenceBookDialog';
 import { DisableReferenceBookDialog } from './dialogs/DisableReferenceBookDialog';
-import { VerifyReferenceBookDialog } from './dialogs/VerifyReferenceBookDialog';
 import { ReferenceBookMobileCard } from './ReferenceBookMobileCard';
 import { ReferenceBookTable } from './ReferenceBookTable';
 
-const SOURCE_TYPES: ReferenceSourceType[] = [
-  'MOM_NOTEBOOK',
-  'SUPPLIER_INFO',
-  'REAL_MEASUREMENT',
-  'SERVICE_HISTORY',
-  'SERVICE_MANUAL',
-  'OTHER',
-];
-
-const VERIFICATION_STATUSES: VerificationStatus[] = [
-  'DRAFT',
-  'PENDING_REVIEW',
-  'VERIFIED',
-  'OLD_DATA',
-];
-
 const LIMIT = 20;
-type StatusFilter = 'true' | 'false' | '__all';
+type StatusFilter = RecordStatus | '__all';
 
 export function ReferenceBookPage() {
   const { t } = useTranslation();
@@ -68,82 +46,84 @@ export function ReferenceBookPage() {
   const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
   const [modelFilter, setModelFilter] = useState('__all');
-  const [sourceFilter, setSourceFilter] = useState<ReferenceSourceType | '__all'>('__all');
-  const [verifyFilter, setVerifyFilter] = useState<VerificationStatus | '__all'>('__all');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('__all');
-
   const [pendingModel, setPendingModel] = useState('__all');
-  const [pendingSource, setPendingSource] = useState<ReferenceSourceType | '__all'>('__all');
-  const [pendingVerify, setPendingVerify] = useState<VerificationStatus | '__all'>('__all');
   const [pendingStatus, setPendingStatus] = useState<StatusFilter>('__all');
-
   const [filterSheetOpen, setFilterSheetOpen] = useState(false);
   const [page, setPage] = useState(1);
 
   const [statusTarget, setStatusTarget] = useState<ReferenceBook | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<ReferenceBook | null>(null);
-  const [verifyTarget, setVerifyTarget] = useState<ReferenceBook | null>(null);
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [verifyDialogOpen, setVerifyDialogOpen] = useState(false);
 
-  const [updateStatus, { isLoading: isToggling }] = useUpdateReferenceBookStatusMutation();
+  const [updateBook, { isLoading: isToggling }] = useUpdateReferenceBookMutation();
   const [deleteRecord, { isLoading: isDeleting }] = useDeleteReferenceBookMutation();
-  const [updateVerification, { isLoading: isVerifying }] = useUpdateReferenceBookVerificationMutation();
 
-  const { data: machineModelsData } = useGetMachineModelsQuery({ isActive: true, limit: 100 });
+  const { data: machineModelsData } = useGetMachineModelsQuery({ status: 'ACTIVE', limit: 200 });
   const machineModels = machineModelsData?.data ?? [];
 
   useEffect(() => {
-    const timer = setTimeout(() => { setSearch(searchInput); setPage(1); }, 400);
+    const timer = setTimeout(() => {
+      setSearch(searchInput);
+      setPage(1);
+    }, 400);
     return () => clearTimeout(timer);
   }, [searchInput]);
 
-  useEffect(() => { setPage(1); }, [modelFilter, sourceFilter, verifyFilter, statusFilter]);
+  useEffect(() => {
+    setPage(1);
+  }, [modelFilter, statusFilter]);
 
   const { data, isLoading, isFetching } = useGetReferenceBooksQuery({
     search: search || undefined,
     machineModelId: modelFilter === '__all' ? undefined : modelFilter,
-    sourceType: sourceFilter === '__all' ? undefined : (sourceFilter as ReferenceSourceType),
-    verificationStatus: verifyFilter === '__all' ? undefined : (verifyFilter as VerificationStatus),
-    isActive: statusFilter === '__all' ? undefined : statusFilter === 'true',
+    status: statusFilter === '__all' ? undefined : (statusFilter as RecordStatus),
     page,
     limit: LIMIT,
   });
 
   const records = data?.data ?? [];
   const meta = data?.meta;
-
-  const activeFilterCount =
-    (modelFilter !== '__all' ? 1 : 0) +
-    (sourceFilter !== '__all' ? 1 : 0) +
-    (verifyFilter !== '__all' ? 1 : 0) +
-    (statusFilter !== '__all' ? 1 : 0);
+  const activeFilterCount = (modelFilter !== '__all' ? 1 : 0) + (statusFilter !== '__all' ? 1 : 0);
 
   const handleSheetOpen = (open: boolean) => {
-    if (open) { setPendingModel(modelFilter); setPendingSource(sourceFilter); setPendingVerify(verifyFilter); setPendingStatus(statusFilter); }
+    if (open) {
+      setPendingModel(modelFilter);
+      setPendingStatus(statusFilter);
+    }
     setFilterSheetOpen(open);
   };
 
   const handleApplyFilters = () => {
-    setModelFilter(pendingModel); setSourceFilter(pendingSource);
-    setVerifyFilter(pendingVerify); setStatusFilter(pendingStatus);
+    setModelFilter(pendingModel);
+    setStatusFilter(pendingStatus);
     setFilterSheetOpen(false);
   };
 
   const handleResetFilters = () => {
-    setPendingModel('__all'); setPendingSource('__all'); setPendingVerify('__all'); setPendingStatus('__all');
-    setModelFilter('__all'); setSourceFilter('__all'); setVerifyFilter('__all'); setStatusFilter('__all');
+    setPendingModel('__all');
+    setPendingStatus('__all');
+    setModelFilter('__all');
+    setStatusFilter('__all');
     setFilterSheetOpen(false);
   };
 
   const handleStatusConfirm = async () => {
     if (!statusTarget) return;
+    const newStatus = statusTarget.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
     try {
-      await updateStatus({ id: statusTarget.id, isActive: !statusTarget.isActive }).unwrap();
-      toast.success(statusTarget.isActive ? t('referenceBook.disabledSuccess') : t('referenceBook.enabledSuccess'));
-      setStatusDialogOpen(false); setStatusTarget(null);
-    } catch { toast.error(t('common.error')); }
+      await updateBook({ id: statusTarget.id, data: { status: newStatus } }).unwrap();
+      toast.success(
+        statusTarget.status === 'ACTIVE'
+          ? t('referenceBook.disabledSuccess')
+          : t('referenceBook.enabledSuccess'),
+      );
+      setStatusDialogOpen(false);
+      setStatusTarget(null);
+    } catch {
+      toast.error(t('common.error'));
+    }
   };
 
   const handleDeleteConfirm = async () => {
@@ -151,22 +131,15 @@ export function ReferenceBookPage() {
     try {
       await deleteRecord(deleteTarget.id).unwrap();
       toast.success(t('referenceBook.deleteSuccess'));
-      setDeleteDialogOpen(false); setDeleteTarget(null);
-    } catch { toast.error(t('common.error')); }
-  };
-
-  const handleVerifyConfirm = async (status: VerificationStatus) => {
-    if (!verifyTarget) return;
-    try {
-      await updateVerification({ id: verifyTarget.id, verificationStatus: status }).unwrap();
-      toast.success(t('referenceBook.verificationUpdated'));
-      setVerifyDialogOpen(false); setVerifyTarget(null);
-    } catch { toast.error(t('common.error')); }
+      setDeleteDialogOpen(false);
+      setDeleteTarget(null);
+    } catch {
+      toast.error(t('common.error'));
+    }
   };
 
   return (
     <div className="space-y-4">
-      {/* Header */}
       <div className="flex items-center justify-end md:justify-between gap-3">
         <h2 className="hidden md:block text-xl font-semibold">{t('referenceBook.title')}</h2>
         <Button asChild size="sm">
@@ -177,7 +150,6 @@ export function ReferenceBookPage() {
         </Button>
       </div>
 
-      {/* Search + Filters */}
       <div className="flex gap-3 items-center">
         <AppSearchInput
           placeholder={t('referenceBook.searchPlaceholder')}
@@ -187,7 +159,7 @@ export function ReferenceBookPage() {
         />
 
         {/* Desktop filters */}
-        <div className="hidden md:flex gap-3 flex-wrap">
+        <div className="hidden md:flex gap-3">
           <Select value={modelFilter} onValueChange={setModelFilter}>
             <SelectTrigger className="w-44">
               <SelectValue placeholder={t('referenceBook.allMachineModels')} />
@@ -195,43 +167,25 @@ export function ReferenceBookPage() {
             <SelectContent>
               <SelectItem value="__all">{t('referenceBook.allMachineModels')}</SelectItem>
               {machineModels.map((m) => (
-                <SelectItem key={m.id} value={m.id}>{m.brand} {m.model}</SelectItem>
+                <SelectItem key={m.id} value={m.id}>
+                  {m.modelName}
+                  {m.brand ? ` · ${m.brand}` : ''}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
 
-          <Select value={sourceFilter} onValueChange={(v) => setSourceFilter(v as ReferenceSourceType | '__all')}>
-            <SelectTrigger className="w-44">
-              <SelectValue placeholder={t('referenceBook.allSourceTypes')} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="__all">{t('referenceBook.allSourceTypes')}</SelectItem>
-              {SOURCE_TYPES.map((st) => (
-                <SelectItem key={st} value={st}>{t(`sourceTypes.${st}`)}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          <Select value={verifyFilter} onValueChange={(v) => setVerifyFilter(v as VerificationStatus | '__all')}>
-            <SelectTrigger className="w-44">
-              <SelectValue placeholder={t('referenceBook.allVerificationStatuses')} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="__all">{t('referenceBook.allVerificationStatuses')}</SelectItem>
-              {VERIFICATION_STATUSES.map((vs) => (
-                <SelectItem key={vs} value={vs}>{t(`verificationStatuses.${vs}`)}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as StatusFilter)}>
+          <Select
+            value={statusFilter}
+            onValueChange={(v) => setStatusFilter(v as StatusFilter)}
+          >
             <SelectTrigger className="w-36">
               <SelectValue placeholder={t('referenceBook.allStatuses')} />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="__all">{t('referenceBook.allStatuses')}</SelectItem>
-              <SelectItem value="true">{t('common.active')}</SelectItem>
-              <SelectItem value="false">{t('common.inactive')}</SelectItem>
+              <SelectItem value="ACTIVE">{t('common.active')}</SelectItem>
+              <SelectItem value="INACTIVE">{t('common.inactive')}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -249,65 +203,56 @@ export function ReferenceBookPage() {
             </Button>
           </SheetTrigger>
           <SheetContent side="bottom" className="h-auto">
-            <SheetHeader><SheetTitle>{t('common.filters')}</SheetTitle></SheetHeader>
+            <SheetHeader>
+              <SheetTitle>{t('common.filters')}</SheetTitle>
+            </SheetHeader>
             <div className="space-y-4 p-4">
               <div className="space-y-2">
                 <p className="text-sm font-medium">{t('referenceBook.machineModel')}</p>
                 <Select value={pendingModel} onValueChange={setPendingModel}>
-                  <SelectTrigger><SelectValue placeholder={t('referenceBook.allMachineModels')} /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue placeholder={t('referenceBook.allMachineModels')} />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="__all">{t('referenceBook.allMachineModels')}</SelectItem>
                     {machineModels.map((m) => (
-                      <SelectItem key={m.id} value={m.id}>{m.brand} {m.model}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <p className="text-sm font-medium">{t('referenceBook.sourceType')}</p>
-                <Select value={pendingSource} onValueChange={(v) => setPendingSource(v as ReferenceSourceType | '__all')}>
-                  <SelectTrigger><SelectValue placeholder={t('referenceBook.allSourceTypes')} /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="__all">{t('referenceBook.allSourceTypes')}</SelectItem>
-                    {SOURCE_TYPES.map((st) => (
-                      <SelectItem key={st} value={st}>{t(`sourceTypes.${st}`)}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <p className="text-sm font-medium">{t('referenceBook.verificationStatus')}</p>
-                <Select value={pendingVerify} onValueChange={(v) => setPendingVerify(v as VerificationStatus | '__all')}>
-                  <SelectTrigger><SelectValue placeholder={t('referenceBook.allVerificationStatuses')} /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="__all">{t('referenceBook.allVerificationStatuses')}</SelectItem>
-                    {VERIFICATION_STATUSES.map((vs) => (
-                      <SelectItem key={vs} value={vs}>{t(`verificationStatuses.${vs}`)}</SelectItem>
+                      <SelectItem key={m.id} value={m.id}>
+                        {m.modelName}
+                        {m.brand ? ` · ${m.brand}` : ''}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
                 <p className="text-sm font-medium">{t('referenceBook.statusLabel')}</p>
-                <Select value={pendingStatus} onValueChange={(v) => setPendingStatus(v as StatusFilter)}>
-                  <SelectTrigger><SelectValue placeholder={t('referenceBook.allStatuses')} /></SelectTrigger>
+                <Select
+                  value={pendingStatus}
+                  onValueChange={(v) => setPendingStatus(v as StatusFilter)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={t('referenceBook.allStatuses')} />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="__all">{t('referenceBook.allStatuses')}</SelectItem>
-                    <SelectItem value="true">{t('common.active')}</SelectItem>
-                    <SelectItem value="false">{t('common.inactive')}</SelectItem>
+                    <SelectItem value="ACTIVE">{t('common.active')}</SelectItem>
+                    <SelectItem value="INACTIVE">{t('common.inactive')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
             <div className="flex gap-3 p-4 pt-0">
-              <Button variant="outline" onClick={handleResetFilters} className="flex-1">{t('common.reset')}</Button>
-              <Button onClick={handleApplyFilters} className="flex-1">{t('common.apply')}</Button>
+              <Button variant="outline" onClick={handleResetFilters} className="flex-1">
+                {t('common.reset')}
+              </Button>
+              <Button onClick={handleApplyFilters} className="flex-1">
+                {t('common.apply')}
+              </Button>
             </div>
           </SheetContent>
         </Sheet>
       </div>
 
-      {/* Loading skeleton */}
       {isLoading && (
         <div className="space-y-3">
           {Array.from({ length: 5 }).map((_, i) => (
@@ -316,19 +261,22 @@ export function ReferenceBookPage() {
         </div>
       )}
 
-      {/* Desktop table */}
       {!isLoading && (
         <div className={`hidden md:block ${isFetching ? 'opacity-60' : ''}`}>
           <ReferenceBookTable
             records={records}
-            onToggleStatus={(r) => { setStatusTarget(r); setStatusDialogOpen(true); }}
-            onDelete={(r) => { setDeleteTarget(r); setDeleteDialogOpen(true); }}
-            onUpdateVerification={(r) => { setVerifyTarget(r); setVerifyDialogOpen(true); }}
+            onToggleStatus={(r) => {
+              setStatusTarget(r);
+              setStatusDialogOpen(true);
+            }}
+            onDelete={(r) => {
+              setDeleteTarget(r);
+              setDeleteDialogOpen(true);
+            }}
           />
         </div>
       )}
 
-      {/* Mobile cards */}
       {!isLoading && (
         <div className={`md:hidden space-y-3 ${isFetching ? 'opacity-60' : ''}`}>
           {records.length === 0 ? (
@@ -342,32 +290,60 @@ export function ReferenceBookPage() {
               <ReferenceBookMobileCard
                 key={record.id}
                 record={record}
-                onToggleStatus={(r) => { setStatusTarget(r); setStatusDialogOpen(true); }}
-                onDelete={(r) => { setDeleteTarget(r); setDeleteDialogOpen(true); }}
-                onUpdateVerification={(r) => { setVerifyTarget(r); setVerifyDialogOpen(true); }}
+                onToggleStatus={(r) => {
+                  setStatusTarget(r);
+                  setStatusDialogOpen(true);
+                }}
+                onDelete={(r) => {
+                  setDeleteTarget(r);
+                  setDeleteDialogOpen(true);
+                }}
               />
             ))
           )}
         </div>
       )}
 
-      {/* Pagination */}
       {meta && meta.totalPages > 1 && (
         <div className="flex items-center justify-between gap-3 pt-2">
           <p className="text-sm text-muted-foreground">
             {(page - 1) * LIMIT + 1}–{Math.min(page * LIMIT, meta.total)} / {meta.total}
           </p>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page <= 1 || isFetching}>{t('common.back')}</Button>
-            <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.min(meta.totalPages, p + 1))} disabled={page >= meta.totalPages || isFetching}>{t('common.next')}</Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page <= 1 || isFetching}
+            >
+              {t('common.back')}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage((p) => Math.min(meta.totalPages, p + 1))}
+              disabled={page >= meta.totalPages || isFetching}
+            >
+              {t('common.next')}
+            </Button>
           </div>
         </div>
       )}
 
-      {/* Dialogs */}
-      <DisableReferenceBookDialog record={statusTarget} open={statusDialogOpen} onOpenChange={setStatusDialogOpen} onConfirm={handleStatusConfirm} isLoading={isToggling} />
-      <DeleteReferenceBookDialog record={deleteTarget} open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen} onConfirm={handleDeleteConfirm} isLoading={isDeleting} />
-      <VerifyReferenceBookDialog record={verifyTarget} open={verifyDialogOpen} onOpenChange={setVerifyDialogOpen} onConfirm={handleVerifyConfirm} isLoading={isVerifying} />
+      <DisableReferenceBookDialog
+        record={statusTarget}
+        open={statusDialogOpen}
+        onOpenChange={setStatusDialogOpen}
+        onConfirm={handleStatusConfirm}
+        isLoading={isToggling}
+      />
+      <DeleteReferenceBookDialog
+        record={deleteTarget}
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        onConfirm={handleDeleteConfirm}
+        isLoading={isDeleting}
+      />
     </div>
   );
 }

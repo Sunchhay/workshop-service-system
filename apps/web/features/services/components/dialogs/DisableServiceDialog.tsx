@@ -33,7 +33,7 @@ export function DisableServiceDialog({
 
   if (!service) return null;
 
-  const isDisabling = service.isActive;
+  const isDisabling = service.status === 'ACTIVE';
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
@@ -45,7 +45,7 @@ export function DisableServiceDialog({
               : t('services.confirmEnableTitle')}
           </AlertDialogTitle>
           <AlertDialogDescription>
-            <span className="font-medium text-foreground">{service.nameEn}</span>{' '}
+            <span className="font-medium text-foreground">{service.name}</span>{' '}
             ({service.code}) —{' '}
             {isDisabling
               ? t('services.confirmDisableDesc')

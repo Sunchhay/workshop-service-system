@@ -21,13 +21,14 @@ export function ReferenceBookCreatePage() {
     data: CreateReferenceBookRequest | UpdateReferenceBookRequest,
   ) => {
     try {
-      await createReferenceBook(data as CreateReferenceBookRequest).unwrap();
+      const result = await createReferenceBook(
+        data as CreateReferenceBookRequest,
+      ).unwrap();
       toast.success(t('referenceBook.createSuccess'));
-      router.replace('/admin/reference-book');
+      router.replace(`/admin/reference-book/${result.data.id}`);
     } catch (err: unknown) {
       const message =
-        (err as { data?: { message?: string } })?.data?.message ??
-        t('common.error');
+        (err as { data?: { message?: string } })?.data?.message ?? t('common.error');
       toast.error(message);
     }
   };
@@ -46,11 +47,7 @@ export function ReferenceBookCreatePage() {
           <CardTitle className="text-base">{t('referenceBook.recordDetail')}</CardTitle>
         </CardHeader>
         <CardContent>
-          <ReferenceBookForm
-            mode="create"
-            onSubmit={handleSubmit}
-            isLoading={isLoading}
-          />
+          <ReferenceBookForm mode="create" onSubmit={handleSubmit} isLoading={isLoading} />
         </CardContent>
       </Card>
     </div>

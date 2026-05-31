@@ -40,7 +40,7 @@ export function DeleteServiceDialog({
           <AlertDialogTitle>{t('services.confirmDeleteTitle')}</AlertDialogTitle>
           <AlertDialogDescription>
             <span className="font-medium text-foreground">
-              {service.nameEn}
+              {service.name}
             </span>{' '}
             ({service.code}) — {t('services.confirmDeleteDesc')}
           </AlertDialogDescription>
@@ -54,7 +54,7 @@ export function DeleteServiceDialog({
             disabled={isLoading}
             className="bg-destructive/10 text-destructive hover:bg-destructive/20"
           >
-            {t('common.delete')}
+            {t('services.confirmDeleteTitle')}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

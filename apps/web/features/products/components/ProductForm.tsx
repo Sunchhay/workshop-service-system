@@ -15,65 +15,29 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { useTranslation } from '@/lib/i18n/TranslationContext';
 
 import type { CreateProductRequest, UpdateProductRequest } from '../types';
 
-const productSchema = z.object({
+const schema = z.object({
+  code: z.string().min(1),
   name: z.string().min(1),
-  brand: z.string(),
-  componentPartType: z.string(),
-  size: z.string(),
-  supplier: z.string(),
-  category: z.string(),
-  unit: z.string(),
-  costPrice: z.string().min(1),
-  sellingPrice: z.string().min(1),
-  stockQuantity: z.string(),
-  reorderLevel: z.string(),
-  linkedReferenceBookId: z.string(),
-  description: z.string(),
-}).superRefine((data, ctx) => {
-  const cost = parseFloat(data.costPrice);
-  if (isNaN(cost) || cost < 0) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: 'priceInvalid',
-      path: ['costPrice'],
-    });
-  }
-  const sell = parseFloat(data.sellingPrice);
-  if (isNaN(sell) || sell < 0) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: 'priceInvalid',
-      path: ['sellingPrice'],
-    });
-  }
-  if (data.stockQuantity) {
-    const qty = parseInt(data.stockQuantity, 10);
-    if (isNaN(qty) || qty < 0 || !Number.isInteger(qty)) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: 'stockInvalid',
-        path: ['stockQuantity'],
-      });
-    }
-  }
-  if (data.reorderLevel) {
-    const lvl = parseInt(data.reorderLevel, 10);
-    if (isNaN(lvl) || lvl < 0 || !Number.isInteger(lvl)) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: 'reorderLevelInvalid',
-        path: ['reorderLevel'],
-      });
-    }
-  }
+  nameEn: z.string().optional(),
+  category: z.string().optional(),
+  unit: z.string().optional(),
+  description: z.string().optional(),
+  status: z.enum(['ACTIVE', 'INACTIVE']),
 });
 
-type FormValues = z.infer<typeof productSchema>;
+type FormValues = z.infer<typeof schema>;
 
 interface ProductFormProps {
   mode: 'create' | 'edit';
@@ -91,39 +55,27 @@ export function ProductForm({
   const { t } = useTranslation();
 
   const form = useForm<FormValues>({
-    resolver: zodResolver(productSchema),
+    resolver: zodResolver(schema),
     defaultValues: {
+      code: defaultValues?.code ?? '',
       name: defaultValues?.name ?? '',
-      brand: defaultValues?.brand ?? '',
-      componentPartType: defaultValues?.componentPartType ?? '',
-      size: defaultValues?.size ?? '',
-      supplier: defaultValues?.supplier ?? '',
+      nameEn: defaultValues?.nameEn ?? '',
       category: defaultValues?.category ?? '',
-      unit: defaultValues?.unit ?? 'piece',
-      costPrice: defaultValues?.costPrice ?? '',
-      sellingPrice: defaultValues?.sellingPrice ?? '',
-      stockQuantity: defaultValues?.stockQuantity ?? '0',
-      reorderLevel: defaultValues?.reorderLevel ?? '0',
-      linkedReferenceBookId: defaultValues?.linkedReferenceBookId ?? '',
+      unit: defaultValues?.unit ?? '',
       description: defaultValues?.description ?? '',
+      status: defaultValues?.status ?? 'ACTIVE',
     },
   });
 
   const handleSubmit = async (data: FormValues) => {
     const payload: CreateProductRequest | UpdateProductRequest = {
+      code: data.code,
       name: data.name,
-      brand: data.brand || undefined,
-      componentPartType: data.componentPartType || undefined,
-      size: data.size || undefined,
-      supplier: data.supplier || undefined,
-      category: data.category || undefined,
-      unit: data.unit || 'piece',
-      costPrice: parseFloat(data.costPrice),
-      sellingPrice: parseFloat(data.sellingPrice),
-      stockQuantity: data.stockQuantity ? parseInt(data.stockQuantity, 10) : 0,
-      reorderLevel: data.reorderLevel ? parseInt(data.reorderLevel, 10) : 0,
-      linkedReferenceBookId: data.linkedReferenceBookId || undefined,
-      description: data.description || undefined,
+      nameEn: data.nameEn?.trim() || undefined,
+      category: data.category?.trim() || undefined,
+      unit: data.unit?.trim() || undefined,
+      description: data.description?.trim() || undefined,
+      status: data.status,
     };
     await onSubmit(payload);
   };
@@ -131,33 +83,35 @@ export function ProductForm({
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-5">
-        {/* Row 1: Name (full width) */}
+        {/* Code */}
         <FormField
           control={form.control}
-          name="name"
+          name="code"
           render={({ field }) => (
             <FormItem>
               <FormLabel>
-                {t('products.name')} <span className="text-destructive">*</span>
+                {t('products.code')} <span className="text-destructive">*</span>
               </FormLabel>
               <FormControl>
-                <Input placeholder={t('products.namePlaceholder')} {...field} />
+                <Input placeholder={t('products.codePlaceholder')} {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
 
-        {/* Row 2: Brand + Part type */}
+        {/* Name + English Name */}
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
           <FormField
             control={form.control}
-            name="brand"
+            name="name"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>{t('products.brand')}</FormLabel>
+                <FormLabel>
+                  {t('products.name')} <span className="text-destructive">*</span>
+                </FormLabel>
                 <FormControl>
-                  <Input placeholder={t('products.brandPlaceholder')} {...field} />
+                  <Input placeholder={t('products.namePlaceholder')} {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -165,15 +119,12 @@ export function ProductForm({
           />
           <FormField
             control={form.control}
-            name="componentPartType"
+            name="nameEn"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>{t('products.componentPartType')}</FormLabel>
+                <FormLabel>{t('products.nameEn')}</FormLabel>
                 <FormControl>
-                  <Input
-                    placeholder={t('products.partTypePlaceholder')}
-                    {...field}
-                  />
+                  <Input placeholder={t('products.nameEnPlaceholder')} {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -181,16 +132,16 @@ export function ProductForm({
           />
         </div>
 
-        {/* Row 3: Size + Unit */}
+        {/* Category + Unit */}
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
           <FormField
             control={form.control}
-            name="size"
+            name="category"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>{t('products.size')}</FormLabel>
+                <FormLabel>{t('products.category')}</FormLabel>
                 <FormControl>
-                  <Input placeholder={t('products.sizePlaceholder')} {...field} />
+                  <Input placeholder={t('products.categoryPlaceholder')} {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -211,145 +162,30 @@ export function ProductForm({
           />
         </div>
 
-        {/* Row 4: Category + Supplier */}
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-          <FormField
-            control={form.control}
-            name="category"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t('products.category')}</FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder={t('products.categoryPlaceholder')}
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="supplier"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t('products.supplier')}</FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder={t('products.supplierPlaceholder')}
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-
-        {/* Row 5: Cost price + Selling price */}
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-          <FormField
-            control={form.control}
-            name="costPrice"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>
-                  {t('products.costPrice')}{' '}
-                  <span className="text-destructive">*</span>
-                </FormLabel>
-                <FormControl>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    placeholder={t('products.costPricePlaceholder')}
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="sellingPrice"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>
-                  {t('products.sellingPrice')}{' '}
-                  <span className="text-destructive">*</span>
-                </FormLabel>
-                <FormControl>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    placeholder={t('products.sellingPricePlaceholder')}
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-
-        {/* Row 6: Stock quantity + Reorder level */}
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-          <FormField
-            control={form.control}
-            name="stockQuantity"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t('products.stockQuantity')}</FormLabel>
-                <FormControl>
-                  <Input type="number" min="0" step="1" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="reorderLevel"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t('products.reorderLevel')}</FormLabel>
-                <FormControl>
-                  <Input
-                    type="number"
-                    min="0"
-                    step="1"
-                    placeholder={t('products.reorderLevelPlaceholder')}
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-
-        {/* Row 7: Linked reference book ID */}
+        {/* Status */}
         <FormField
           control={form.control}
-          name="linkedReferenceBookId"
+          name="status"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>{t('products.linkedReferenceBook')}</FormLabel>
-              <FormControl>
-                <Input
-                  placeholder={t('products.refBookPlaceholder')}
-                  {...field}
-                />
-              </FormControl>
+              <FormLabel>{t('products.statusLabel')}</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="ACTIVE">{t('common.active')}</SelectItem>
+                  <SelectItem value="INACTIVE">{t('common.inactive')}</SelectItem>
+                </SelectContent>
+              </Select>
               <FormMessage />
             </FormItem>
           )}
         />
 
-        {/* Row 8: Description */}
+        {/* Description */}
         <FormField
           control={form.control}
           name="description"
@@ -368,7 +204,12 @@ export function ProductForm({
           )}
         />
 
-        {/* Sticky save button */}
+        {form.formState.errors.root && (
+          <p className="text-sm text-destructive">
+            {form.formState.errors.root.message}
+          </p>
+        )}
+
         <div className="sticky bottom-16 md:static z-10 bg-background/95 backdrop-blur-sm md:bg-transparent pt-4 pb-2 md:py-0 border-t md:border-t-0">
           <Button
             type="submit"

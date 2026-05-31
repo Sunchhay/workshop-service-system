@@ -25,19 +25,22 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { useTranslation } from '@/lib/i18n/TranslationContext';
 
-import type { CreateExpenseRequest, ExpenseCategory, ExpensePaymentMethod, UpdateExpenseRequest } from '../types';
+import type { CreateExpenseRequest, PaymentMethod, UpdateExpenseRequest } from '../types';
 
-const CATEGORIES: ExpenseCategory[] = ['SUPPLIES', 'UTILITIES', 'RENT', 'SALARY', 'MAINTENANCE', 'OTHER'];
-const METHODS: ExpensePaymentMethod[] = ['CASH', 'ABA', 'BANK_TRANSFER', 'CARD', 'OTHER'];
+const PAYMENT_METHODS: PaymentMethod[] = ['CASH', 'ACLEDA', 'ABA', 'BAKONG', 'OTHER'];
 
 const expenseSchema = z.object({
-  category: z.enum(['SUPPLIES', 'UTILITIES', 'RENT', 'SALARY', 'MAINTENANCE', 'OTHER']),
-  description: z.string().min(1, 'descriptionRequired'),
+  title: z.string().min(1),
   amount: z.string().refine((v) => parseFloat(v) > 0, 'amountInvalid'),
-  method: z.enum(['CASH', 'ABA', 'BANK_TRANSFER', 'CARD', 'OTHER']),
-  expenseDate: z.string().min(1, 'expenseDateRequired'),
-  referenceNo: z.string(),
-  notes: z.string(),
+  expenseDate: z.string().min(1),
+  category: z.string().optional(),
+  paymentMethod: z.enum(['CASH', 'ACLEDA', 'ABA', 'BAKONG', 'OTHER']).optional(),
+  expenseStatus: z.enum(['PAID', 'UNPAID', 'VOIDED']).optional(),
+  supplierId: z.string().optional(),
+  mechanicId: z.string().optional(),
+  referenceNo: z.string().optional(),
+  imageUrl: z.string().optional(),
+  note: z.string().optional(),
 });
 
 export type ExpenseFormValues = z.infer<typeof expenseSchema>;
@@ -55,100 +58,55 @@ export function ExpenseForm({ mode, defaultValues, onSubmit, isLoading }: Props)
   const form = useForm<ExpenseFormValues>({
     resolver: zodResolver(expenseSchema),
     defaultValues: {
-      category: defaultValues?.category ?? 'OTHER',
-      description: defaultValues?.description ?? '',
+      title: defaultValues?.title ?? '',
       amount: defaultValues?.amount ?? '',
-      method: defaultValues?.method ?? 'CASH',
       expenseDate: defaultValues?.expenseDate ?? new Date().toISOString().slice(0, 10),
+      category: defaultValues?.category ?? '',
+      paymentMethod: defaultValues?.paymentMethod ?? 'CASH',
+      expenseStatus: defaultValues?.expenseStatus ?? 'PAID',
+      supplierId: defaultValues?.supplierId ?? '',
+      mechanicId: defaultValues?.mechanicId ?? '',
       referenceNo: defaultValues?.referenceNo ?? '',
-      notes: defaultValues?.notes ?? '',
+      imageUrl: defaultValues?.imageUrl ?? '',
+      note: defaultValues?.note ?? '',
     },
   });
 
   const handleSubmit = form.handleSubmit(async (values) => {
     await onSubmit({
-      category: values.category as ExpenseCategory,
-      description: values.description,
+      title: values.title,
       amount: parseFloat(values.amount),
-      method: values.method as ExpensePaymentMethod,
       expenseDate: values.expenseDate,
+      category: values.category || undefined,
+      paymentMethod: values.paymentMethod || undefined,
+      expenseStatus: values.expenseStatus || undefined,
+      supplierId: values.supplierId || undefined,
+      mechanicId: values.mechanicId || undefined,
       referenceNo: values.referenceNo || undefined,
-      notes: values.notes || undefined,
+      imageUrl: values.imageUrl || undefined,
+      note: values.note || undefined,
     });
   });
 
   return (
     <Form {...form}>
       <form onSubmit={handleSubmit} className="space-y-5">
-        {/* Description — full width */}
+        {/* Title — full width */}
         <FormField
           control={form.control}
-          name="description"
+          name="title"
           render={({ field }) => (
             <FormItem>
               <FormLabel>
-                {t('expenses.description')} <span className="text-destructive">*</span>
+                {t('expenses.title')} <span className="text-destructive">*</span>
               </FormLabel>
               <FormControl>
-                <Input placeholder={t('expenses.descriptionPlaceholder')} {...field} />
+                <Input placeholder={t('expenses.titlePlaceholder')} {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
-
-        {/* Category + Method */}
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-          <FormField
-            control={form.control}
-            name="category"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>
-                  {t('expenses.category')} <span className="text-destructive">*</span>
-                </FormLabel>
-                <FormControl>
-                  <Select value={field.value} onValueChange={field.onChange}>
-                    <SelectTrigger className="w-full">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {CATEGORIES.map((c) => (
-                        <SelectItem key={c} value={c}>{t(`expenseCategories.${c}`)}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="method"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>
-                  {t('expenses.method')} <span className="text-destructive">*</span>
-                </FormLabel>
-                <FormControl>
-                  <Select value={field.value} onValueChange={field.onChange}>
-                    <SelectTrigger className="w-full">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {METHODS.map((m) => (
-                        <SelectItem key={m} value={m}>{t(`paymentMethods.${m}`)}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
 
         {/* Amount + Date */}
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
@@ -185,31 +143,110 @@ export function ExpenseForm({ mode, defaultValues, onSubmit, isLoading }: Props)
           />
         </div>
 
-        {/* Reference No */}
+        {/* Category + Payment Method */}
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+          <FormField
+            control={form.control}
+            name="category"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('expenses.category')}</FormLabel>
+                <FormControl>
+                  <Input placeholder={t('expenses.categoryPlaceholder')} {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="paymentMethod"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('expenses.paymentMethod')}</FormLabel>
+                <FormControl>
+                  <Select value={field.value ?? ''} onValueChange={field.onChange}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder={t('expenses.allPaymentMethods')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {PAYMENT_METHODS.map((m) => (
+                        <SelectItem key={m} value={m}>{t(`paymentMethods.${m}`)}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        {/* Status + Reference No */}
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+          <FormField
+            control={form.control}
+            name="expenseStatus"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('expenses.expenseStatus')}</FormLabel>
+                <FormControl>
+                  <Select value={field.value ?? 'PAID'} onValueChange={field.onChange}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="PAID">{t('expenses.statusPaid')}</SelectItem>
+                      <SelectItem value="UNPAID">{t('expenses.statusUnpaid')}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="referenceNo"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('expenses.referenceNo')}</FormLabel>
+                <FormControl>
+                  <Input placeholder={t('expenses.referenceNoPlaceholder')} {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        {/* Image URL */}
         <FormField
           control={form.control}
-          name="referenceNo"
+          name="imageUrl"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>{t('expenses.referenceNo')}</FormLabel>
+              <FormLabel>{t('expenses.imageUrl')}</FormLabel>
               <FormControl>
-                <Input placeholder={t('expenses.referenceNoPlaceholder')} {...field} />
+                <Input placeholder={t('expenses.imageUrlPlaceholder')} {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
 
-        {/* Notes */}
+        {/* Note */}
         <FormField
           control={form.control}
-          name="notes"
+          name="note"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>{t('expenses.notes')}</FormLabel>
+              <FormLabel>{t('expenses.note')}</FormLabel>
               <FormControl>
                 <Textarea
-                  placeholder={t('expenses.notesPlaceholder')}
+                  placeholder={t('expenses.notePlaceholder')}
                   className="min-h-[70px] resize-none"
                   {...field}
                 />
@@ -219,7 +256,6 @@ export function ExpenseForm({ mode, defaultValues, onSubmit, isLoading }: Props)
           )}
         />
 
-        {/* Sticky save button — mobile bottom, desktop inline */}
         <div className="sticky bottom-16 md:static z-10 bg-background/95 backdrop-blur-sm md:bg-transparent pt-4 pb-2 md:py-0 border-t md:border-t-0">
           <Button type="submit" size="lg" className="w-full md:w-auto" disabled={isLoading}>
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

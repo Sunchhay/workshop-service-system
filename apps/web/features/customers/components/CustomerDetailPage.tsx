@@ -27,12 +27,8 @@ interface CustomerDetailPageProps {
 }
 
 const typeClass: Record<CustomerType, string> = {
-  NORMAL: 'text-muted-foreground',
-  VIP: 'bg-amber-500/10 text-amber-700 border-amber-500/20 dark:text-amber-400',
-  WHOLESALE:
-    'bg-blue-500/10 text-blue-600 border-blue-500/20 dark:text-blue-400',
-  PARTNER:
-    'bg-green-500/10 text-green-700 border-green-500/20 dark:text-green-400',
+  OWNER: 'bg-blue-500/10 text-blue-600 border-blue-500/20 dark:text-blue-400',
+  MECHANIC: 'bg-amber-500/10 text-amber-700 border-amber-500/20 dark:text-amber-400',
 };
 
 function formatDate(dateStr: string) {
@@ -60,9 +56,14 @@ export function CustomerDetailPage({ id }: CustomerDetailPageProps) {
   const handleStatusConfirm = async () => {
     if (!customer) return;
     try {
-      await updateStatus({ id, isActive: !customer.isActive }).unwrap();
+      await updateStatus({
+        id,
+        data: {
+          status: customer.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE',
+        },
+      }).unwrap();
       toast.success(
-        customer.isActive
+        customer.status === 'ACTIVE'
           ? t('customers.disabledSuccess')
           : t('customers.enabledSuccess'),
       );
@@ -108,16 +109,24 @@ export function CustomerDetailPage({ id }: CustomerDetailPageProps) {
           <Card>
             <CardHeader>
               <div className="flex items-start justify-between gap-3 flex-wrap">
-                <div>
-                  <div className="flex items-center gap-2 flex-wrap">
+                <div className="flex items-center gap-3">
+                  {customer.imageUrl ? (
+                    <img
+                      src={customer.imageUrl}
+                      alt={customer.name}
+                      className="h-12 w-12 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-base font-semibold text-primary">
+                      {customer.name.slice(0, 2).toUpperCase()}
+                    </div>
+                  )}
+                  <div>
                     <CardTitle>{customer.name}</CardTitle>
-                    <Badge variant="outline" className="font-mono text-xs">
-                      {customer.code}
-                    </Badge>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {customer.phone}
+                    </p>
                   </div>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    {customer.phone}
-                  </p>
                 </div>
                 <div className="flex gap-2">
                   <Button asChild variant="outline" size="sm">
@@ -149,39 +158,29 @@ export function CustomerDetailPage({ id }: CustomerDetailPageProps) {
                     {t('customers.statusLabel')}
                   </p>
                   <Badge
-                    variant={customer.isActive ? 'default' : 'outline'}
+                    variant={customer.status === 'ACTIVE' ? 'default' : 'outline'}
                     className={
-                      customer.isActive
+                      customer.status === 'ACTIVE'
                         ? 'bg-green-500/10 text-green-700 border-green-500/20 dark:text-green-400'
                         : 'text-muted-foreground'
                     }
                   >
-                    {t(customer.isActive ? 'common.active' : 'common.inactive')}
+                    {t(customer.status === 'ACTIVE' ? 'common.active' : 'common.inactive')}
                   </Badge>
                 </div>
-                {customer.email && (
-                  <div>
-                    <p className="text-muted-foreground text-xs mb-1">
-                      {t('customers.email')}
-                    </p>
-                    <p className="break-all">{customer.email}</p>
-                  </div>
-                )}
-                {customer.address && (
+                <div>
+                  <p className="text-muted-foreground text-xs mb-1">
+                    {t('customers.lastPurchasedAt')}
+                  </p>
+                  <p>{customer.lastPurchasedAt ? formatDate(customer.lastPurchasedAt) : '—'}</p>
+                </div>
+                {customer.note && (
                   <div className="col-span-2 sm:col-span-3">
                     <p className="text-muted-foreground text-xs mb-1">
-                      {t('customers.address')}
-                    </p>
-                    <p className="whitespace-pre-line">{customer.address}</p>
-                  </div>
-                )}
-                {customer.notes && (
-                  <div className="col-span-2 sm:col-span-3">
-                    <p className="text-muted-foreground text-xs mb-1">
-                      {t('customers.notes')}
+                      {t('customers.note')}
                     </p>
                     <p className="whitespace-pre-line text-muted-foreground">
-                      {customer.notes}
+                      {customer.note}
                     </p>
                   </div>
                 )}
@@ -204,16 +203,16 @@ export function CustomerDetailPage({ id }: CustomerDetailPageProps) {
               {/* Actions */}
               <div className="flex flex-wrap gap-2">
                 <Button
-                  variant={customer.isActive ? 'outline' : 'outline'}
+                  variant="outline"
                   size="sm"
                   onClick={() => setStatusDialogOpen(true)}
                   className={
-                    customer.isActive
+                    customer.status === 'ACTIVE'
                       ? 'border-destructive/30 text-destructive hover:bg-destructive/10'
                       : 'border-green-500/30 text-green-700 hover:bg-green-500/10 dark:text-green-400'
                   }
                 >
-                  {customer.isActive
+                  {customer.status === 'ACTIVE'
                     ? t('customers.confirmDisableTitle')
                     : t('customers.confirmEnableTitle')}
                 </Button>
@@ -224,7 +223,7 @@ export function CustomerDetailPage({ id }: CustomerDetailPageProps) {
                   className="border-destructive/30 text-destructive hover:bg-destructive/10"
                 >
                   <Trash2 className="h-3.5 w-3.5 mr-1.5" />
-                  {t('common.delete')}
+                  {t('customers.confirmDeleteTitle')}
                 </Button>
               </div>
             </CardContent>

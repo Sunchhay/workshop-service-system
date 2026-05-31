@@ -1,17 +1,16 @@
 import { Transform } from 'class-transformer';
-import {
-  IsBoolean,
-  IsInt,
-  IsOptional,
-  IsString,
-  Max,
-  Min,
-} from 'class-validator';
+import { IsEnum, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
+
+import { RecordStatus } from '../../../generated/prisma/enums';
 
 export class QueryProductDto {
   @IsString()
   @IsOptional()
   search?: string;
+
+  @IsEnum(RecordStatus)
+  @IsOptional()
+  status?: RecordStatus;
 
   @IsString()
   @IsOptional()
@@ -19,34 +18,18 @@ export class QueryProductDto {
 
   @IsString()
   @IsOptional()
-  componentPartType?: string;
-
-  @IsBoolean()
-  @Transform(({ value }) => {
-    if (value === 'true') return true;
-    if (value === 'false') return false;
-    return value;
-  })
-  @IsOptional()
-  isActive?: boolean;
-
-  @IsBoolean()
-  @Transform(({ value }) => {
-    if (value === 'true') return true;
-    if (value === 'false') return false;
-    return value;
-  })
-  @IsOptional()
-  lowStock?: boolean;
+  unit?: string;
 
   @IsInt()
   @Min(1)
   @IsOptional()
+  @Transform(({ value }) => Number(value))
   page?: number;
 
   @IsInt()
   @Min(1)
   @Max(500)
   @IsOptional()
+  @Transform(({ value }) => Number(value))
   limit?: number;
 }

@@ -27,7 +27,7 @@ export class ServicesController {
     return this.servicesService.create(dto);
   }
 
-  // GET /api/services?search=bore&priceType=FIXED&isActive=true&page=1&limit=20
+  // GET /api/services?search=bore&status=ACTIVE&category=Engine&page=1&limit=20
   @Get()
   findAll(@Query() query: QueryServiceDto) {
     return this.servicesService.findAll(query);
@@ -52,7 +52,7 @@ export class ServicesController {
     return this.servicesService.updateStatus(id, dto);
   }
 
-  // DELETE /api/services/:id  (soft delete)
+  // DELETE /api/services/:id (deactivates)
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.servicesService.remove(id);

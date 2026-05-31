@@ -62,6 +62,10 @@ export function MachineModelEditPage({ id }: MachineModelEditPageProps) {
               <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                 <Skeleton className="h-11 w-full" />
                 <Skeleton className="h-11 w-full" />
+                <Skeleton className="h-11 w-full" />
+                <Skeleton className="h-11 w-full" />
+                <Skeleton className="h-11 w-full" />
+                <Skeleton className="h-11 w-full" />
               </div>
               <Skeleton className="h-11 w-full" />
               <Skeleton className="h-20 w-full" />
@@ -70,10 +74,14 @@ export function MachineModelEditPage({ id }: MachineModelEditPageProps) {
             <MachineModelForm
               mode="edit"
               defaultValues={{
-                brand: model.brand,
-                model: model.model,
-                category: model.category ?? '',
+                code: model.code,
+                modelName: model.modelName,
+                brand: model.brand ?? '',
+                machineType: model.machineType ?? '',
+                year: model.year ?? '',
+                imageUrl: model.imageUrl ?? '',
                 description: model.description ?? '',
+                status: model.status,
               }}
               onSubmit={handleSubmit}
               isLoading={isUpdating}

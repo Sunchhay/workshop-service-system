@@ -11,19 +11,22 @@ import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { CustomersModule } from './modules/customers/customers.module';
 import { MachineModelsModule } from './modules/machine-models/machine-models.module';
-import { PriceCatalogModule } from './modules/price-catalog/price-catalog.module';
+import { ServicePricesModule } from './modules/service-prices/service-prices.module';
 import { ReferenceBookModule } from './modules/reference-book/reference-book.module';
-import { InvoicesModule } from './modules/invoices/invoices.module';
 import { PaymentsModule } from './modules/payments/payments.module';
 import { ProductsModule } from './modules/products/products.module';
+import { ProductPricesModule } from './modules/product-prices/product-prices.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { ReportsModule } from './modules/reports/reports.module';
 import { ExpensesModule } from './modules/expenses/expenses.module';
 import { SalesModule } from './modules/sales/sales.module';
-import { ServiceJobsModule } from './modules/service-jobs/service-jobs.module';
 import { SettingsModule } from './modules/settings/settings.module';
 import { ServicesModule } from './modules/services/services.module';
 import { UsersModule } from './modules/users/users.module';
+import { SuppliersModule } from './modules/suppliers/suppliers.module';
+import { ProductSupplierPricesModule } from './modules/product-supplier-prices/product-supplier-prices.module';
+import { CartsModule } from './modules/carts/carts.module';
+import { CheckoutModule } from './modules/checkout/checkout.module';
 
 @Module({
   imports: [
@@ -36,18 +39,21 @@ import { UsersModule } from './modules/users/users.module';
     UsersModule,
     CustomersModule,
     ServicesModule,
-    PriceCatalogModule,
+    ServicePricesModule,
+    ProductsModule,
+    ProductPricesModule,
     MachineModelsModule,
     ReferenceBookModule,
-    InvoicesModule,
     PaymentsModule,
-    ProductsModule,
     DashboardModule,
     ReportsModule,
     ExpensesModule,
     SalesModule,
-    ServiceJobsModule,
     SettingsModule,
+    SuppliersModule,
+    ProductSupplierPricesModule,
+    CartsModule,
+    CheckoutModule,
   ],
   controllers: [AppController],
   providers: [
@@ -58,4 +64,4 @@ import { UsersModule } from './modules/users/users.module';
     { provide: APP_GUARD, useClass: RolesGuard },
   ],
 })
-export class AppModule {}
+export class AppModule { }

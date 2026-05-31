@@ -8,40 +8,19 @@ import {
   createPaginatedResponse,
   createResponse,
 } from '../../common/types/api-response.type';
-import { SaleStatus } from '../../generated/prisma/enums';
-import type { CancelSaleDto } from './dto/cancel-sale.dto';
-import type { CreateSaleDto } from './dto/create-sale.dto';
+import { CommissionStatus, PaymentStatus, SaleStatus } from '../../generated/prisma/enums';
+import { PaymentsRepository } from '../payments/payments.repository';
+import type { CreatePaymentDto } from '../payments/dto/create-payment.dto';
 import type { QuerySaleDto } from './dto/query-sale.dto';
-import type { UpdateSaleDto } from './dto/update-sale.dto';
-import { calcSaleTotals, SalesRepository } from './sales.repository';
+import type { VoidSaleDto } from './dto/void-sale.dto';
+import { SalesRepository } from './sales.repository';
 
 @Injectable()
 export class SalesService {
-  constructor(private readonly salesRepository: SalesRepository) {}
-
-  async create(dto: CreateSaleDto, createdById: string) {
-    if (!dto.items || dto.items.length === 0) {
-      throw new BadRequestException('At least one sale item is required');
-    }
-
-    const totals = calcSaleTotals(dto.items, dto.discountAmount);
-    const saleNumber = await this.salesRepository.generateSaleNumber();
-    const status = dto.status ?? SaleStatus.COMPLETED;
-
-    try {
-      const sale = await this.salesRepository.createWithTransaction(
-        dto,
-        saleNumber,
-        createdById,
-        totals,
-        status,
-      );
-      return createResponse(sale, 'Sale created');
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Failed to create sale';
-      throw new BadRequestException(message);
-    }
-  }
+  constructor(
+    private readonly salesRepository: SalesRepository,
+    private readonly paymentsRepository: PaymentsRepository,
+  ) {}
 
   async findAll(dto: QuerySaleDto) {
     const page = dto.page ?? 1;
@@ -56,66 +35,59 @@ export class SalesService {
     return sale;
   }
 
-  async update(id: string, dto: UpdateSaleDto) {
+  async voidSale(id: string, dto: VoidSaleDto, voidedById: string) {
     const sale = await this.findOne(id);
-
-    if (sale.status === SaleStatus.CANCELLED) {
-      throw new BadRequestException('Cannot edit a cancelled sale');
+    if (sale.saleStatus === SaleStatus.VOIDED) {
+      throw new BadRequestException('Sale is already voided');
     }
-    if (sale.status === SaleStatus.COMPLETED && dto.items !== undefined) {
-      throw new BadRequestException('Cannot change items of a completed sale');
-    }
-
-    let totals;
-    if (dto.items !== undefined) {
-      totals = calcSaleTotals(dto.items, dto.discountAmount);
-    } else if (dto.discountAmount !== undefined) {
-      const subtotal = parseFloat(sale.subtotal.toString());
-      const cappedDiscount = Math.min(dto.discountAmount, subtotal);
-      const totalAmount = Math.max(0, subtotal - cappedDiscount);
-      totals = { subtotal, totalAmount };
-    }
-
-    const updated = await this.salesRepository.update(id, dto, totals);
-    return createResponse(updated, 'Sale updated');
+    const updated = await this.salesRepository.void(id, dto.voidReason, voidedById);
+    return createResponse(updated, 'Sale voided');
   }
 
-  async cancel(id: string, _dto: CancelSaleDto) {
+  async markCommissionPaid(id: string) {
     const sale = await this.findOne(id);
-
-    if (sale.status === SaleStatus.CANCELLED) {
-      throw new BadRequestException('Sale is already cancelled');
+    const commissionAmount = parseFloat(sale.commissionAmount.toString());
+    if (commissionAmount <= 0) {
+      throw new BadRequestException('Sale has no commission amount');
     }
-
-    let updated;
-    if (sale.status === SaleStatus.COMPLETED) {
-      updated = await this.salesRepository.cancelAndRestoreStock(id, sale.items);
-    } else {
-      updated = await this.salesRepository.cancel(id);
+    if (sale.commissionStatus === CommissionStatus.PAID) {
+      throw new BadRequestException('Commission is already marked as paid');
     }
-
-    return createResponse(updated, 'Sale cancelled');
+    const updated = await this.salesRepository.markCommissionPaid(id);
+    return createResponse(updated, 'Commission marked as paid');
   }
 
-  async complete(id: string) {
-    const sale = await this.findOne(id);
-
-    if (sale.status !== SaleStatus.DRAFT) {
-      throw new BadRequestException('Only draft sales can be completed');
+  async addPayment(saleId: string, dto: CreatePaymentDto) {
+    const sale = await this.findOne(saleId);
+    if (sale.saleStatus === SaleStatus.VOIDED) {
+      throw new BadRequestException('Cannot add payment to a voided sale');
+    }
+    if (sale.paymentStatus === PaymentStatus.PAID) {
+      throw new BadRequestException('Sale is already fully paid');
+    }
+    if (dto.amount <= 0) {
+      throw new BadRequestException('Payment amount must be greater than 0');
     }
 
-    try {
-      const updated = await this.salesRepository.completeDraft(id, sale.items);
-      return createResponse(updated, 'Sale completed');
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Failed to complete sale';
-      throw new BadRequestException(message);
-    }
-  }
+    const payment = await this.paymentsRepository.create({ ...dto, saleId });
 
-  async remove(id: string) {
-    await this.findOne(id);
-    await this.salesRepository.softDelete(id);
-    return createResponse(null, 'Sale deleted');
+    const grandTotal = parseFloat(sale.grandTotal.toString());
+    const prevPaid = parseFloat(sale.paidAmount.toString());
+    const newPaid = prevPaid + dto.amount;
+    const newBalance = Math.max(0, grandTotal - newPaid);
+
+    let paymentStatus: PaymentStatus;
+    if (newPaid <= 0) paymentStatus = PaymentStatus.UNPAID;
+    else if (newPaid >= grandTotal) paymentStatus = PaymentStatus.PAID;
+    else paymentStatus = PaymentStatus.PARTIAL;
+
+    const updated = await this.salesRepository.updatePaymentTotals(
+      saleId,
+      newPaid,
+      newBalance,
+      paymentStatus,
+    );
+
+    return createResponse({ sale: updated, payment }, 'Payment added');
   }
 }

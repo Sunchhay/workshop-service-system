@@ -1,32 +1,23 @@
 import { baseApi } from '@/lib/api/baseApi';
 
 import type {
-  AdjustStockRequest,
   CreateProductRequest,
   GetProductResponse,
   GetProductsResponse,
   ProductQuery,
   UpdateProductRequest,
+  UpdateProductStatusRequest,
 } from './types';
 
 const productsApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getProducts: builder.query<GetProductsResponse, ProductQuery>({
-      query: ({
-        search,
-        category,
-        componentPartType,
-        isActive,
-        lowStock,
-        page = 1,
-        limit = 20,
-      }) => {
+      query: ({ search, status, category, unit, page = 1, limit = 20 }) => {
         const params = new URLSearchParams();
         if (search) params.set('search', search);
+        if (status) params.set('status', status);
         if (category) params.set('category', category);
-        if (componentPartType) params.set('componentPartType', componentPartType);
-        if (isActive !== undefined) params.set('isActive', String(isActive));
-        if (lowStock !== undefined) params.set('lowStock', String(lowStock));
+        if (unit) params.set('unit', unit);
         params.set('page', String(page));
         params.set('limit', String(limit));
         return `/products?${params}`;
@@ -57,24 +48,10 @@ const productsApi = baseApi.injectEndpoints({
     }),
     updateProductStatus: builder.mutation<
       GetProductResponse,
-      { id: string; isActive: boolean }
-    >({
-      query: ({ id, isActive }) => ({
-        url: `/products/${id}/status`,
-        method: 'PATCH',
-        body: { isActive },
-      }),
-      invalidatesTags: (_result, _error, { id }) => [
-        'Product',
-        { type: 'Product', id },
-      ],
-    }),
-    adjustProductStock: builder.mutation<
-      GetProductResponse,
-      { id: string; data: AdjustStockRequest }
+      { id: string; data: UpdateProductStatusRequest }
     >({
       query: ({ id, data }) => ({
-        url: `/products/${id}/stock`,
+        url: `/products/${id}/status`,
         method: 'PATCH',
         body: data,
       }),
@@ -83,7 +60,7 @@ const productsApi = baseApi.injectEndpoints({
         { type: 'Product', id },
       ],
     }),
-    deleteProduct: builder.mutation<{ success: boolean; data: null }, string>({
+    deleteProduct: builder.mutation<GetProductResponse, string>({
       query: (id) => ({ url: `/products/${id}`, method: 'DELETE' }),
       invalidatesTags: ['Product'],
     }),
@@ -96,6 +73,5 @@ export const {
   useCreateProductMutation,
   useUpdateProductMutation,
   useUpdateProductStatusMutation,
-  useAdjustProductStockMutation,
   useDeleteProductMutation,
 } = productsApi;

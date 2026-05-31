@@ -30,10 +30,7 @@ import { useAppDispatch, useAppSelector } from '@/lib/store/hooks';
 const roleClass: Record<string, string> = {
   ADMIN: '',
   STAFF: 'bg-blue-500/10 text-blue-600 border-blue-500/20 dark:text-blue-400',
-  TECHNICIAN:
-    'bg-orange-500/10 text-orange-600 border-orange-500/20 dark:text-orange-400',
-  CASHIER:
-    'bg-purple-500/10 text-purple-600 border-purple-500/20 dark:text-purple-400',
+  VIEWER: 'bg-purple-500/10 text-purple-600 border-purple-500/20 dark:text-purple-400',
 };
 
 const profileSchema = z.object({
@@ -50,7 +47,7 @@ export function ProfilePage() {
   const user = useAppSelector((s) => s.auth.user);
   const [updateProfile, { isLoading }] = useUpdateProfileMutation();
   const [avatarPreview, setAvatarPreview] = useState<string | null>(
-    user?.avatarUrl ?? null,
+    user?.imageUrl ?? null,
   );
   const [avatarData, setAvatarData] = useState<string | null | undefined>(undefined);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -93,11 +90,11 @@ export function ProfilePage() {
 
   const onSubmit = async (data: ProfileForm) => {
     try {
-      const payload: { name: string; email: string; avatarUrl?: string | null } = {
+      const payload: { name: string; email: string; imageUrl?: string | null } = {
         name: data.name,
         email: data.email,
       };
-      if (avatarData !== undefined) payload.avatarUrl = avatarData;
+      if (avatarData !== undefined) payload.imageUrl = avatarData;
 
       const result = await updateProfile(payload).unwrap();
       dispatch(setAuthenticatedUser(result.data));

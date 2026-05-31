@@ -24,13 +24,15 @@ export function ExpenseEditPage({ id }: { id: string }) {
 
   const defaultValues: Partial<ExpenseFormValues> | undefined = expense
     ? {
-        category: expense.category,
-        description: expense.description,
-        amount: expense.amount,
-        method: expense.method,
+        title: expense.title,
+        amount: String(expense.amount),
         expenseDate: expense.expenseDate.slice(0, 10),
+        category: expense.category ?? '',
+        paymentMethod: expense.paymentMethod ?? undefined,
+        expenseStatus: expense.expenseStatus,
         referenceNo: expense.referenceNo ?? '',
-        notes: expense.notes ?? '',
+        imageUrl: expense.imageUrl ?? '',
+        note: expense.note ?? '',
       }
     : undefined;
 

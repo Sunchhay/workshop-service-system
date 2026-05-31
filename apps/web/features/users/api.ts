@@ -5,15 +5,17 @@ import type {
   GetUserResponse,
   GetUsersResponse,
   UpdateUserRequest,
+  UpdateUserStatusRequest,
   UserQuery,
 } from './types';
 
 const usersApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getUsers: builder.query<GetUsersResponse, UserQuery>({
-      query: ({ role, search, page = 1, limit = 20 }) => {
+      query: ({ role, status, search, page = 1, limit = 20 }) => {
         const params = new URLSearchParams();
         if (role) params.set('role', role);
+        if (status) params.set('status', status);
         if (search) params.set('search', search);
         params.set('page', String(page));
         params.set('limit', String(limit));
@@ -26,40 +28,20 @@ const usersApi = baseApi.injectEndpoints({
       providesTags: (_result, _error, id) => [{ type: 'User', id }],
     }),
     createUser: builder.mutation<GetUserResponse, CreateUserRequest>({
-      query: (body) => ({
-        url: '/users',
-        method: 'POST',
-        body,
-      }),
+      query: (body) => ({ url: '/users', method: 'POST', body }),
       invalidatesTags: ['User'],
     }),
-    updateUser: builder.mutation<
-      GetUserResponse,
-      { id: string; data: UpdateUserRequest }
-    >({
-      query: ({ id, data }) => ({
-        url: `/users/${id}`,
-        method: 'PATCH',
-        body: data,
-      }),
-      invalidatesTags: (_result, _error, { id }) => [
-        'User',
-        { type: 'User', id },
-      ],
+    updateUser: builder.mutation<GetUserResponse, { id: string; data: UpdateUserRequest }>({
+      query: ({ id, data }) => ({ url: `/users/${id}`, method: 'PATCH', body: data }),
+      invalidatesTags: (_result, _error, { id }) => ['User', { type: 'User', id }],
     }),
-    updateUserStatus: builder.mutation<
-      GetUserResponse,
-      { id: string; isActive: boolean }
-    >({
-      query: ({ id, isActive }) => ({
+    updateUserStatus: builder.mutation<GetUserResponse, { id: string } & UpdateUserStatusRequest>({
+      query: ({ id, status }) => ({
         url: `/users/${id}/status`,
         method: 'PATCH',
-        body: { isActive },
+        body: { status },
       }),
-      invalidatesTags: (_result, _error, { id }) => [
-        'User',
-        { type: 'User', id },
-      ],
+      invalidatesTags: (_result, _error, { id }) => ['User', { type: 'User', id }],
     }),
   }),
 });

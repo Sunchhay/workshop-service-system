@@ -2,14 +2,13 @@ import { Injectable } from '@nestjs/common';
 
 import { PrismaService } from '../../prisma/prisma.service';
 
-// Safe select — password never included
 const USER_SAFE_SELECT = {
   id: true,
-  email: true,
   name: true,
+  email: true,
+  imageUrl: true,
   role: true,
-  isActive: true,
-  avatarUrl: true,
+  status: true,
   createdAt: true,
   updatedAt: true,
 } as const;
@@ -18,47 +17,42 @@ const USER_SAFE_SELECT = {
 export class AuthRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  // Only called during login — the only place we need the password hash
   findByEmailWithPassword(email: string) {
     return this.prisma.user.findUnique({
       where: { email },
       select: {
         id: true,
-        email: true,
-        password: true,
         name: true,
+        email: true,
+        imageUrl: true,
         role: true,
-        isActive: true,
+        status: true,
+        passwordHash: true,
+        createdAt: true,
+        updatedAt: true,
       },
     });
   }
 
   findById(id: string) {
-    return this.prisma.user.findUnique({
-      where: { id },
-      select: USER_SAFE_SELECT,
-    });
+    return this.prisma.user.findUnique({ where: { id }, select: USER_SAFE_SELECT });
   }
 
   findByIdWithPassword(id: string) {
     return this.prisma.user.findUnique({
       where: { id },
-      select: { id: true, password: true },
+      select: { id: true, passwordHash: true },
     });
   }
 
   findByEmail(email: string) {
-    return this.prisma.user.findUnique({
-      where: { email },
-      select: USER_SAFE_SELECT,
-    });
+    return this.prisma.user.findUnique({ where: { email }, select: USER_SAFE_SELECT });
   }
 
-  update(id: string, data: { name?: string; email?: string; password?: string; avatarUrl?: string | null }) {
-    return this.prisma.user.update({
-      where: { id },
-      data,
-      select: USER_SAFE_SELECT,
-    });
+  update(
+    id: string,
+    data: { name?: string; email?: string; passwordHash?: string; imageUrl?: string | null },
+  ) {
+    return this.prisma.user.update({ where: { id }, data, select: USER_SAFE_SELECT });
   }
 }

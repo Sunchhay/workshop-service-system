@@ -1,15 +1,7 @@
 import { Transform } from 'class-transformer';
-import {
-  IsBoolean,
-  IsEnum,
-  IsInt,
-  IsOptional,
-  IsString,
-  Max,
-  Min,
-} from 'class-validator';
+import { IsEnum, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
 
-import { CustomerType } from '../../../generated/prisma/enums';
+import { CustomerType, RecordStatus } from '../../../generated/prisma/enums';
 
 export class QueryCustomerDto {
   @IsString()
@@ -20,23 +12,20 @@ export class QueryCustomerDto {
   @IsOptional()
   customerType?: CustomerType;
 
-  @IsBoolean()
+  @IsEnum(RecordStatus)
   @IsOptional()
-  @Transform(({ value }) => {
-    if (value === 'true' || value === true) return true;
-    if (value === 'false' || value === false) return false;
-    return undefined;
-  })
-  isActive?: boolean;
+  status?: RecordStatus;
 
   @IsInt()
   @Min(1)
   @IsOptional()
+  @Transform(({ value }) => Number(value))
   page?: number = 1;
 
   @IsInt()
   @Min(1)
   @Max(500)
   @IsOptional()
+  @Transform(({ value }) => Number(value))
   limit?: number = 20;
 }

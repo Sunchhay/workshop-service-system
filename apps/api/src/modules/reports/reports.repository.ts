@@ -1,338 +1,389 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../../prisma/prisma.service';
-import { QueryReportDto } from './dto/query-report.dto';
 
-const TAKE = 500;
+import {
+  CommissionStatus,
+  ExpenseStatus,
+  ItemType,
+  PaymentStatus,
+  SaleStatus,
+} from '../../generated/prisma/enums';
+import { PrismaService } from '../../prisma/prisma.service';
+import type { QueryReportDto } from './dto/query-report.dto';
+
+function toNum(val: unknown): number {
+  if (val === null || val === undefined) return 0;
+  return parseFloat(val.toString());
+}
+
+const SALE_SELECT = {
+  id: true,
+  invoiceNo: true,
+  grandTotal: true,
+  paidAmount: true,
+  balanceAmount: true,
+  paymentStatus: true,
+  saleStatus: true,
+  commissionStatus: true,
+  commissionAmount: true,
+  note: true,
+  createdAt: true,
+  customer: { select: { id: true, name: true, phone: true } },
+  mechanic: { select: { id: true, name: true, phone: true } },
+} as const;
+
+const PAYMENT_SELECT = {
+  id: true,
+  paymentMethod: true,
+  amount: true,
+  referenceNo: true,
+  note: true,
+  paidAt: true,
+  createdAt: true,
+  sale: { select: { id: true, invoiceNo: true } },
+} as const;
+
+const EXPENSE_SELECT = {
+  id: true,
+  expenseNo: true,
+  title: true,
+  category: true,
+  amount: true,
+  paymentMethod: true,
+  expenseStatus: true,
+  referenceNo: true,
+  expenseDate: true,
+  note: true,
+  supplier: { select: { id: true, name: true, phone: true } },
+  mechanic: { select: { id: true, name: true, phone: true } },
+  createdBy: { select: { id: true, name: true } },
+} as const;
 
 @Injectable()
 export class ReportsRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  private buildDateRange(fromDate?: string, toDate?: string) {
-    if (!fromDate && !toDate) return undefined;
+  private buildDateRange(dateFrom?: string, dateTo?: string) {
+    if (!dateFrom && !dateTo) return undefined;
     const range: { gte?: Date; lte?: Date } = {};
-    if (fromDate) range.gte = new Date(fromDate + 'T00:00:00');
-    if (toDate) range.lte = new Date(toDate + 'T23:59:59');
+    if (dateFrom) range.gte = new Date(dateFrom + 'T00:00:00');
+    if (dateTo) range.lte = new Date(dateTo + 'T23:59:59');
     return range;
   }
 
-  async getSummary(fromDate?: string, toDate?: string) {
-    const dateRange = this.buildDateRange(fromDate, toDate);
-    const [
-      totalCustomers,
-      totalServiceJobs,
-      totalInvoices,
-      invoiceAgg,
-      paymentAgg,
-      unpaidAgg,
-      salesAgg,
-      expenseAgg,
-      allProducts,
-    ] = await Promise.all([
-      this.prisma.customer.count({ where: { deletedAt: null } }),
-      this.prisma.serviceJob.count({
-        where: { deletedAt: null, ...(dateRange ? { createdAt: dateRange } : {}) },
+  async getSales(dto: QueryReportDto) {
+    const { page = 1, limit = 50 } = dto;
+    const skip = (page - 1) * limit;
+    const dateRange = this.buildDateRange(dto.dateFrom, dto.dateTo);
+
+    const listWhere = {
+      ...(dateRange && { createdAt: dateRange }),
+      ...(dto.saleStatus && { saleStatus: dto.saleStatus }),
+      ...(dto.paymentStatus && { paymentStatus: dto.paymentStatus }),
+      ...(dto.customerId && { customerId: dto.customerId }),
+      ...(dto.mechanicId && { mechanicId: dto.mechanicId }),
+    };
+
+    // For aggregates, exclude VOIDED unless caller explicitly filters by VOIDED
+    const totalsWhere = {
+      ...listWhere,
+      ...(dto.saleStatus === undefined && { saleStatus: { not: SaleStatus.VOIDED } }),
+    };
+
+    const [rows, total, totalsAgg, totalsCount] = await Promise.all([
+      this.prisma.sale.findMany({
+        where: listWhere,
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+        select: SALE_SELECT,
       }),
-      this.prisma.invoice.count({
-        where: { deletedAt: null, status: { not: 'CANCELLED' as any }, ...(dateRange ? { issuedAt: dateRange } : {}) },
-      }),
-      this.prisma.invoice.aggregate({
-        where: { deletedAt: null, status: { not: 'CANCELLED' as any }, ...(dateRange ? { issuedAt: dateRange } : {}) },
-        _sum: { totalAmount: true },
-      }),
-      this.prisma.payment.aggregate({
-        where: { ...(dateRange ? { paidAt: dateRange } : {}) },
-        _sum: { amount: true },
-      }),
-      this.prisma.invoice.aggregate({
-        where: { deletedAt: null, status: { notIn: ['CANCELLED', 'PAID'] as any[] } },
-        _sum: { dueAmount: true },
-      }),
+      this.prisma.sale.count({ where: listWhere }),
       this.prisma.sale.aggregate({
-        where: { deletedAt: null, status: 'COMPLETED' as any, ...(dateRange ? { soldAt: dateRange } : {}) },
-        _sum: { totalAmount: true },
+        where: totalsWhere,
+        _sum: { grandTotal: true, paidAmount: true, balanceAmount: true },
       }),
-      this.prisma.expense.aggregate({
-        where: { deletedAt: null, ...(dateRange ? { expenseDate: dateRange } : {}) },
-        _sum: { amount: true },
-      }),
-      this.prisma.product.findMany({
-        where: { deletedAt: null, isActive: true },
-        select: { stockQuantity: true, reorderLevel: true },
-      }),
+      this.prisma.sale.count({ where: totalsWhere }),
     ]);
 
-    const lowStockCount = allProducts.filter(p => p.stockQuantity <= p.reorderLevel).length;
-    const paymentTotal = parseFloat(paymentAgg._sum.amount?.toString() ?? '0');
-    const expenseTotal = parseFloat(expenseAgg._sum.amount?.toString() ?? '0');
-
     return {
-      totalCustomers,
-      totalServiceJobs,
-      totalInvoices,
-      invoiceTotal: invoiceAgg._sum.totalAmount?.toString() ?? '0',
-      paymentTotal: paymentAgg._sum.amount?.toString() ?? '0',
-      unpaidTotal: unpaidAgg._sum.dueAmount?.toString() ?? '0',
-      salesTotal: salesAgg._sum.totalAmount?.toString() ?? '0',
-      expenseTotal: expenseAgg._sum.amount?.toString() ?? '0',
-      profitEstimate: (paymentTotal - expenseTotal).toFixed(2),
-      lowStockCount,
-    };
-  }
-
-  async getServiceJobs(dto: QueryReportDto) {
-    const dateRange = this.buildDateRange(dto.fromDate, dto.toDate);
-    const where: any = {
-      deletedAt: null,
-      ...(dateRange ? { createdAt: dateRange } : {}),
-      ...(dto.status ? { status: dto.status as any } : {}),
-      ...(dto.priority ? { priority: dto.priority as any } : {}),
-      ...(dto.customerId ? { customerId: dto.customerId } : {}),
-    };
-
-    return this.prisma.serviceJob.findMany({
-      where,
-      orderBy: { createdAt: 'desc' },
-      take: TAKE,
-      select: {
-        id: true,
-        jobCode: true,
-        status: true,
-        priority: true,
-        partDescription: true,
-        createdAt: true,
-        completedAt: true,
-        customer: { select: { id: true, name: true, phone: true } },
-        assignedTo: { select: { id: true, name: true } },
-        _count: { select: { items: true } },
+      items: rows,
+      meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
+      summary: {
+        totalSales: toNum(totalsAgg._sum.grandTotal),
+        totalPaid: toNum(totalsAgg._sum.paidAmount),
+        totalBalance: toNum(totalsAgg._sum.balanceAmount),
+        totalOrders: totalsCount,
       },
-    });
-  }
-
-  async getInvoices(dto: QueryReportDto) {
-    const dateRange = this.buildDateRange(dto.fromDate, dto.toDate);
-    const where: any = {
-      deletedAt: null,
-      ...(dateRange ? { issuedAt: dateRange } : {}),
-      ...(dto.status ? { status: dto.status as any } : {}),
-      ...(dto.customerId ? { customerId: dto.customerId } : {}),
     };
-
-    return this.prisma.invoice.findMany({
-      where,
-      orderBy: { issuedAt: 'desc' },
-      take: TAKE,
-      select: {
-        id: true,
-        invoiceNumber: true,
-        status: true,
-        subtotal: true,
-        discountAmount: true,
-        taxAmount: true,
-        totalAmount: true,
-        paidAmount: true,
-        dueAmount: true,
-        issuedAt: true,
-        dueDate: true,
-        customer: { select: { id: true, name: true, phone: true } },
-      },
-    });
   }
 
   async getPayments(dto: QueryReportDto) {
-    const dateRange = this.buildDateRange(dto.fromDate, dto.toDate);
-    const where: any = {
-      ...(dateRange ? { paidAt: dateRange } : {}),
-      ...(dto.paymentMethod ? { method: dto.paymentMethod as any } : {}),
-      ...(dto.customerId ? { customerId: dto.customerId } : {}),
+    const { page = 1, limit = 50 } = dto;
+    const skip = (page - 1) * limit;
+    const dateRange = this.buildDateRange(dto.dateFrom, dto.dateTo);
+
+    const where = {
+      ...(dateRange && { paidAt: dateRange }),
+      ...(dto.paymentMethod && { paymentMethod: dto.paymentMethod }),
     };
 
-    return this.prisma.payment.findMany({
-      where,
-      orderBy: { paidAt: 'desc' },
-      take: TAKE,
-      select: {
-        id: true,
-        paymentNumber: true,
-        amount: true,
-        method: true,
-        referenceNo: true,
-        paidAt: true,
-        invoice: { select: { id: true, invoiceNumber: true } },
-        customer: { select: { id: true, name: true } },
-        createdBy: { select: { id: true, name: true } },
-      },
-    });
-  }
-
-  async getSales(dto: QueryReportDto) {
-    const dateRange = this.buildDateRange(dto.fromDate, dto.toDate);
-    const where: any = {
-      deletedAt: null,
-      ...(dateRange ? { soldAt: dateRange } : {}),
-      ...(dto.status ? { status: dto.status as any } : {}),
-      ...(dto.customerId ? { customerId: dto.customerId } : {}),
-    };
-
-    return this.prisma.sale.findMany({
-      where,
-      orderBy: { soldAt: 'desc' },
-      take: TAKE,
-      select: {
-        id: true,
-        saleNumber: true,
-        status: true,
-        subtotal: true,
-        discountAmount: true,
-        totalAmount: true,
-        soldAt: true,
-        customer: { select: { id: true, name: true } },
-        _count: { select: { items: true } },
-      },
-    });
-  }
-
-  async getExpenses(dto: QueryReportDto) {
-    const dateRange = this.buildDateRange(dto.fromDate, dto.toDate);
-    const where: any = {
-      deletedAt: null,
-      ...(dateRange ? { expenseDate: dateRange } : {}),
-      ...(dto.category ? { category: dto.category as any } : {}),
-      ...(dto.paymentMethod ? { method: dto.paymentMethod as any } : {}),
-      ...(dto.customerId ? { createdById: dto.customerId } : {}),
-    };
-
-    return this.prisma.expense.findMany({
-      where,
-      orderBy: { expenseDate: 'desc' },
-      take: TAKE,
-      select: {
-        id: true,
-        expenseNumber: true,
-        category: true,
-        description: true,
-        amount: true,
-        method: true,
-        referenceNo: true,
-        expenseDate: true,
-        createdBy: { select: { id: true, name: true } },
-      },
-    });
-  }
-
-  async getProfit(fromDate?: string, toDate?: string) {
-    const dateRange = this.buildDateRange(fromDate, toDate);
-    const [invoiceAgg, salesAgg, paymentAgg, expenseAgg, unpaidAgg] = await Promise.all([
-      this.prisma.invoice.aggregate({
-        where: { deletedAt: null, status: { not: 'CANCELLED' as any }, ...(dateRange ? { issuedAt: dateRange } : {}) },
-        _sum: { totalAmount: true },
+    const [rows, total, grouped] = await Promise.all([
+      this.prisma.payment.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { paidAt: 'desc' },
+        select: PAYMENT_SELECT,
       }),
-      this.prisma.sale.aggregate({
-        where: { deletedAt: null, status: 'COMPLETED' as any, ...(dateRange ? { soldAt: dateRange } : {}) },
-        _sum: { totalAmount: true },
-      }),
-      this.prisma.payment.aggregate({
-        where: { ...(dateRange ? { paidAt: dateRange } : {}) },
+      this.prisma.payment.count({ where }),
+      this.prisma.payment.groupBy({
+        by: ['paymentMethod'],
+        where,
         _sum: { amount: true },
-      }),
-      this.prisma.expense.aggregate({
-        where: { deletedAt: null, ...(dateRange ? { expenseDate: dateRange } : {}) },
-        _sum: { amount: true },
-      }),
-      this.prisma.invoice.aggregate({
-        where: { deletedAt: null, status: { notIn: ['CANCELLED', 'PAID'] as any[] } },
-        _sum: { dueAmount: true },
+        _count: { id: true },
+        orderBy: { _sum: { amount: 'desc' } },
       }),
     ]);
 
-    const paymentReceived = parseFloat(paymentAgg._sum.amount?.toString() ?? '0');
-    const expenseTotal = parseFloat(expenseAgg._sum.amount?.toString() ?? '0');
+    return {
+      grouped: grouped.map((g) => ({
+        paymentMethod: g.paymentMethod,
+        totalAmount: toNum(g._sum.amount),
+        transactionCount: g._count.id,
+      })),
+      items: rows,
+      meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
+    };
+  }
+
+  async getExpenses(dto: QueryReportDto) {
+    const { page = 1, limit = 50 } = dto;
+    const skip = (page - 1) * limit;
+    const dateRange = this.buildDateRange(dto.dateFrom, dto.dateTo);
+
+    const listWhere = {
+      ...(dateRange && { expenseDate: dateRange }),
+      ...(dto.expenseStatus && { expenseStatus: dto.expenseStatus }),
+      ...(dto.paymentMethod && { paymentMethod: dto.paymentMethod }),
+      ...(dto.supplierId && { supplierId: dto.supplierId }),
+      ...(dto.mechanicId && { mechanicId: dto.mechanicId }),
+      ...(dto.category && { category: dto.category }),
+    };
+
+    // Exclude VOIDED from totals unless explicitly filtered
+    const totalsWhere = {
+      ...listWhere,
+      ...(dto.expenseStatus === undefined && { expenseStatus: { not: ExpenseStatus.VOIDED } }),
+    };
+
+    const [rows, total, totalsAgg] = await Promise.all([
+      this.prisma.expense.findMany({
+        where: listWhere,
+        skip,
+        take: limit,
+        orderBy: { expenseDate: 'desc' },
+        select: EXPENSE_SELECT,
+      }),
+      this.prisma.expense.count({ where: listWhere }),
+      this.prisma.expense.aggregate({
+        where: totalsWhere,
+        _sum: { amount: true },
+      }),
+    ]);
 
     return {
-      invoiceTotal: invoiceAgg._sum.totalAmount?.toString() ?? '0',
-      salesTotal: salesAgg._sum.totalAmount?.toString() ?? '0',
-      paymentReceived: paymentAgg._sum.amount?.toString() ?? '0',
-      expenseTotal: expenseAgg._sum.amount?.toString() ?? '0',
-      estimatedProfit: (paymentReceived - expenseTotal).toFixed(2),
-      unpaidAmount: unpaidAgg._sum.dueAmount?.toString() ?? '0',
+      items: rows,
+      meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
+      summary: { totalExpenses: toNum(totalsAgg._sum.amount) },
     };
   }
 
-  async getUnpaidBalances(dto: QueryReportDto) {
-    const dateRange = this.buildDateRange(dto.fromDate, dto.toDate);
-    const where: any = {
-      deletedAt: null,
-      status: { notIn: ['CANCELLED', 'PAID'] as any[] },
-      ...(dateRange ? { issuedAt: dateRange } : {}),
-      ...(dto.customerId ? { customerId: dto.customerId } : {}),
+  async getProfitSummary(dto: QueryReportDto) {
+    const dateRange = this.buildDateRange(dto.dateFrom, dto.dateTo);
+
+    const salesWhere = {
+      saleStatus: SaleStatus.COMPLETED,
+      ...(dateRange && { createdAt: dateRange }),
     };
 
-    return this.prisma.invoice.findMany({
-      where,
-      orderBy: { issuedAt: 'desc' },
-      take: TAKE,
-      select: {
-        id: true,
-        invoiceNumber: true,
-        status: true,
-        totalAmount: true,
-        paidAmount: true,
-        dueAmount: true,
-        issuedAt: true,
-        dueDate: true,
-        customer: { select: { id: true, name: true, phone: true } },
-      },
-    });
-  }
-
-  async getProducts(dto: QueryReportDto) {
-    const where: any = {
-      deletedAt: null,
-      ...(dto.isActive !== undefined ? { isActive: dto.isActive } : {}),
-      ...(dto.componentPartType ? { componentPartType: dto.componentPartType } : {}),
-      ...(dto.category ? { category: dto.category } : {}),
+    const expensesWhere = {
+      expenseStatus: { not: ExpenseStatus.VOIDED },
+      ...(dateRange && { expenseDate: dateRange }),
     };
 
-    const products = await this.prisma.product.findMany({
-      where,
-      orderBy: { name: 'asc' },
-      take: TAKE,
-      select: {
-        id: true,
-        code: true,
-        name: true,
-        category: true,
-        componentPartType: true,
-        supplier: true,
-        stockQuantity: true,
-        reorderLevel: true,
-        costPrice: true,
-        sellingPrice: true,
-        isActive: true,
-      },
-    });
+    const [salesAgg, expensesAgg] = await Promise.all([
+      this.prisma.sale.aggregate({ where: salesWhere, _sum: { grandTotal: true } }),
+      this.prisma.expense.aggregate({ where: expensesWhere, _sum: { amount: true } }),
+    ]);
 
-    return products
-      .filter(p => dto.isLowStock ? p.stockQuantity <= p.reorderLevel : true)
-      .map(p => ({ ...p, isLowStock: p.stockQuantity <= p.reorderLevel }));
+    const totalSales = toNum(salesAgg._sum.grandTotal);
+    const totalExpenses = toNum(expensesAgg._sum.amount);
+
+    return {
+      totalSales,
+      totalExpenses,
+      estimatedProfit: parseFloat((totalSales - totalExpenses).toFixed(2)),
+      dateFrom: dto.dateFrom ?? null,
+      dateTo: dto.dateTo ?? null,
+    };
   }
 
-  async getLowStock() {
-    const products = await this.prisma.product.findMany({
-      where: { deletedAt: null, isActive: true },
-      orderBy: { stockQuantity: 'asc' },
-      select: {
-        id: true,
-        code: true,
-        name: true,
-        category: true,
-        componentPartType: true,
-        supplier: true,
-        stockQuantity: true,
-        reorderLevel: true,
+  async getMechanicCommissions(dto: QueryReportDto) {
+    const { page = 1, limit = 50 } = dto;
+    const skip = (page - 1) * limit;
+    const dateRange = this.buildDateRange(dto.dateFrom, dto.dateTo);
+
+    const baseWhere = {
+      commissionStatus: { not: CommissionStatus.NONE } as object,
+      ...(dateRange && { createdAt: dateRange }),
+      ...(dto.mechanicId && { mechanicId: dto.mechanicId }),
+    };
+
+    const listWhere = {
+      ...baseWhere,
+      ...(dto.commissionStatus && { commissionStatus: dto.commissionStatus }),
+    };
+
+    const [rows, total, totalAgg, paidAgg, unpaidAgg] = await Promise.all([
+      this.prisma.sale.findMany({
+        where: listWhere,
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+        select: {
+          id: true,
+          invoiceNo: true,
+          commissionAmount: true,
+          commissionStatus: true,
+          commissionPaidAt: true,
+          commissionNote: true,
+          saleStatus: true,
+          createdAt: true,
+          mechanic: { select: { id: true, name: true, phone: true } },
+        },
+      }),
+      this.prisma.sale.count({ where: listWhere }),
+      this.prisma.sale.aggregate({ where: baseWhere, _sum: { commissionAmount: true } }),
+      this.prisma.sale.aggregate({
+        where: { ...baseWhere, commissionStatus: CommissionStatus.PAID },
+        _sum: { commissionAmount: true },
+      }),
+      this.prisma.sale.aggregate({
+        where: { ...baseWhere, commissionStatus: CommissionStatus.UNPAID },
+        _sum: { commissionAmount: true },
+      }),
+    ]);
+
+    return {
+      items: rows,
+      meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
+      summary: {
+        totalCommission: toNum(totalAgg._sum.commissionAmount),
+        paidCommission: toNum(paidAgg._sum.commissionAmount),
+        unpaidCommission: toNum(unpaidAgg._sum.commissionAmount),
       },
+    };
+  }
+
+  async getCustomerDebts(dto: QueryReportDto) {
+    const { page = 1, limit = 50 } = dto;
+    const skip = (page - 1) * limit;
+
+    const where = {
+      saleStatus: SaleStatus.COMPLETED,
+      balanceAmount: { gt: 0 },
+      paymentStatus: { not: PaymentStatus.PAID },
+    };
+
+    const [rows, total, totalAgg] = await Promise.all([
+      this.prisma.sale.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { balanceAmount: 'desc' },
+        select: {
+          id: true,
+          invoiceNo: true,
+          grandTotal: true,
+          paidAmount: true,
+          balanceAmount: true,
+          paymentStatus: true,
+          createdAt: true,
+          customer: { select: { id: true, name: true, phone: true } },
+        },
+      }),
+      this.prisma.sale.count({ where }),
+      this.prisma.sale.aggregate({ where, _sum: { balanceAmount: true } }),
+    ]);
+
+    return {
+      items: rows,
+      meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
+      summary: { totalDebt: toNum(totalAgg._sum.balanceAmount) },
+    };
+  }
+
+  async getServiceUsage(dto: QueryReportDto) {
+    const { page = 1, limit = 50 } = dto;
+    const skip = (page - 1) * limit;
+    const dateRange = this.buildDateRange(dto.dateFrom, dto.dateTo);
+
+    const rows = await this.prisma.saleItem.groupBy({
+      by: ['serviceId', 'nameSnapshot'],
+      where: {
+        itemType: ItemType.SERVICE,
+        sale: {
+          saleStatus: SaleStatus.COMPLETED,
+          ...(dateRange && { createdAt: dateRange }),
+        },
+      },
+      _sum: { total: true, quantity: true },
+      _count: { id: true },
+      orderBy: { _sum: { total: 'desc' } },
+      skip,
+      take: limit,
     });
 
-    return products.filter(p => p.stockQuantity <= p.reorderLevel);
+    return {
+      items: rows.map((r) => ({
+        serviceId: r.serviceId,
+        nameSnapshot: r.nameSnapshot,
+        totalQuantity: toNum(r._sum.quantity),
+        totalRevenue: toNum(r._sum.total),
+        orderCount: r._count.id,
+      })),
+    };
+  }
+
+  async getProductSales(dto: QueryReportDto) {
+    const { page = 1, limit = 50 } = dto;
+    const skip = (page - 1) * limit;
+    const dateRange = this.buildDateRange(dto.dateFrom, dto.dateTo);
+
+    const rows = await this.prisma.saleItem.groupBy({
+      by: ['productId', 'nameSnapshot'],
+      where: {
+        itemType: ItemType.PRODUCT,
+        sale: {
+          saleStatus: SaleStatus.COMPLETED,
+          ...(dateRange && { createdAt: dateRange }),
+        },
+      },
+      _sum: { total: true, quantity: true },
+      _count: { id: true },
+      orderBy: { _sum: { total: 'desc' } },
+      skip,
+      take: limit,
+    });
+
+    return {
+      items: rows.map((r) => ({
+        productId: r.productId,
+        nameSnapshot: r.nameSnapshot,
+        totalQuantity: toNum(r._sum.quantity),
+        totalRevenue: toNum(r._sum.total),
+        orderCount: r._count.id,
+      })),
+    };
   }
 }

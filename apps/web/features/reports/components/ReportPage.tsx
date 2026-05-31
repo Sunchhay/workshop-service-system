@@ -4,23 +4,21 @@ import { useState } from 'react';
 
 import { useTranslation } from '@/lib/i18n/TranslationContext';
 
+import { CustomerDebtReport } from './CustomerDebtReport';
 import { ExpenseReport } from './ExpenseReport';
-import { InvoiceReport } from './InvoiceReport';
-import { LowStockReport } from './LowStockReport';
+import { MechanicCommissionReport } from './MechanicCommissionReport';
 import { PaymentReport } from './PaymentReport';
-import { ProductReport } from './ProductReport';
+import { ProductSalesReport } from './ProductSalesReport';
 import { ProfitReport } from './ProfitReport';
 import { ReportFilter } from './ReportFilter';
 import type { ReportTab } from './ReportTabs';
 import { ReportTabs } from './ReportTabs';
 import { SalesReport } from './SalesReport';
-import { ServiceJobReport } from './ServiceJobReport';
-import { SummaryReport } from './SummaryReport';
-import { UnpaidBalanceReport } from './UnpaidBalanceReport';
+import { ServiceUsageReport } from './ServiceUsageReport';
 
 export function ReportPage() {
   const { t } = useTranslation();
-  const [activeTab, setActiveTab] = useState<ReportTab>('summary');
+  const [activeTab, setActiveTab] = useState<ReportTab>('sales');
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
 
@@ -38,16 +36,14 @@ export function ReportPage() {
       <ReportTabs active={activeTab} onChange={setActiveTab} />
 
       <div className="pt-2">
-        {activeTab === 'summary' && <SummaryReport fromDate={fromDate} toDate={toDate} />}
-        {activeTab === 'service-jobs' && <ServiceJobReport fromDate={fromDate} toDate={toDate} />}
-        {activeTab === 'invoices' && <InvoiceReport fromDate={fromDate} toDate={toDate} />}
-        {activeTab === 'payments' && <PaymentReport fromDate={fromDate} toDate={toDate} />}
         {activeTab === 'sales' && <SalesReport fromDate={fromDate} toDate={toDate} />}
+        {activeTab === 'payments' && <PaymentReport fromDate={fromDate} toDate={toDate} />}
         {activeTab === 'expenses' && <ExpenseReport fromDate={fromDate} toDate={toDate} />}
         {activeTab === 'profit' && <ProfitReport fromDate={fromDate} toDate={toDate} />}
-        {activeTab === 'unpaid' && <UnpaidBalanceReport fromDate={fromDate} toDate={toDate} />}
-        {activeTab === 'products' && <ProductReport fromDate={fromDate} toDate={toDate} />}
-        {activeTab === 'low-stock' && <LowStockReport fromDate={fromDate} toDate={toDate} />}
+        {activeTab === 'mechanic-commissions' && <MechanicCommissionReport fromDate={fromDate} toDate={toDate} />}
+        {activeTab === 'customer-debts' && <CustomerDebtReport fromDate={fromDate} toDate={toDate} />}
+        {activeTab === 'service-usage' && <ServiceUsageReport fromDate={fromDate} toDate={toDate} />}
+        {activeTab === 'product-sales' && <ProductSalesReport fromDate={fromDate} toDate={toDate} />}
       </div>
     </div>
   );

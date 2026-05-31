@@ -9,7 +9,6 @@ import {
   Query,
 } from '@nestjs/common';
 
-import { AdjustStockDto } from './dto/adjust-stock.dto';
 import { CreateProductDto } from './dto/create-product.dto';
 import { QueryProductDto } from './dto/query-product.dto';
 import {
@@ -28,7 +27,7 @@ export class ProductsController {
     return this.productsService.create(dto);
   }
 
-  // GET /api/products?search=piston&category=Engine&isActive=true&lowStock=true&page=1
+  // GET /api/products?search=piston&status=ACTIVE&category=Engine&unit=piece&page=1&limit=20
   @Get()
   findAll(@Query() query: QueryProductDto) {
     return this.productsService.findAll(query);
@@ -53,13 +52,7 @@ export class ProductsController {
     return this.productsService.updateStatus(id, dto);
   }
 
-  // PATCH /api/products/:id/stock
-  @Patch(':id/stock')
-  adjustStock(@Param('id') id: string, @Body() dto: AdjustStockDto) {
-    return this.productsService.adjustStock(id, dto);
-  }
-
-  // DELETE /api/products/:id  (soft delete)
+  // DELETE /api/products/:id (deactivates)
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.productsService.remove(id);

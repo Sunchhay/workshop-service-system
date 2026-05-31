@@ -1,67 +1,48 @@
 import type { ApiResponse } from '@/lib/api/types';
 
 export interface DashboardSummary {
+  todaySales: number;
+  todayOrders: number;
+  thisMonthSales: number;
   totalCustomers: number;
-  todayNewJobs: number;
-  pendingJobs: number;
-  inProgressJobs: number;
-  completedJobs: number;
-  invoiceTotalToday: string;
-  invoiceTotalMonth: string;
-  paymentsTotalToday: string;
-  paymentsTotalMonth: string;
-  totalUnpaidAmount: string;
-  expensesToday: string;
-  expensesMonth: string;
-  lowStockCount: number;
+  unpaidSalesAmount: number;
+  unpaidCommissionAmount: number;
+  todayExpenses: number;
+  thisMonthExpenses: number;
 }
 
-export interface DashboardServiceJobCustomer {
+export interface DashboardRecentSale {
   id: string;
-  name: string;
-  phone: string;
-}
-
-export interface DashboardServiceJob {
-  id: string;
-  jobCode: string;
-  status: string;
-  priority: string;
+  invoiceNo: string;
+  grandTotal: number | string;
+  paymentStatus: string;
+  saleStatus: string;
   createdAt: string;
-  partDescription: string;
-  customer: DashboardServiceJobCustomer;
+  customer?: { id: string; name: string } | null;
 }
 
-export interface DashboardTransactionInvoice {
-  id: string;
-  invoiceNumber: string;
-}
-
-export interface DashboardTransactionCustomer {
-  id: string;
+export interface DashboardTopService {
+  serviceId: string;
   name: string;
+  quantity: number;
+  total: number | string;
 }
 
-export interface DashboardTransaction {
-  id: string;
-  paymentNumber: string;
-  amount: string;
-  method: string;
-  paidAt: string;
-  customer: DashboardTransactionCustomer | null;
-  invoice: DashboardTransactionInvoice;
-}
-
-export interface LowStockProduct {
-  id: string;
-  code: string;
+export interface DashboardTopProduct {
+  productId: string;
   name: string;
-  unit: string;
-  stockQuantity: number;
-  reorderLevel: number;
+  quantity: number;
+  total: number | string;
+}
+
+export interface DashboardPaymentSummaryItem {
+  paymentMethod: string;
+  total: number | string;
+  count: number;
 }
 
 export type GetDashboardSummaryResponse = ApiResponse<DashboardSummary>;
-export type GetRecentServiceJobsResponse = ApiResponse<DashboardServiceJob[]>;
-export type GetRecentTransactionsResponse = ApiResponse<DashboardTransaction[]>;
-export type GetLowStockProductsResponse = ApiResponse<LowStockProduct[]>;
+export type GetRecentSalesResponse = ApiResponse<DashboardRecentSale[]>;
+export type GetTopServicesResponse = ApiResponse<DashboardTopService[]>;
+export type GetTopProductsResponse = ApiResponse<DashboardTopProduct[]>;
+export type GetPaymentSummaryResponse = ApiResponse<DashboardPaymentSummaryItem[]>;

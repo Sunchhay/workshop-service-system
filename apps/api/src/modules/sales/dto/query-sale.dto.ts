@@ -1,46 +1,47 @@
-import { Type } from 'class-transformer';
-import {
-  IsEnum,
-  IsInt,
-  IsOptional,
-  IsString,
-  Max,
-  Min,
-} from 'class-validator';
+import { Transform } from 'class-transformer';
+import { IsEnum, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
 
-import { SaleStatus } from '../../../generated/prisma/enums';
+import { PaymentStatus, SaleStatus } from '../../../generated/prisma/enums';
 
 export class QuerySaleDto {
-  @IsOptional()
   @IsString()
+  @IsOptional()
   search?: string;
 
-  @IsOptional()
   @IsEnum(SaleStatus)
-  status?: SaleStatus;
-
   @IsOptional()
+  saleStatus?: SaleStatus;
+
+  @IsEnum(PaymentStatus)
+  @IsOptional()
+  paymentStatus?: PaymentStatus;
+
   @IsString()
+  @IsOptional()
   customerId?: string;
 
-  @IsOptional()
   @IsString()
+  @IsOptional()
+  mechanicId?: string;
+
+  @IsString()
+  @IsOptional()
   dateFrom?: string;
 
-  @IsOptional()
   @IsString()
+  @IsOptional()
   dateTo?: string;
 
-  @IsOptional()
-  @Type(() => Number)
   @IsInt()
   @Min(1)
+  @IsOptional()
+  @Transform(({ value }) => Number(value))
   page?: number;
 
-  @IsOptional()
-  @Type(() => Number)
   @IsInt()
   @Min(1)
-  @Max(100)
+  @Max(500)
+  @IsOptional()
+  @Transform(({ value }) => Number(value))
   limit?: number;
 }

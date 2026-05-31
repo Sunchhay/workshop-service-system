@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 
+import { RecordStatus } from '../../generated/prisma/enums';
 import { PrismaService } from '../../prisma/prisma.service';
 import type { CreateProductDto } from './dto/create-product.dto';
 import type { QueryProductDto } from './dto/query-product.dto';
@@ -9,155 +10,106 @@ const PRODUCT_SELECT = {
   id: true,
   code: true,
   name: true,
-  brand: true,
-  componentPartType: true,
-  size: true,
-  supplier: true,
-  description: true,
+  nameEn: true,
   category: true,
   unit: true,
-  costPrice: true,
-  sellingPrice: true,
-  stockQuantity: true,
-  reorderLevel: true,
-  linkedReferenceBookId: true,
-  isActive: true,
+  description: true,
+  status: true,
   createdAt: true,
   updatedAt: true,
-  linkedReferenceBook: {
-    select: { id: true, partName: true, partCode: true },
-  },
 } as const;
 
 @Injectable()
 export class ProductsRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async generateCode(): Promise<string> {
-    const last = await this.prisma.product.findFirst({
-      where: { code: { startsWith: 'PRD-' } },
-      orderBy: { createdAt: 'desc' },
-      select: { code: true },
+  findByCode(code: string, excludeId?: string) {
+    return this.prisma.product.findFirst({
+      where: { code, ...(excludeId && { id: { not: excludeId } }) },
+      select: { id: true },
     });
-    if (!last) return 'PRD-001';
-    const num = parseInt(last.code.slice(4), 10);
-    return `PRD-${String(num + 1).padStart(3, '0')}`;
   }
 
-  create(data: CreateProductDto & { code: string }) {
+  create(data: CreateProductDto) {
     return this.prisma.product.create({
       data: {
         code: data.code,
         name: data.name,
-        brand: data.brand,
-        componentPartType: data.componentPartType,
-        size: data.size,
-        supplier: data.supplier,
-        description: data.description,
+        nameEn: data.nameEn,
         category: data.category,
-        unit: data.unit ?? 'piece',
-        costPrice: data.costPrice,
-        sellingPrice: data.sellingPrice,
-        stockQuantity: data.stockQuantity ?? 0,
-        reorderLevel: data.reorderLevel ?? 0,
-        linkedReferenceBookId: data.linkedReferenceBookId,
+        unit: data.unit,
+        description: data.description,
+        status: data.status ?? RecordStatus.ACTIVE,
       },
       select: PRODUCT_SELECT,
     });
   }
 
   async findAll(dto: QueryProductDto) {
-    const {
-      search,
-      category,
-      componentPartType,
-      isActive,
-      lowStock,
-      page = 1,
-      limit = 20,
-    } = dto;
+    const { search, status, category, unit, page = 1, limit = 20 } = dto;
     const skip = (page - 1) * limit;
 
-    const where: Record<string, unknown> = { deletedAt: null };
+    const where = {
+      ...(status !== undefined && { status }),
+      ...(category !== undefined && {
+        category: { contains: category, mode: 'insensitive' as const },
+      }),
+      ...(unit !== undefined && {
+        unit: { contains: unit, mode: 'insensitive' as const },
+      }),
+      ...(search !== undefined && {
+        OR: [
+          { code: { contains: search, mode: 'insensitive' as const } },
+          { name: { contains: search, mode: 'insensitive' as const } },
+          { nameEn: { contains: search, mode: 'insensitive' as const } },
+          { category: { contains: search, mode: 'insensitive' as const } },
+          { unit: { contains: search, mode: 'insensitive' as const } },
+          { description: { contains: search, mode: 'insensitive' as const } },
+        ],
+      }),
+    };
 
-    if (isActive !== undefined) where.isActive = isActive;
-    if (category !== undefined)
-      where.category = { contains: category, mode: 'insensitive' };
-    if (componentPartType !== undefined)
-      where.componentPartType = {
-        contains: componentPartType,
-        mode: 'insensitive',
-      };
-    if (search !== undefined) {
-      where.OR = [
-        { code: { contains: search, mode: 'insensitive' } },
-        { name: { contains: search, mode: 'insensitive' } },
-        { brand: { contains: search, mode: 'insensitive' } },
-        { componentPartType: { contains: search, mode: 'insensitive' } },
-        { size: { contains: search, mode: 'insensitive' } },
-        { supplier: { contains: search, mode: 'insensitive' } },
-        { category: { contains: search, mode: 'insensitive' } },
-      ];
-    }
+    const [data, total] = await Promise.all([
+      this.prisma.product.findMany({
+        where,
+        select: PRODUCT_SELECT,
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.product.count({ where }),
+    ]);
 
-    const prismaWhere = where as any;
-
-    let products = await this.prisma.product.findMany({
-      where: prismaWhere,
-      select: PRODUCT_SELECT,
-      orderBy: { createdAt: 'desc' },
-    });
-
-    // Apply lowStock filter in-memory (stockQuantity <= reorderLevel)
-    if (lowStock) {
-      products = products.filter((p) => p.stockQuantity <= p.reorderLevel);
-    }
-
-    const total = lowStock
-      ? products.length
-      : await this.prisma.product.count({ where: prismaWhere });
-
-    const paginated = products.slice(skip, skip + limit);
-
-    return { data: paginated, total };
+    return { data, total };
   }
 
   findById(id: string) {
-    return this.prisma.product.findFirst({
-      where: { id, deletedAt: null },
+    return this.prisma.product.findUnique({
+      where: { id },
       select: PRODUCT_SELECT,
     });
   }
 
   update(id: string, data: UpdateProductDto) {
-    const updateData: any = { ...data };
     return this.prisma.product.update({
       where: { id },
-      data: updateData,
+      data,
       select: PRODUCT_SELECT,
     });
   }
 
-  updateStatus(id: string, isActive: boolean) {
+  updateStatus(id: string, status: RecordStatus) {
     return this.prisma.product.update({
       where: { id },
-      data: { isActive },
+      data: { status },
       select: PRODUCT_SELECT,
     });
   }
 
-  adjustStock(id: string, newQuantity: number) {
+  deactivate(id: string) {
     return this.prisma.product.update({
       where: { id },
-      data: { stockQuantity: newQuantity },
-      select: PRODUCT_SELECT,
-    });
-  }
-
-  softDelete(id: string) {
-    return this.prisma.product.update({
-      where: { id },
-      data: { deletedAt: new Date() },
+      data: { status: RecordStatus.INACTIVE },
       select: PRODUCT_SELECT,
     });
   }

@@ -27,7 +27,7 @@ export class CustomersController {
     return this.customersService.create(dto);
   }
 
-  // GET /api/customers?search=john&customerType=VIP&isActive=true&page=1&limit=20
+  // GET /api/customers?search=john&customerType=OWNER&status=ACTIVE&page=1&limit=20
   @Get()
   findAll(@Query() query: QueryCustomerDto) {
     return this.customersService.findAll(query);

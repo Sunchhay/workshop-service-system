@@ -6,16 +6,17 @@ import type {
   GetMachineModelsResponse,
   MachineModelQuery,
   UpdateMachineModelRequest,
+  UpdateMachineModelStatusRequest,
 } from './types';
 
 const machineModelsApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getMachineModels: builder.query<GetMachineModelsResponse, MachineModelQuery>({
-      query: ({ search, category, isActive, page = 1, limit = 20 }) => {
+      query: ({ search, machineType, status, page = 1, limit = 20 }) => {
         const params = new URLSearchParams();
         if (search) params.set('search', search);
-        if (category) params.set('category', category);
-        if (isActive !== undefined) params.set('isActive', String(isActive));
+        if (machineType) params.set('machineType', machineType);
+        if (status) params.set('status', status);
         params.set('page', String(page));
         params.set('limit', String(limit));
         return `/machine-models?${params}`;
@@ -53,19 +54,19 @@ const machineModelsApi = baseApi.injectEndpoints({
     }),
     updateMachineModelStatus: builder.mutation<
       GetMachineModelResponse,
-      { id: string; isActive: boolean }
+      { id: string; data: UpdateMachineModelStatusRequest }
     >({
-      query: ({ id, isActive }) => ({
+      query: ({ id, data }) => ({
         url: `/machine-models/${id}/status`,
         method: 'PATCH',
-        body: { isActive },
+        body: data,
       }),
       invalidatesTags: (_result, _error, { id }) => [
         'MachineModel',
         { type: 'MachineModel', id },
       ],
     }),
-    deleteMachineModel: builder.mutation<{ success: boolean; data: null }, string>({
+    deleteMachineModel: builder.mutation<GetMachineModelResponse, string>({
       query: (id) => ({
         url: `/machine-models/${id}`,
         method: 'DELETE',

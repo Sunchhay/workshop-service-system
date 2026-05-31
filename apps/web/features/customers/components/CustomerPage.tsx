@@ -30,17 +30,17 @@ import {
   useGetCustomersQuery,
   useUpdateCustomerStatusMutation,
 } from '../api';
-import type { Customer, CustomerType } from '../types';
+import type { Customer, CustomerType, RecordStatus } from '../types';
 import { DeleteCustomerDialog } from './dialogs/DeleteCustomerDialog';
 import { DisableCustomerDialog } from './dialogs/DisableCustomerDialog';
 import { CustomerMobileCard } from './CustomerMobileCard';
 import { CustomerTable } from './CustomerTable';
 
-const CUSTOMER_TYPES: CustomerType[] = ['NORMAL', 'VIP', 'WHOLESALE', 'PARTNER'];
+const CUSTOMER_TYPES: CustomerType[] = ['OWNER', 'MECHANIC'];
 const LIMIT = 20;
 
 type TypeFilter = CustomerType | '__all';
-type StatusFilter = 'true' | 'false' | '__all';
+type StatusFilter = RecordStatus | '__all';
 
 export function CustomerPage() {
   const { t } = useTranslation();
@@ -75,8 +75,7 @@ export function CustomerPage() {
   const { data, isLoading, isFetching } = useGetCustomersQuery({
     search: search || undefined,
     customerType: typeFilter === '__all' ? undefined : (typeFilter as CustomerType),
-    isActive:
-      statusFilter === '__all' ? undefined : statusFilter === 'true',
+    status: statusFilter === '__all' ? undefined : (statusFilter as RecordStatus),
     page,
     limit: LIMIT,
   });
@@ -125,10 +124,12 @@ export function CustomerPage() {
     try {
       await updateStatus({
         id: statusTarget.id,
-        isActive: !statusTarget.isActive,
+        data: {
+          status: statusTarget.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE',
+        },
       }).unwrap();
       toast.success(
-        statusTarget.isActive
+        statusTarget.status === 'ACTIVE'
           ? t('customers.disabledSuccess')
           : t('customers.enabledSuccess'),
       );
@@ -202,8 +203,8 @@ export function CustomerPage() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="__all">{t('customers.allStatuses')}</SelectItem>
-              <SelectItem value="true">{t('common.active')}</SelectItem>
-              <SelectItem value="false">{t('common.inactive')}</SelectItem>
+              <SelectItem value="ACTIVE">{t('common.active')}</SelectItem>
+              <SelectItem value="INACTIVE">{t('common.inactive')}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -259,8 +260,8 @@ export function CustomerPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="__all">{t('customers.allStatuses')}</SelectItem>
-                    <SelectItem value="true">{t('common.active')}</SelectItem>
-                    <SelectItem value="false">{t('common.inactive')}</SelectItem>
+                    <SelectItem value="ACTIVE">{t('common.active')}</SelectItem>
+                    <SelectItem value="INACTIVE">{t('common.inactive')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

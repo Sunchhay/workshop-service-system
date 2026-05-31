@@ -10,7 +10,6 @@ import { Button } from '@/components/ui/button';
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -26,28 +25,31 @@ import {
 } from '@/components/ui/select';
 import { useTranslation } from '@/lib/i18n/TranslationContext';
 
-import type { CreateUserRequest, UpdateUserRequest, UserRole } from '../types';
+import type { CreateUserRequest, UpdateUserRequest, UserRole, UserStatus } from '../types';
 
-const ROLES: UserRole[] = ['ADMIN', 'STAFF', 'TECHNICIAN', 'CASHIER'];
+const ROLES: UserRole[] = ['ADMIN', 'STAFF', 'VIEWER'];
+const STATUSES: UserStatus[] = ['ACTIVE', 'INACTIVE'];
 
-function getSchema(mode: 'create' | 'edit') {
-  return z.object({
-    name: z.string().min(1),
-    email: z.string().email(),
-    password:
-      mode === 'create'
-        ? z.string().min(8)
-        : z.union([z.string().min(8), z.literal('')]),
-    role: z.enum(['ADMIN', 'STAFF', 'TECHNICIAN', 'CASHIER']),
-  });
-}
+const createSchema = z.object({
+  name: z.string().min(1),
+  email: z.string().email(),
+  password: z.string().min(8),
+  imageUrl: z.string().optional(),
+  role: z.enum(['ADMIN', 'STAFF', 'VIEWER']).optional(),
+  status: z.enum(['ACTIVE', 'INACTIVE']).optional(),
+});
 
-type FormValues = {
-  name: string;
-  email: string;
-  password: string;
-  role: UserRole;
-};
+const editSchema = z.object({
+  name: z.string().min(1),
+  email: z.string().email(),
+  imageUrl: z.string().optional(),
+  role: z.enum(['ADMIN', 'STAFF', 'VIEWER']).optional(),
+  status: z.enum(['ACTIVE', 'INACTIVE']).optional(),
+});
+
+type CreateFormValues = z.infer<typeof createSchema>;
+type EditFormValues = z.infer<typeof editSchema>;
+type FormValues = CreateFormValues & { password?: string };
 
 interface UserFormProps {
   mode: 'create' | 'edit';
@@ -56,22 +58,18 @@ interface UserFormProps {
   isLoading?: boolean;
 }
 
-export function UserForm({
-  mode,
-  defaultValues,
-  onSubmit,
-  isLoading,
-}: UserFormProps) {
+export function UserForm({ mode, defaultValues, onSubmit, isLoading }: UserFormProps) {
   const { t } = useTranslation();
-  const schema = getSchema(mode);
 
   const form = useForm<FormValues>({
-    resolver: zodResolver(schema),
+    resolver: zodResolver(mode === 'create' ? createSchema : editSchema),
     defaultValues: {
       name: defaultValues?.name ?? '',
       email: defaultValues?.email ?? '',
       password: '',
+      imageUrl: defaultValues?.imageUrl ?? '',
       role: defaultValues?.role ?? 'STAFF',
+      status: defaultValues?.status ?? 'ACTIVE',
     },
   });
 
@@ -80,17 +78,19 @@ export function UserForm({
       await onSubmit({
         name: data.name,
         email: data.email,
-        password: data.password,
+        password: data.password!,
+        imageUrl: data.imageUrl || undefined,
         role: data.role,
+        status: data.status,
       } as CreateUserRequest);
     } else {
-      const payload: UpdateUserRequest = {
+      await onSubmit({
         name: data.name,
         email: data.email,
+        imageUrl: data.imageUrl || null,
         role: data.role,
-      };
-      if (data.password) payload.password = data.password;
-      await onSubmit(payload);
+        status: data.status,
+      } as UpdateUserRequest);
     }
   };
 
@@ -118,34 +118,42 @@ export function UserForm({
             <FormItem>
               <FormLabel>{t('users.email')}</FormLabel>
               <FormControl>
-                <Input
-                  type="email"
-                  autoComplete="off"
-                  placeholder={t('users.emailPlaceholder')}
-                  {...field}
-                />
+                <Input type="email" autoComplete="off" placeholder={t('users.emailPlaceholder')} {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
 
+        {mode === 'create' && (
+          <FormField
+            control={form.control}
+            name="password"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('users.password')}</FormLabel>
+                <FormControl>
+                  <AppPasswordInput
+                    autoComplete="new-password"
+                    placeholder={t('users.passwordPlaceholder')}
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
+
         <FormField
           control={form.control}
-          name="password"
+          name="imageUrl"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>{t('users.password')}</FormLabel>
+              <FormLabel>{t('users.imageUrl')}</FormLabel>
               <FormControl>
-                <AppPasswordInput
-                  autoComplete="new-password"
-                  placeholder={t('users.passwordPlaceholder')}
-                  {...field}
-                />
+                <Input placeholder="https://..." {...field} />
               </FormControl>
-              {mode === 'edit' && (
-                <FormDescription>{t('users.passwordHint')}</FormDescription>
-              )}
               <FormMessage />
             </FormItem>
           )}
@@ -176,19 +184,37 @@ export function UserForm({
           )}
         />
 
+        <FormField
+          control={form.control}
+          name="status"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>{t('users.statusLabel')}</FormLabel>
+              <FormControl>
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {STATUSES.map((s) => (
+                      <SelectItem key={s} value={s}>
+                        {t(s === 'ACTIVE' ? 'common.active' : 'common.inactive')}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
         {form.formState.errors.root && (
-          <p className="text-sm text-destructive">
-            {form.formState.errors.root.message}
-          </p>
+          <p className="text-sm text-destructive">{form.formState.errors.root.message}</p>
         )}
 
         <div className="pt-2">
-          <Button
-            type="submit"
-            size="lg"
-            className="w-full md:w-auto"
-            disabled={isLoading}
-          >
+          <Button type="submit" size="lg" className="w-full md:w-auto" disabled={isLoading}>
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {mode === 'create' ? t('users.createUser') : t('common.save')}
           </Button>

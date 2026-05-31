@@ -1,10 +1,15 @@
+export type UserRole = 'ADMIN' | 'STAFF' | 'VIEWER';
+export type UserStatus = 'ACTIVE' | 'INACTIVE';
+
 export interface AuthUser {
   id: string;
   name: string;
   email: string;
-  role: string;
-  isActive?: boolean;
-  avatarUrl?: string | null;
+  imageUrl?: string | null;
+  role: UserRole;
+  status: UserStatus;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface LoginRequest {
@@ -27,7 +32,7 @@ export interface AuthState {
 export interface UpdateProfileRequest {
   name?: string;
   email?: string;
-  avatarUrl?: string | null;
+  imageUrl?: string | null;
 }
 
 export interface ChangePasswordRequest {

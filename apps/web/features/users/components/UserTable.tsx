@@ -1,6 +1,7 @@
 'use client';
 
 import { MoreHorizontal } from 'lucide-react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
@@ -27,12 +28,8 @@ import type { User, UserRole } from '../types';
 
 const roleClass: Record<UserRole, string> = {
   ADMIN: '',
-  STAFF:
-    'bg-blue-500/10 text-blue-600 border-blue-500/20 dark:text-blue-400',
-  TECHNICIAN:
-    'bg-orange-500/10 text-orange-600 border-orange-500/20 dark:text-orange-400',
-  CASHIER:
-    'bg-purple-500/10 text-purple-600 border-purple-500/20 dark:text-purple-400',
+  STAFF: 'bg-blue-500/10 text-blue-600 border-blue-500/20 dark:text-blue-400',
+  VIEWER: 'bg-purple-500/10 text-purple-600 border-purple-500/20 dark:text-purple-400',
 };
 
 interface UserTableProps {
@@ -48,15 +45,34 @@ function formatDate(dateStr: string) {
   });
 }
 
+function UserAvatar({ name, imageUrl }: { name: string; imageUrl?: string | null }) {
+  if (imageUrl) {
+    return (
+      <div className="relative h-8 w-8 shrink-0 overflow-hidden rounded-full">
+        <Image src={imageUrl} alt={name} fill className="object-cover" sizes="32px" />
+      </div>
+    );
+  }
+  const initials = name.split(' ').map((n) => n[0]).slice(0, 2).join('').toUpperCase();
+  return (
+    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
+      {initials}
+    </div>
+  );
+}
+
 export function UserTable({ users, onToggleStatus }: UserTableProps) {
   const { t } = useTranslation();
   const router = useRouter();
+
+  const isActive = (user: User) => user.status === 'ACTIVE';
 
   return (
     <div className="rounded-xl border bg-card overflow-hidden">
       <Table>
         <TableHeader>
           <TableRow>
+            <TableHead className="w-10">{t('users.avatar')}</TableHead>
             <TableHead>{t('users.name')}</TableHead>
             <TableHead>{t('users.role')}</TableHead>
             <TableHead>{t('users.statusLabel')}</TableHead>
@@ -67,10 +83,7 @@ export function UserTable({ users, onToggleStatus }: UserTableProps) {
         <TableBody>
           {users.length === 0 ? (
             <TableRow>
-              <TableCell
-                colSpan={5}
-                className="text-center text-muted-foreground py-10"
-              >
+              <TableCell colSpan={6} className="text-center text-muted-foreground py-10">
                 {t('users.noUsers')}
               </TableCell>
             </TableRow>
@@ -81,12 +94,13 @@ export function UserTable({ users, onToggleStatus }: UserTableProps) {
                 className="cursor-pointer"
                 onClick={() => router.push(`/admin/users/${user.id}`)}
               >
+                <TableCell onClick={(e) => e.stopPropagation()}>
+                  <UserAvatar name={user.name} imageUrl={user.imageUrl} />
+                </TableCell>
                 <TableCell>
                   <div>
                     <p className="font-medium">{user.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {user.email}
-                    </p>
+                    <p className="text-xs text-muted-foreground">{user.email}</p>
                   </div>
                 </TableCell>
                 <TableCell>
@@ -99,14 +113,14 @@ export function UserTable({ users, onToggleStatus }: UserTableProps) {
                 </TableCell>
                 <TableCell>
                   <Badge
-                    variant={user.isActive ? 'default' : 'outline'}
+                    variant={isActive(user) ? 'default' : 'outline'}
                     className={
-                      user.isActive
+                      isActive(user)
                         ? 'bg-green-500/10 text-green-700 border-green-500/20 dark:text-green-400'
                         : 'text-muted-foreground'
                     }
                   >
-                    {t(user.isActive ? 'common.active' : 'common.inactive')}
+                    {t(isActive(user) ? 'common.active' : 'common.inactive')}
                   </Badge>
                 </TableCell>
                 <TableCell className="text-muted-foreground text-sm">
@@ -121,25 +135,21 @@ export function UserTable({ users, onToggleStatus }: UserTableProps) {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem asChild>
-                        <Link href={`/admin/users/${user.id}`}>
-                          {t('users.userDetail')}
-                        </Link>
+                        <Link href={`/admin/users/${user.id}`}>{t('users.userDetail')}</Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild>
-                        <Link href={`/admin/users/${user.id}/edit`}>
-                          {t('common.edit')}
-                        </Link>
+                        <Link href={`/admin/users/${user.id}/edit`}>{t('common.edit')}</Link>
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
                         onClick={() => onToggleStatus(user)}
                         className={
-                          user.isActive
+                          isActive(user)
                             ? 'text-destructive focus:text-destructive'
                             : 'text-green-600 focus:text-green-600'
                         }
                       >
-                        {user.isActive
+                        {isActive(user)
                           ? t('users.confirmDisableTitle')
                           : t('users.confirmEnableTitle')}
                       </DropdownMenuItem>

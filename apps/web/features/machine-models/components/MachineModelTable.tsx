@@ -25,14 +25,6 @@ import { useTranslation } from '@/lib/i18n/TranslationContext';
 
 import type { MachineModel } from '../types';
 
-function formatDate(dateStr: string) {
-  return new Date(dateStr).toLocaleDateString(undefined, {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  });
-}
-
 interface MachineModelTableProps {
   models: MachineModel[];
   onToggleStatus: (model: MachineModel) => void;
@@ -52,12 +44,13 @@ export function MachineModelTable({
       <Table>
         <TableHeader>
           <TableRow>
+            <TableHead className="w-10" />
+            <TableHead>{t('machineModels.code')}</TableHead>
             <TableHead>{t('machineModels.brand')}</TableHead>
-            <TableHead>{t('machineModels.model')}</TableHead>
-            <TableHead>{t('machineModels.category')}</TableHead>
-            <TableHead>{t('machineModels.description')}</TableHead>
+            <TableHead>{t('machineModels.modelName')}</TableHead>
+            <TableHead>{t('machineModels.machineType')}</TableHead>
+            <TableHead>{t('machineModels.year')}</TableHead>
             <TableHead>{t('machineModels.statusLabel')}</TableHead>
-            <TableHead>{t('machineModels.createdAt')}</TableHead>
             <TableHead className="w-12" />
           </TableRow>
         </TableHeader>
@@ -65,7 +58,7 @@ export function MachineModelTable({
           {models.length === 0 ? (
             <TableRow>
               <TableCell
-                colSpan={7}
+                colSpan={8}
                 className="text-center text-muted-foreground py-10"
               >
                 {t('machineModels.noModels')}
@@ -78,36 +71,45 @@ export function MachineModelTable({
                 className="cursor-pointer"
                 onClick={() => router.push(`/admin/machine-models/${model.id}`)}
               >
-                <TableCell className="font-medium">{model.brand}</TableCell>
-                <TableCell>{model.model}</TableCell>
+                <TableCell onClick={(e) => e.stopPropagation()}>
+                  {model.imageUrl ? (
+                    <img
+                      src={model.imageUrl}
+                      alt={model.modelName}
+                      className="h-8 w-8 rounded-md object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 text-xs font-semibold text-primary">
+                      {model.code.slice(0, 2).toUpperCase()}
+                    </div>
+                  )}
+                </TableCell>
+                <TableCell className="font-medium">{model.code}</TableCell>
+                <TableCell>{model.brand ?? '—'}</TableCell>
+                <TableCell>{model.modelName}</TableCell>
                 <TableCell>
-                  {model.category ? (
+                  {model.machineType ? (
                     <Badge variant="outline" className="bg-blue-500/10 text-blue-700 border-blue-500/20 dark:text-blue-400">
-                      {model.category}
+                      {model.machineType}
                     </Badge>
                   ) : (
                     <span className="text-muted-foreground text-sm">—</span>
                   )}
                 </TableCell>
-                <TableCell>
-                  <p className="text-sm text-muted-foreground max-w-[200px] truncate">
-                    {model.description ?? '—'}
-                  </p>
+                <TableCell className="text-muted-foreground text-sm">
+                  {model.year ?? '—'}
                 </TableCell>
                 <TableCell>
                   <Badge
-                    variant={model.isActive ? 'default' : 'outline'}
+                    variant={model.status === 'ACTIVE' ? 'default' : 'outline'}
                     className={
-                      model.isActive
+                      model.status === 'ACTIVE'
                         ? 'bg-green-500/10 text-green-700 border-green-500/20 dark:text-green-400'
                         : 'text-muted-foreground'
                     }
                   >
-                    {t(model.isActive ? 'common.active' : 'common.inactive')}
+                    {t(model.status === 'ACTIVE' ? 'common.active' : 'common.inactive')}
                   </Badge>
-                </TableCell>
-                <TableCell className="text-muted-foreground text-sm">
-                  {formatDate(model.createdAt)}
                 </TableCell>
                 <TableCell onClick={(e) => e.stopPropagation()}>
                   <DropdownMenu>
@@ -131,12 +133,12 @@ export function MachineModelTable({
                       <DropdownMenuItem
                         onClick={() => onToggleStatus(model)}
                         className={
-                          model.isActive
+                          model.status === 'ACTIVE'
                             ? 'text-destructive focus:text-destructive'
                             : 'text-green-600 focus:text-green-600'
                         }
                       >
-                        {model.isActive
+                        {model.status === 'ACTIVE'
                           ? t('machineModels.confirmDisableTitle')
                           : t('machineModels.confirmEnableTitle')}
                       </DropdownMenuItem>

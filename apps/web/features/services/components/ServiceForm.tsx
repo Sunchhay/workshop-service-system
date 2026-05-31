@@ -25,46 +25,18 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { useTranslation } from '@/lib/i18n/TranslationContext';
 
-import type {
-  CreateServiceRequest,
-  PriceType,
-  UpdateServiceRequest,
-} from '../types';
+import type { CreateServiceRequest, UpdateServiceRequest } from '../types';
 
-const PRICE_TYPES: PriceType[] = ['FIXED', 'CATALOG_BASED', 'CUSTOM'];
+const schema = z.object({
+  code: z.string().min(1),
+  name: z.string().min(1),
+  nameEn: z.string().min(1),
+  category: z.string().optional(),
+  description: z.string().optional(),
+  status: z.enum(['ACTIVE', 'INACTIVE']),
+});
 
-const serviceSchema = z
-  .object({
-    nameEn: z.string().min(1),
-    nameKh: z.string(),
-    category: z.string(),
-    relatedComponent: z.string(),
-    priceType: z.enum(['FIXED', 'CATALOG_BASED', 'CUSTOM']),
-    defaultPrice: z.string(),
-    description: z.string(),
-  })
-  .superRefine((data, ctx) => {
-    if (data.priceType === 'FIXED') {
-      if (!data.defaultPrice.trim()) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: 'Default price is required for fixed price services',
-          path: ['defaultPrice'],
-        });
-      } else {
-        const num = parseFloat(data.defaultPrice);
-        if (isNaN(num) || num < 0) {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: 'Must be a valid non-negative number',
-            path: ['defaultPrice'],
-          });
-        }
-      }
-    }
-  });
-
-type FormValues = z.infer<typeof serviceSchema>;
+type FormValues = z.infer<typeof schema>;
 
 interface ServiceFormProps {
   mode: 'create' | 'edit';
@@ -82,29 +54,25 @@ export function ServiceForm({
   const { t } = useTranslation();
 
   const form = useForm<FormValues>({
-    resolver: zodResolver(serviceSchema),
+    resolver: zodResolver(schema),
     defaultValues: {
+      code: defaultValues?.code ?? '',
+      name: defaultValues?.name ?? '',
       nameEn: defaultValues?.nameEn ?? '',
-      nameKh: defaultValues?.nameKh ?? '',
       category: defaultValues?.category ?? '',
-      relatedComponent: defaultValues?.relatedComponent ?? '',
-      priceType: defaultValues?.priceType ?? 'FIXED',
-      defaultPrice: defaultValues?.defaultPrice ?? '',
       description: defaultValues?.description ?? '',
+      status: defaultValues?.status ?? 'ACTIVE',
     },
   });
 
-  const priceType = form.watch('priceType');
-
   const handleSubmit = async (data: FormValues) => {
     const payload: CreateServiceRequest | UpdateServiceRequest = {
+      code: data.code,
+      name: data.name,
       nameEn: data.nameEn,
-      nameKh: data.nameKh || undefined,
-      category: data.category || undefined,
-      relatedComponent: data.relatedComponent || undefined,
-      priceType: data.priceType,
-      defaultPrice: data.defaultPrice ? parseFloat(data.defaultPrice) : undefined,
-      description: data.description || undefined,
+      category: data.category?.trim() || undefined,
+      description: data.description?.trim() || undefined,
+      status: data.status,
     };
     await onSubmit(payload);
   };
@@ -112,22 +80,35 @@ export function ServiceForm({
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-5">
-        {/* Row 1: English name + Khmer name */}
+        {/* Code */}
+        <FormField
+          control={form.control}
+          name="code"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>
+                {t('services.code')} <span className="text-destructive">*</span>
+              </FormLabel>
+              <FormControl>
+                <Input placeholder={t('services.codePlaceholder')} {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {/* Service Name + English Name */}
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
           <FormField
             control={form.control}
-            name="nameEn"
+            name="name"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>
-                  {t('services.nameEn')}{' '}
-                  <span className="text-destructive">*</span>
+                  {t('services.name')} <span className="text-destructive">*</span>
                 </FormLabel>
                 <FormControl>
-                  <Input
-                    placeholder={t('services.nameEnPlaceholder')}
-                    {...field}
-                  />
+                  <Input placeholder={t('services.namePlaceholder')} {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -136,15 +117,14 @@ export function ServiceForm({
 
           <FormField
             control={form.control}
-            name="nameKh"
+            name="nameEn"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>{t('services.nameKh')}</FormLabel>
+                <FormLabel>
+                  {t('services.nameEn')} <span className="text-destructive">*</span>
+                </FormLabel>
                 <FormControl>
-                  <Input
-                    placeholder={t('services.nameKhPlaceholder')}
-                    {...field}
-                  />
+                  <Input placeholder={t('services.nameEnPlaceholder')} {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -152,7 +132,7 @@ export function ServiceForm({
           />
         </div>
 
-        {/* Row 2: Category + Related component */}
+        {/* Category + Status */}
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
           <FormField
             control={form.control}
@@ -161,10 +141,7 @@ export function ServiceForm({
               <FormItem>
                 <FormLabel>{t('services.category')}</FormLabel>
                 <FormControl>
-                  <Input
-                    placeholder={t('services.categoryPlaceholder')}
-                    {...field}
-                  />
+                  <Input placeholder={t('services.categoryPlaceholder')} {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -173,76 +150,25 @@ export function ServiceForm({
 
           <FormField
             control={form.control}
-            name="relatedComponent"
+            name="status"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>{t('services.relatedComponent')}</FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder={t('services.relatedComponentPlaceholder')}
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-
-        {/* Row 3: Price type + Default price (conditionally shown) */}
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-          <FormField
-            control={form.control}
-            name="priceType"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>
-                  {t('services.priceType')}{' '}
-                  <span className="text-destructive">*</span>
-                </FormLabel>
-                <FormControl>
-                  <Select value={field.value} onValueChange={field.onChange}>
-                    <SelectTrigger className="w-full">
+                <FormLabel>{t('services.statusLabel')}</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
-                      {PRICE_TYPES.map((pt) => (
-                        <SelectItem key={pt} value={pt}>
-                          {t(`priceTypes.${pt}`)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </FormControl>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="ACTIVE">{t('common.active')}</SelectItem>
+                    <SelectItem value="INACTIVE">{t('common.inactive')}</SelectItem>
+                  </SelectContent>
+                </Select>
                 <FormMessage />
               </FormItem>
             )}
           />
-
-          {priceType === 'FIXED' && (
-            <FormField
-              control={form.control}
-              name="defaultPrice"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>
-                    {t('services.defaultPrice')}{' '}
-                    <span className="text-destructive">*</span>
-                  </FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      placeholder={t('services.defaultPricePlaceholder')}
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          )}
         </div>
 
         {/* Description */}
@@ -270,7 +196,6 @@ export function ServiceForm({
           </p>
         )}
 
-        {/* Save button — sticky on mobile, normal on desktop */}
         <div className="sticky bottom-16 md:static z-10 bg-background/95 backdrop-blur-sm md:bg-transparent pt-4 pb-2 md:py-0 border-t md:border-t-0">
           <Button
             type="submit"

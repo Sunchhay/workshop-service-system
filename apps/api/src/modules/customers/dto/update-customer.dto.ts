@@ -1,13 +1,6 @@
-import {
-  IsBoolean,
-  IsEmail,
-  IsEnum,
-  IsNotEmpty,
-  IsOptional,
-  IsString,
-} from 'class-validator';
+import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
-import { CustomerType } from '../../../generated/prisma/enums';
+import { CustomerType, RecordStatus } from '../../../generated/prisma/enums';
 
 export class UpdateCustomerDto {
   @IsString()
@@ -20,24 +13,24 @@ export class UpdateCustomerDto {
   @IsOptional()
   phone?: string;
 
-  @IsEmail()
+  @IsString()
   @IsOptional()
-  email?: string;
+  imageUrl?: string;
 
   @IsString()
   @IsOptional()
-  address?: string;
+  note?: string;
 
   @IsEnum(CustomerType)
   @IsOptional()
   customerType?: CustomerType;
 
-  @IsString()
+  @IsEnum(RecordStatus)
   @IsOptional()
-  notes?: string;
+  status?: RecordStatus;
 }
 
 export class UpdateCustomerStatusDto {
-  @IsBoolean()
-  isActive: boolean;
+  @IsEnum(RecordStatus)
+  status!: RecordStatus;
 }

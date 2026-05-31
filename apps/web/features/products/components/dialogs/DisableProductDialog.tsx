@@ -33,7 +33,7 @@ export function DisableProductDialog({
 }: DisableProductDialogProps) {
   const { t } = useTranslation();
 
-  const isDisabling = product?.isActive ?? true;
+  const isDisabling = product?.status === 'ACTIVE';
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>

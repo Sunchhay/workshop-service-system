@@ -15,16 +15,27 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { useTranslation } from '@/lib/i18n/TranslationContext';
 
 import type { CreateMachineModelRequest, UpdateMachineModelRequest } from '../types';
 
 const schema = z.object({
-  brand: z.string().min(1),
-  model: z.string().min(1),
-  category: z.string(),
-  description: z.string(),
+  code: z.string().min(1),
+  modelName: z.string().min(1),
+  brand: z.string().optional(),
+  machineType: z.string().optional(),
+  year: z.string().optional(),
+  imageUrl: z.string().optional(),
+  description: z.string().optional(),
+  status: z.enum(['ACTIVE', 'INACTIVE']),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -47,19 +58,27 @@ export function MachineModelForm({
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
+      code: defaultValues?.code ?? '',
+      modelName: defaultValues?.modelName ?? '',
       brand: defaultValues?.brand ?? '',
-      model: defaultValues?.model ?? '',
-      category: defaultValues?.category ?? '',
+      machineType: defaultValues?.machineType ?? '',
+      year: defaultValues?.year ?? '',
+      imageUrl: defaultValues?.imageUrl ?? '',
       description: defaultValues?.description ?? '',
+      status: defaultValues?.status ?? 'ACTIVE',
     },
   });
 
   const handleSubmit = async (data: FormValues) => {
     const payload: CreateMachineModelRequest | UpdateMachineModelRequest = {
-      brand: data.brand,
-      model: data.model,
-      category: data.category.trim() || undefined,
-      description: data.description.trim() || undefined,
+      code: data.code,
+      modelName: data.modelName,
+      brand: data.brand?.trim() || undefined,
+      machineType: data.machineType?.trim() || undefined,
+      year: data.year?.trim() || undefined,
+      imageUrl: data.imageUrl?.trim() || undefined,
+      description: data.description?.trim() || undefined,
+      status: data.status,
     };
     await onSubmit(payload);
   };
@@ -67,16 +86,49 @@ export function MachineModelForm({
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-5">
-        {/* Brand + Model */}
+        {/* Code + Model Name */}
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+          <FormField
+            control={form.control}
+            name="code"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>
+                  {t('machineModels.code')} <span className="text-destructive">*</span>
+                </FormLabel>
+                <FormControl>
+                  <Input placeholder={t('machineModels.codePlaceholder')} {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="modelName"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>
+                  {t('machineModels.modelName')} <span className="text-destructive">*</span>
+                </FormLabel>
+                <FormControl>
+                  <Input placeholder={t('machineModels.modelNamePlaceholder')} {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        {/* Brand + Machine Type */}
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
           <FormField
             control={form.control}
             name="brand"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>
-                  {t('machineModels.brand')} <span className="text-destructive">*</span>
-                </FormLabel>
+                <FormLabel>{t('machineModels.brand')}</FormLabel>
                 <FormControl>
                   <Input placeholder={t('machineModels.brandPlaceholder')} {...field} />
                 </FormControl>
@@ -87,14 +139,12 @@ export function MachineModelForm({
 
           <FormField
             control={form.control}
-            name="model"
+            name="machineType"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>
-                  {t('machineModels.model')} <span className="text-destructive">*</span>
-                </FormLabel>
+                <FormLabel>{t('machineModels.machineType')}</FormLabel>
                 <FormControl>
-                  <Input placeholder={t('machineModels.modelPlaceholder')} {...field} />
+                  <Input placeholder={t('machineModels.machineTypePlaceholder')} {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -102,16 +152,55 @@ export function MachineModelForm({
           />
         </div>
 
-        {/* Category */}
+        {/* Year + Image URL */}
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+          <FormField
+            control={form.control}
+            name="year"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('machineModels.year')}</FormLabel>
+                <FormControl>
+                  <Input placeholder={t('machineModels.yearPlaceholder')} {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="imageUrl"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('machineModels.imageUrl')}</FormLabel>
+                <FormControl>
+                  <Input placeholder={t('machineModels.imageUrlPlaceholder')} {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        {/* Status */}
         <FormField
           control={form.control}
-          name="category"
+          name="status"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>{t('machineModels.category')}</FormLabel>
-              <FormControl>
-                <Input placeholder={t('machineModels.categoryPlaceholder')} {...field} />
-              </FormControl>
+              <FormLabel>{t('machineModels.statusLabel')}</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="ACTIVE">{t('common.active')}</SelectItem>
+                  <SelectItem value="INACTIVE">{t('common.inactive')}</SelectItem>
+                </SelectContent>
+              </Select>
               <FormMessage />
             </FormItem>
           )}

@@ -1,24 +1,31 @@
+import { Transform } from 'class-transformer';
 import { IsEnum, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
 
-import { UserRole } from '../../../generated/prisma/enums';
+import { RecordStatus, UserRole } from '../../../generated/prisma/enums';
 
 export class QueryUserDto {
-  @IsEnum(UserRole)
-  @IsOptional()
-  role?: UserRole;
-
   @IsString()
   @IsOptional()
   search?: string;
 
+  @IsEnum(UserRole)
+  @IsOptional()
+  role?: UserRole;
+
+  @IsEnum(RecordStatus)
+  @IsOptional()
+  status?: RecordStatus;
+
   @IsInt()
   @Min(1)
   @IsOptional()
-  page?: number = 1;
+  @Transform(({ value }) => Number(value))
+  page?: number;
 
   @IsInt()
   @Min(1)
   @Max(100)
   @IsOptional()
-  limit?: number = 20;
+  @Transform(({ value }) => Number(value))
+  limit?: number;
 }

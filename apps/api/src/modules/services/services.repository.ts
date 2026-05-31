@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 
+import { RecordStatus } from '../../generated/prisma/enums';
 import { PrismaService } from '../../prisma/prisma.service';
 import type { CreateServiceDto } from './dto/create-service.dto';
 import type { QueryServiceDto } from './dto/query-service.dto';
@@ -8,14 +9,11 @@ import type { UpdateServiceDto } from './dto/update-service.dto';
 const SERVICE_SELECT = {
   id: true,
   code: true,
+  name: true,
   nameEn: true,
-  nameKh: true,
   category: true,
-  relatedComponent: true,
-  defaultPrice: true,
-  priceType: true,
   description: true,
-  isActive: true,
+  status: true,
   createdAt: true,
   updatedAt: true,
 } as const;
@@ -24,47 +22,43 @@ const SERVICE_SELECT = {
 export class ServicesRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async generateCode(): Promise<string> {
-    const last = await this.prisma.service.findFirst({
-      orderBy: { createdAt: 'desc' },
-      select: { code: true },
+  findByCode(code: string, excludeId?: string) {
+    return this.prisma.service.findFirst({
+      where: { code, ...(excludeId && { id: { not: excludeId } }) },
+      select: { id: true },
     });
-    if (!last) return 'SRV-001';
-    const num = parseInt(last.code.slice(4), 10);
-    return `SRV-${String(num + 1).padStart(3, '0')}`;
   }
 
-  create(data: CreateServiceDto & { code: string }) {
+  create(data: CreateServiceDto) {
     return this.prisma.service.create({
       data: {
         code: data.code,
+        name: data.name,
         nameEn: data.nameEn,
-        nameKh: data.nameKh,
         category: data.category,
-        relatedComponent: data.relatedComponent,
-        priceType: data.priceType,
-        defaultPrice: data.defaultPrice,
         description: data.description,
+        status: data.status ?? RecordStatus.ACTIVE,
       },
       select: SERVICE_SELECT,
     });
   }
 
   async findAll(dto: QueryServiceDto) {
-    const { search, priceType, isActive, page = 1, limit = 20 } = dto;
+    const { search, status, category, page = 1, limit = 20 } = dto;
     const skip = (page - 1) * limit;
 
     const where = {
-      deletedAt: null,
-      ...(priceType !== undefined && { priceType }),
-      ...(isActive !== undefined && { isActive }),
+      ...(status !== undefined && { status }),
+      ...(category !== undefined && {
+        category: { contains: category, mode: 'insensitive' as const },
+      }),
       ...(search !== undefined && {
         OR: [
           { code: { contains: search, mode: 'insensitive' as const } },
+          { name: { contains: search, mode: 'insensitive' as const } },
           { nameEn: { contains: search, mode: 'insensitive' as const } },
-          { nameKh: { contains: search, mode: 'insensitive' as const } },
           { category: { contains: search, mode: 'insensitive' as const } },
-          { relatedComponent: { contains: search, mode: 'insensitive' as const } },
+          { description: { contains: search, mode: 'insensitive' as const } },
         ],
       }),
     };
@@ -84,8 +78,8 @@ export class ServicesRepository {
   }
 
   findById(id: string) {
-    return this.prisma.service.findFirst({
-      where: { id, deletedAt: null },
+    return this.prisma.service.findUnique({
+      where: { id },
       select: SERVICE_SELECT,
     });
   }
@@ -98,18 +92,18 @@ export class ServicesRepository {
     });
   }
 
-  updateStatus(id: string, isActive: boolean) {
+  updateStatus(id: string, status: RecordStatus) {
     return this.prisma.service.update({
       where: { id },
-      data: { isActive },
+      data: { status },
       select: SERVICE_SELECT,
     });
   }
 
-  softDelete(id: string) {
+  deactivate(id: string) {
     return this.prisma.service.update({
       where: { id },
-      data: { deletedAt: new Date() },
+      data: { status: RecordStatus.INACTIVE },
       select: SERVICE_SELECT,
     });
   }

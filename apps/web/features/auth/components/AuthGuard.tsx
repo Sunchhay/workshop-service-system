@@ -20,12 +20,17 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     skip: !isHydrated || isAuthenticated || !accessToken,
   });
 
-  // /auth/me succeeded — mark user as authenticated
+  // /auth/me succeeded — mark user as authenticated (or logout if inactive)
   useEffect(() => {
     if (data?.data) {
-      dispatch(setAuthenticatedUser(data.data));
+      if (data.data.status === 'INACTIVE') {
+        dispatch(logout());
+        router.replace('/login');
+      } else {
+        dispatch(setAuthenticatedUser(data.data));
+      }
     }
-  }, [data, dispatch]);
+  }, [data, dispatch, router]);
 
   // /auth/me failed — token is invalid or expired
   useEffect(() => {

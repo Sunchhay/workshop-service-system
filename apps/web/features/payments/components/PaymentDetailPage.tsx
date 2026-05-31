@@ -16,11 +16,16 @@ import type { PaymentMethod } from '../types';
 
 const methodClass: Record<PaymentMethod, string> = {
   CASH: 'bg-green-500/10 text-green-700 border-green-500/20 dark:text-green-400',
+  ACLEDA: 'bg-purple-500/10 text-purple-700 border-purple-500/20 dark:text-purple-400',
   ABA: 'bg-blue-500/10 text-blue-700 border-blue-500/20 dark:text-blue-400',
-  BANK_TRANSFER: 'bg-purple-500/10 text-purple-700 border-purple-500/20 dark:text-purple-400',
-  CARD: 'bg-amber-500/10 text-amber-700 border-amber-500/20 dark:text-amber-400',
+  BAKONG: 'bg-cyan-500/10 text-cyan-700 border-cyan-500/20 dark:text-cyan-400',
   OTHER: 'bg-gray-500/10 text-gray-600 border-gray-500/20 dark:text-gray-400',
 };
+
+function fmt(v: string | number) {
+  const n = parseFloat(String(v));
+  return isNaN(n) ? '0.00' : n.toFixed(2);
+}
 
 function formatDate(d: string) {
   return new Date(d).toLocaleDateString(undefined, {
@@ -59,20 +64,22 @@ export function PaymentDetailPage({ id }: { id: string }) {
             <div className="flex items-start justify-between gap-3 flex-wrap">
               <div>
                 <div className="flex items-center gap-2 flex-wrap">
-                  <CardTitle className="font-mono">{payment.paymentNumber}</CardTitle>
-                  <Badge variant="outline" className={methodClass[payment.method]}>
-                    {t(`paymentMethods.${payment.method}`)}
+                  <CardTitle>{t('payments.paymentDetail')}</CardTitle>
+                  <Badge variant="outline" className={methodClass[payment.paymentMethod]}>
+                    {t(`paymentMethods.${payment.paymentMethod}`)}
                   </Badge>
                 </div>
-                <p className="text-sm text-muted-foreground mt-1">
-                  {payment.customer.name}
-                  {payment.customer.phone && ` · ${payment.customer.phone}`}
-                </p>
+                {payment.sale && (
+                  <Link
+                    href={`/admin/sales/${payment.sale.id}`}
+                    className="font-mono text-sm text-muted-foreground hover:underline mt-1 block"
+                  >
+                    {payment.sale.invoiceNo}
+                  </Link>
+                )}
               </div>
               <div className="text-right">
-                <p className="text-2xl font-mono font-bold">
-                  ${parseFloat(payment.amount).toFixed(2)}
-                </p>
+                <p className="text-2xl font-mono font-bold">${fmt(payment.amount)}</p>
                 <p className="text-sm text-muted-foreground">{formatDate(payment.paidAt)}</p>
               </div>
             </div>
@@ -82,19 +89,17 @@ export function PaymentDetailPage({ id }: { id: string }) {
             <Separator />
 
             <div className="grid grid-cols-2 gap-4 text-sm sm:grid-cols-3">
-              <div>
-                <p className="text-muted-foreground text-xs mb-1">{t('payments.invoice')}</p>
-                <Link
-                  href={`/admin/invoices/${payment.invoice.id}`}
-                  className="font-mono font-medium hover:underline"
-                >
-                  {payment.invoice.invoiceNumber}
-                </Link>
-              </div>
-              <div>
-                <p className="text-muted-foreground text-xs mb-1">{t('payments.customer')}</p>
-                <p>{payment.customer.name}</p>
-              </div>
+              {payment.sale && (
+                <div>
+                  <p className="text-muted-foreground text-xs mb-1">{t('payments.sale')}</p>
+                  <Link
+                    href={`/admin/sales/${payment.sale.id}`}
+                    className="font-mono font-medium hover:underline"
+                  >
+                    {payment.sale.invoiceNo}
+                  </Link>
+                </div>
+              )}
               {payment.referenceNo && (
                 <div>
                   <p className="text-muted-foreground text-xs mb-1">{t('payments.referenceNo')}</p>
@@ -102,43 +107,17 @@ export function PaymentDetailPage({ id }: { id: string }) {
                 </div>
               )}
               <div>
-                <p className="text-muted-foreground text-xs mb-1">{t('payments.createdBy')}</p>
-                <p>{payment.createdBy.name}</p>
-              </div>
-              <div>
                 <p className="text-muted-foreground text-xs mb-1">{t('payments.createdAt')}</p>
                 <p>{formatDate(payment.createdAt)}</p>
               </div>
             </div>
 
-            {/* Invoice status at time of this payment */}
-            <Separator />
-            <div className="rounded-lg bg-muted/50 px-4 py-3 text-sm space-y-1.5">
-              <p className="text-xs text-muted-foreground uppercase mb-2">{t('payments.invoice')}</p>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">{t('invoices.totalAmount')}</span>
-                <span className="font-mono">${parseFloat(payment.invoice.totalAmount).toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">{t('invoices.paidAmount')}</span>
-                <span className="font-mono text-green-700 dark:text-green-400">
-                  ${parseFloat(payment.invoice.paidAmount).toFixed(2)}
-                </span>
-              </div>
-              <div className="flex justify-between font-medium">
-                <span>{t('invoices.dueAmount')}</span>
-                <span className={`font-mono ${parseFloat(payment.invoice.dueAmount) > 0 ? 'text-amber-700 dark:text-amber-400' : 'text-green-700 dark:text-green-400'}`}>
-                  ${parseFloat(payment.invoice.dueAmount).toFixed(2)}
-                </span>
-              </div>
-            </div>
-
-            {payment.notes && (
+            {payment.note && (
               <>
                 <Separator />
                 <div className="text-sm">
-                  <p className="text-muted-foreground text-xs mb-1">{t('payments.notes')}</p>
-                  <p className="whitespace-pre-line text-muted-foreground">{payment.notes}</p>
+                  <p className="text-muted-foreground text-xs mb-1">{t('payments.note')}</p>
+                  <p className="whitespace-pre-line text-muted-foreground">{payment.note}</p>
                 </div>
               </>
             )}

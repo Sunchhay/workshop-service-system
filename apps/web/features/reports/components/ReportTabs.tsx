@@ -5,16 +5,14 @@ import type { TranslationKey } from '@/lib/i18n/TranslationContext';
 import { useTranslation } from '@/lib/i18n/TranslationContext';
 
 export type ReportTab =
-  | 'summary'
-  | 'service-jobs'
-  | 'invoices'
-  | 'payments'
   | 'sales'
+  | 'payments'
   | 'expenses'
   | 'profit'
-  | 'unpaid'
-  | 'products'
-  | 'low-stock';
+  | 'mechanic-commissions'
+  | 'customer-debts'
+  | 'service-usage'
+  | 'product-sales';
 
 interface TabDef {
   id: ReportTab;
@@ -22,16 +20,14 @@ interface TabDef {
 }
 
 const TABS: TabDef[] = [
-  { id: 'summary', labelKey: 'reports.tabSummary' },
-  { id: 'service-jobs', labelKey: 'reports.tabServiceJobs' },
-  { id: 'invoices', labelKey: 'reports.tabInvoices' },
-  { id: 'payments', labelKey: 'reports.tabPayments' },
   { id: 'sales', labelKey: 'reports.tabSales' },
+  { id: 'payments', labelKey: 'reports.tabPayments' },
   { id: 'expenses', labelKey: 'reports.tabExpenses' },
   { id: 'profit', labelKey: 'reports.tabProfit' },
-  { id: 'unpaid', labelKey: 'reports.tabUnpaid' },
-  { id: 'products', labelKey: 'reports.tabProducts' },
-  { id: 'low-stock', labelKey: 'reports.tabLowStock' },
+  { id: 'mechanic-commissions', labelKey: 'reports.tabMechanicCommissions' },
+  { id: 'customer-debts', labelKey: 'reports.tabCustomerDebts' },
+  { id: 'service-usage', labelKey: 'reports.tabServiceUsage' },
+  { id: 'product-sales', labelKey: 'reports.tabProductSales' },
 ];
 
 interface ReportTabsProps {

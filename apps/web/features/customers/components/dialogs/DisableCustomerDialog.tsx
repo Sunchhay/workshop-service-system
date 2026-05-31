@@ -33,7 +33,7 @@ export function DisableCustomerDialog({
 
   if (!customer) return null;
 
-  const isDisabling = customer.isActive;
+  const isDisabling = customer.status === 'ACTIVE';
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
@@ -46,7 +46,7 @@ export function DisableCustomerDialog({
           </AlertDialogTitle>
           <AlertDialogDescription>
             <span className="font-medium text-foreground">{customer.name}</span>{' '}
-            ({customer.code}) —{' '}
+            —{' '}
             {isDisabling
               ? t('customers.confirmDisableDesc')
               : t('customers.confirmEnableDesc')}

@@ -1,6 +1,6 @@
 'use client';
 
-import Link from 'next/link';
+import { MoreHorizontal } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 import { Badge } from '@/components/ui/badge';
@@ -9,7 +9,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
@@ -21,135 +20,134 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { useTranslation } from '@/lib/i18n/TranslationContext';
-import { MoreHorizontal } from 'lucide-react';
 
-import type { Sale, SaleStatus } from '../types';
+import type { PaymentStatus, Sale, SaleStatus } from '../types';
 
-const statusClass: Record<SaleStatus, string> = {
-  DRAFT: 'bg-gray-500/10 text-gray-600 border-gray-500/20 dark:text-gray-400',
-  COMPLETED: 'bg-green-500/10 text-green-700 border-green-500/20 dark:text-green-400',
-  CANCELLED: 'bg-red-500/10 text-red-700 border-red-500/20 dark:text-red-400',
+const paymentStatusClass: Record<PaymentStatus, string> = {
+  PAID: 'bg-green-500/10 text-green-700 border-green-500/20 dark:text-green-400',
+  PARTIAL: 'bg-amber-500/10 text-amber-700 border-amber-500/20 dark:text-amber-400',
+  UNPAID: 'bg-red-500/10 text-red-700 border-red-500/20 dark:text-red-400',
 };
 
+const saleStatusClass: Record<SaleStatus, string> = {
+  COMPLETED: 'bg-blue-500/10 text-blue-700 border-blue-500/20 dark:text-blue-400',
+  VOIDED: 'bg-gray-500/10 text-gray-600 border-gray-500/20 dark:text-gray-400',
+};
+
+function fmt(v: string | number) {
+  const n = parseFloat(String(v));
+  return isNaN(n) ? '0.00' : n.toFixed(2);
+}
+
 function formatDate(d: string) {
-  return new Date(d).toLocaleDateString(undefined, {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  });
+  return new Date(d).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
 interface SalesTableProps {
   sales: Sale[];
-  onCancel: (sale: Sale) => void;
-  onDelete: (sale: Sale) => void;
-  onComplete?: (sale: Sale) => void;
+  onVoid: (sale: Sale) => void;
 }
 
-export function SalesTable({ sales, onCancel, onDelete, onComplete }: SalesTableProps) {
+export function SalesTable({ sales, onVoid }: SalesTableProps) {
   const { t } = useTranslation();
   const router = useRouter();
+
+  if (sales.length === 0) {
+    return (
+      <div className="rounded-xl border border-dashed p-8 text-center text-muted-foreground text-sm">
+        {t('sales.noSales')}
+      </div>
+    );
+  }
 
   return (
     <div className="rounded-xl border bg-card overflow-hidden">
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>{t('sales.saleNumber')}</TableHead>
+            <TableHead>{t('sales.invoiceNo')}</TableHead>
+            <TableHead>{t('sales.date')}</TableHead>
             <TableHead>{t('sales.customer')}</TableHead>
-            <TableHead>{t('sales.status')}</TableHead>
-            <TableHead>{t('sales.totalAmount')}</TableHead>
-            <TableHead>{t('sales.soldAt')}</TableHead>
-            <TableHead className="w-12" />
+            <TableHead>{t('sales.mechanic')}</TableHead>
+            <TableHead className="text-right">{t('sales.grandTotal')}</TableHead>
+            <TableHead className="text-right">{t('sales.paidAmount')}</TableHead>
+            <TableHead className="text-right">{t('sales.balanceAmount')}</TableHead>
+            <TableHead>{t('sales.paymentStatus')}</TableHead>
+            <TableHead>{t('sales.saleStatus')}</TableHead>
+            <TableHead className="w-10" />
           </TableRow>
         </TableHeader>
         <TableBody>
-          {sales.length === 0 ? (
-            <TableRow>
-              <TableCell colSpan={6} className="text-center text-muted-foreground py-10">
-                {t('sales.noSales')}
+          {sales.map((sale) => (
+            <TableRow
+              key={sale.id}
+              className="cursor-pointer"
+              onClick={() => router.push(`/admin/sales/${sale.id}`)}
+            >
+              <TableCell className="font-mono font-medium text-sm">{sale.invoiceNo}</TableCell>
+              <TableCell className="text-muted-foreground text-sm">
+                {formatDate(sale.createdAt)}
+              </TableCell>
+              <TableCell>
+                {sale.customer ? (
+                  <>
+                    <p className="text-sm font-medium">{sale.customer.name}</p>
+                    <p className="text-xs text-muted-foreground">{sale.customer.phone}</p>
+                  </>
+                ) : (
+                  <span className="text-sm text-muted-foreground">—</span>
+                )}
+              </TableCell>
+              <TableCell>
+                {sale.mechanic ? (
+                  <p className="text-sm">{sale.mechanic.name}</p>
+                ) : (
+                  <span className="text-muted-foreground text-sm">—</span>
+                )}
+              </TableCell>
+              <TableCell className="text-right font-mono text-sm font-medium">
+                ${fmt(sale.grandTotal)}
+              </TableCell>
+              <TableCell className="text-right font-mono text-sm text-green-700 dark:text-green-400">
+                ${fmt(sale.paidAmount)}
+              </TableCell>
+              <TableCell className={`text-right font-mono text-sm ${parseFloat(String(sale.balanceAmount)) > 0 ? 'text-amber-700 dark:text-amber-400' : ''}`}>
+                ${fmt(sale.balanceAmount)}
+              </TableCell>
+              <TableCell>
+                <Badge variant="outline" className={paymentStatusClass[sale.paymentStatus]}>
+                  {t(`paymentStatuses.${sale.paymentStatus}`)}
+                </Badge>
+              </TableCell>
+              <TableCell>
+                <Badge variant="outline" className={saleStatusClass[sale.saleStatus]}>
+                  {t(`saleStatuses.${sale.saleStatus}`)}
+                </Badge>
+              </TableCell>
+              <TableCell onClick={(e) => e.stopPropagation()}>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon-sm">
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => router.push(`/admin/sales/${sale.id}`)}>
+                      {t('common.view')}
+                    </DropdownMenuItem>
+                    {sale.saleStatus === 'COMPLETED' && (
+                      <DropdownMenuItem
+                        className="text-destructive focus:text-destructive"
+                        onClick={() => onVoid(sale)}
+                      >
+                        {t('sales.voidSale')}
+                      </DropdownMenuItem>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </TableCell>
             </TableRow>
-          ) : (
-            sales.map((sale) => (
-              <TableRow
-                key={sale.id}
-                className="cursor-pointer"
-                onClick={() => router.push(`/admin/sales/${sale.id}`)}
-              >
-                <TableCell>
-                  <div>
-                    <p className="font-mono font-medium text-sm">{sale.saleNumber}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {sale.items.length} {sale.items.length === 1 ? 'item' : 'items'}
-                    </p>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  {sale.customer ? (
-                    <div>
-                      <p className="text-sm font-medium">{sale.customer.name}</p>
-                      {sale.customer.phone && (
-                        <p className="text-xs text-muted-foreground">{sale.customer.phone}</p>
-                      )}
-                    </div>
-                  ) : (
-                    <span className="text-sm text-muted-foreground">{t('sales.walkIn')}</span>
-                  )}
-                </TableCell>
-                <TableCell>
-                  <Badge variant="outline" className={statusClass[sale.status]}>
-                    {t(`saleStatuses.${sale.status}`)}
-                  </Badge>
-                </TableCell>
-                <TableCell className="font-mono text-sm font-medium">
-                  ${parseFloat(sale.totalAmount).toFixed(2)}
-                </TableCell>
-                <TableCell className="text-muted-foreground text-sm">
-                  {formatDate(sale.soldAt)}
-                </TableCell>
-                <TableCell onClick={(e) => e.stopPropagation()}>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon-sm">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem asChild>
-                        <Link href={`/admin/sales/${sale.id}`}>{t('sales.saleDetail')}</Link>
-                      </DropdownMenuItem>
-                      {sale.status === 'DRAFT' && (
-                        <DropdownMenuItem asChild>
-                          <Link href={`/admin/sales/${sale.id}/edit`}>{t('sales.continueDraft')}</Link>
-                        </DropdownMenuItem>
-                      )}
-                      {sale.status === 'DRAFT' && onComplete && (
-                        <DropdownMenuItem onClick={() => onComplete(sale)}>
-                          {t('sales.completeSale')}
-                        </DropdownMenuItem>
-                      )}
-                      <DropdownMenuSeparator />
-                      {sale.status !== 'CANCELLED' && (
-                        <DropdownMenuItem
-                          onClick={() => onCancel(sale)}
-                          className="text-destructive focus:text-destructive"
-                        >
-                          {t('sales.confirmCancelTitle')}
-                        </DropdownMenuItem>
-                      )}
-                      <DropdownMenuItem
-                        onClick={() => onDelete(sale)}
-                        className="text-destructive focus:text-destructive"
-                      >
-                        {t('common.delete')}
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </TableCell>
-              </TableRow>
-            ))
-          )}
+          ))}
         </TableBody>
       </Table>
     </div>

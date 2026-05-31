@@ -1,83 +1,71 @@
 import { baseApi } from '@/lib/api/baseApi';
 
 import type {
+  GetReportCustomerDebtsResponse,
   GetReportExpensesResponse,
-  GetReportInvoicesResponse,
-  GetReportLowStockResponse,
+  GetReportMechanicCommissionsResponse,
   GetReportPaymentsResponse,
-  GetReportProductsResponse,
-  GetReportProfitResponse,
+  GetReportProductSalesResponse,
+  GetReportProfitSummaryResponse,
   GetReportSalesResponse,
-  GetReportServiceJobsResponse,
-  GetReportSummaryResponse,
-  GetReportUnpaidBalancesResponse,
-  ReportQuery,
+  GetReportServiceUsageResponse,
+  ReportCommissionQuery,
+  ReportDateQuery,
+  ReportExpenseQuery,
+  ReportPaymentQuery,
+  ReportSaleQuery,
 } from './types';
 
 const reportsApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
-    getReportSummary: builder.query<GetReportSummaryResponse, ReportQuery>({
-      query: (params) => ({ url: '/reports/summary', params }),
-      providesTags: ['ReportSummary'],
-      keepUnusedDataFor: 60,
-    }),
-    getReportServiceJobs: builder.query<GetReportServiceJobsResponse, ReportQuery>({
-      query: (params) => ({ url: '/reports/service-jobs', params }),
-      providesTags: ['ReportServiceJob'],
-      keepUnusedDataFor: 60,
-    }),
-    getReportInvoices: builder.query<GetReportInvoicesResponse, ReportQuery>({
-      query: (params) => ({ url: '/reports/invoices', params }),
-      providesTags: ['ReportInvoice'],
-      keepUnusedDataFor: 60,
-    }),
-    getReportPayments: builder.query<GetReportPaymentsResponse, ReportQuery>({
-      query: (params) => ({ url: '/reports/payments', params }),
-      providesTags: ['ReportPayment'],
-      keepUnusedDataFor: 60,
-    }),
-    getReportSales: builder.query<GetReportSalesResponse, ReportQuery>({
+    getReportSales: builder.query<GetReportSalesResponse, ReportSaleQuery>({
       query: (params) => ({ url: '/reports/sales', params }),
       providesTags: ['ReportSale'],
       keepUnusedDataFor: 60,
     }),
-    getReportExpenses: builder.query<GetReportExpensesResponse, ReportQuery>({
+    getReportPayments: builder.query<GetReportPaymentsResponse, ReportPaymentQuery>({
+      query: (params) => ({ url: '/reports/payments', params }),
+      providesTags: ['ReportPayment'],
+      keepUnusedDataFor: 60,
+    }),
+    getReportExpenses: builder.query<GetReportExpensesResponse, ReportExpenseQuery>({
       query: (params) => ({ url: '/reports/expenses', params }),
       providesTags: ['ReportExpense'],
       keepUnusedDataFor: 60,
     }),
-    getReportProfit: builder.query<GetReportProfitResponse, ReportQuery>({
-      query: (params) => ({ url: '/reports/profit', params }),
+    getReportProfitSummary: builder.query<GetReportProfitSummaryResponse, ReportDateQuery>({
+      query: (params) => ({ url: '/reports/profit-summary', params }),
       providesTags: ['ReportProfit'],
       keepUnusedDataFor: 60,
     }),
-    getReportUnpaidBalances: builder.query<GetReportUnpaidBalancesResponse, ReportQuery>({
-      query: (params) => ({ url: '/reports/unpaid-balances', params }),
-      providesTags: ['ReportUnpaidBalance'],
+    getReportMechanicCommissions: builder.query<GetReportMechanicCommissionsResponse, ReportCommissionQuery>({
+      query: (params) => ({ url: '/reports/mechanic-commissions', params }),
+      providesTags: ['ReportSale'],
       keepUnusedDataFor: 60,
     }),
-    getReportProducts: builder.query<GetReportProductsResponse, ReportQuery>({
-      query: (params) => ({ url: '/reports/products', params }),
-      providesTags: ['ReportProduct'],
+    getReportCustomerDebts: builder.query<GetReportCustomerDebtsResponse, ReportDateQuery>({
+      query: (params) => ({ url: '/reports/customer-debts', params }),
+      providesTags: ['ReportSale'],
       keepUnusedDataFor: 60,
     }),
-    getReportLowStock: builder.query<GetReportLowStockResponse, void>({
-      query: () => '/reports/low-stock',
-      providesTags: ['ReportLowStock'],
+    getReportServiceUsage: builder.query<GetReportServiceUsageResponse, ReportDateQuery>({
+      query: (params) => ({ url: '/reports/service-usage', params }),
+      keepUnusedDataFor: 60,
+    }),
+    getReportProductSales: builder.query<GetReportProductSalesResponse, ReportDateQuery>({
+      query: (params) => ({ url: '/reports/product-sales', params }),
       keepUnusedDataFor: 60,
     }),
   }),
 });
 
 export const {
-  useGetReportSummaryQuery,
-  useGetReportServiceJobsQuery,
-  useGetReportInvoicesQuery,
-  useGetReportPaymentsQuery,
   useGetReportSalesQuery,
+  useGetReportPaymentsQuery,
   useGetReportExpensesQuery,
-  useGetReportProfitQuery,
-  useGetReportUnpaidBalancesQuery,
-  useGetReportProductsQuery,
-  useGetReportLowStockQuery,
+  useGetReportProfitSummaryQuery,
+  useGetReportMechanicCommissionsQuery,
+  useGetReportCustomerDebtsQuery,
+  useGetReportServiceUsageQuery,
+  useGetReportProductSalesQuery,
 } = reportsApi;

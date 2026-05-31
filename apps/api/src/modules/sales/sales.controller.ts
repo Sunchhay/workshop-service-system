@@ -1,33 +1,17 @@
-import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  Param,
-  Patch,
-  Post,
-  Query,
-} from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
 
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import type { RequestUser } from '../../common/types/jwt-payload.type';
-import { CancelSaleDto } from './dto/cancel-sale.dto';
-import { CreateSaleDto } from './dto/create-sale.dto';
+import { CreatePaymentDto } from '../payments/dto/create-payment.dto';
 import { QuerySaleDto } from './dto/query-sale.dto';
-import { UpdateSaleDto } from './dto/update-sale.dto';
+import { VoidSaleDto } from './dto/void-sale.dto';
 import { SalesService } from './sales.service';
 
 @Controller('sales')
 export class SalesController {
   constructor(private readonly salesService: SalesService) {}
 
-  // POST /api/sales
-  @Post()
-  create(@Body() dto: CreateSaleDto, @CurrentUser() user: RequestUser) {
-    return this.salesService.create(dto, user.id);
-  }
-
-  // GET /api/sales
+  // GET /api/sales?search=&saleStatus=COMPLETED&paymentStatus=UNPAID&customerId=&mechanicId=&dateFrom=&dateTo=&page=1&limit=20
   @Get()
   findAll(@Query() query: QuerySaleDto) {
     return this.salesService.findAll(query);
@@ -40,27 +24,25 @@ export class SalesController {
     return { success: true, data: sale };
   }
 
-  // PATCH /api/sales/:id
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() dto: UpdateSaleDto) {
-    return this.salesService.update(id, dto);
+  // POST /api/sales/:id/void
+  @Post(':id/void')
+  voidSale(
+    @Param('id') id: string,
+    @Body() dto: VoidSaleDto,
+    @CurrentUser() user: RequestUser,
+  ) {
+    return this.salesService.voidSale(id, dto, user.id);
   }
 
-  // PATCH /api/sales/:id/complete
-  @Patch(':id/complete')
-  complete(@Param('id') id: string) {
-    return this.salesService.complete(id);
+  // POST /api/sales/:id/commission-paid
+  @Post(':id/commission-paid')
+  markCommissionPaid(@Param('id') id: string) {
+    return this.salesService.markCommissionPaid(id);
   }
 
-  // PATCH /api/sales/:id/cancel
-  @Patch(':id/cancel')
-  cancel(@Param('id') id: string, @Body() dto: CancelSaleDto) {
-    return this.salesService.cancel(id, dto);
-  }
-
-  // DELETE /api/sales/:id
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.salesService.remove(id);
+  // POST /api/sales/:id/payments
+  @Post(':id/payments')
+  addPayment(@Param('id') id: string, @Body() dto: CreatePaymentDto) {
+    return this.salesService.addPayment(id, dto);
   }
 }

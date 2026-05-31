@@ -25,39 +25,38 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { useTranslation } from '@/lib/i18n/TranslationContext';
 
-import { useDeleteExpenseMutation, useGetExpensesQuery } from '../api';
-import type { Expense, ExpenseCategory, ExpensePaymentMethod } from '../types';
-import { DeleteExpenseDialog } from './dialogs/DeleteExpenseDialog';
+import { useGetExpensesQuery, useVoidExpenseMutation } from '../api';
+import type { Expense, ExpenseStatus, PaymentMethod } from '../types';
+import { VoidExpenseDialog } from './dialogs/VoidExpenseDialog';
 import { ExpenseMobileCard } from './ExpenseMobileCard';
 import { ExpenseTable } from './ExpenseTable';
 
-const CATEGORIES: ExpenseCategory[] = ['SUPPLIES', 'UTILITIES', 'RENT', 'SALARY', 'MAINTENANCE', 'OTHER'];
-const METHODS: ExpensePaymentMethod[] = ['CASH', 'ABA', 'BANK_TRANSFER', 'CARD', 'OTHER'];
+const PAYMENT_METHODS: PaymentMethod[] = ['CASH', 'ACLEDA', 'ABA', 'BAKONG', 'OTHER'];
 const LIMIT = 20;
-type CategoryFilter = ExpenseCategory | '__all';
-type MethodFilter = ExpensePaymentMethod | '__all';
+
+type StatusFilter = ExpenseStatus | '__all';
+type MethodFilter = PaymentMethod | '__all';
 
 export function ExpensePage() {
   const { t } = useTranslation();
 
   const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('__all');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('__all');
   const [methodFilter, setMethodFilter] = useState<MethodFilter>('__all');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [page, setPage] = useState(1);
   const [filterSheetOpen, setFilterSheetOpen] = useState(false);
 
-  // Pending filter state for mobile sheet
-  const [pendingCategory, setPendingCategory] = useState<CategoryFilter>('__all');
+  const [pendingStatus, setPendingStatus] = useState<StatusFilter>('__all');
   const [pendingMethod, setPendingMethod] = useState<MethodFilter>('__all');
   const [pendingDateFrom, setPendingDateFrom] = useState('');
   const [pendingDateTo, setPendingDateTo] = useState('');
 
-  const [deleteTarget, setDeleteTarget] = useState<Expense | null>(null);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [deleteExpense, { isLoading: isDeleting }] = useDeleteExpenseMutation();
+  const [voidTarget, setVoidTarget] = useState<Expense | null>(null);
+  const [voidDialogOpen, setVoidDialogOpen] = useState(false);
+  const [voidExpense, { isLoading: isVoiding }] = useVoidExpenseMutation();
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -67,12 +66,12 @@ export function ExpensePage() {
     return () => clearTimeout(timer);
   }, [searchInput]);
 
-  useEffect(() => { setPage(1); }, [categoryFilter, methodFilter, dateFrom, dateTo]);
+  useEffect(() => { setPage(1); }, [statusFilter, methodFilter, dateFrom, dateTo]);
 
   const { data, isLoading, isFetching } = useGetExpensesQuery({
     search: search || undefined,
-    category: categoryFilter === '__all' ? undefined : categoryFilter,
-    method: methodFilter === '__all' ? undefined : methodFilter,
+    expenseStatus: statusFilter === '__all' ? undefined : (statusFilter as ExpenseStatus),
+    paymentMethod: methodFilter === '__all' ? undefined : (methodFilter as PaymentMethod),
     dateFrom: dateFrom || undefined,
     dateTo: dateTo || undefined,
     page,
@@ -83,7 +82,7 @@ export function ExpensePage() {
   const meta = data?.meta;
 
   const activeFilterCount = [
-    categoryFilter !== '__all',
+    statusFilter !== '__all',
     methodFilter !== '__all',
     !!dateFrom,
     !!dateTo,
@@ -91,7 +90,7 @@ export function ExpensePage() {
 
   const handleSheetOpen = (open: boolean) => {
     if (open) {
-      setPendingCategory(categoryFilter);
+      setPendingStatus(statusFilter);
       setPendingMethod(methodFilter);
       setPendingDateFrom(dateFrom);
       setPendingDateTo(dateTo);
@@ -100,7 +99,7 @@ export function ExpensePage() {
   };
 
   const handleApplyFilters = () => {
-    setCategoryFilter(pendingCategory);
+    setStatusFilter(pendingStatus);
     setMethodFilter(pendingMethod);
     setDateFrom(pendingDateFrom);
     setDateTo(pendingDateTo);
@@ -108,30 +107,33 @@ export function ExpensePage() {
   };
 
   const handleResetFilters = () => {
-    setPendingCategory('__all');
+    setPendingStatus('__all');
     setPendingMethod('__all');
     setPendingDateFrom('');
     setPendingDateTo('');
-    setCategoryFilter('__all');
+    setStatusFilter('__all');
     setMethodFilter('__all');
     setDateFrom('');
     setDateTo('');
     setFilterSheetOpen(false);
   };
 
-  const handleDeleteConfirm = async () => {
-    if (!deleteTarget) return;
+  const openVoid = (expense: Expense) => { setVoidTarget(expense); setVoidDialogOpen(true); };
+
+  const handleVoidConfirm = async (voidReason: string) => {
+    if (!voidTarget) return;
     try {
-      await deleteExpense(deleteTarget.id).unwrap();
-      toast.success(t('expenses.deleteSuccess'));
-      setDeleteDialogOpen(false);
-      setDeleteTarget(null);
-    } catch {
-      toast.error(t('common.error'));
+      await voidExpense({ id: voidTarget.id, data: { voidReason } }).unwrap();
+      toast.success(t('expenses.voidSuccess'));
+      setVoidDialogOpen(false);
+      setVoidTarget(null);
+    } catch (err: unknown) {
+      const message = (err as { data?: { message?: string } })?.data?.message ?? t('common.error');
+      toast.error(message);
     }
   };
 
-  const openDelete = (expense: Expense) => { setDeleteTarget(expense); setDeleteDialogOpen(true); };
+  const inputClass = 'flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2';
 
   return (
     <div className="space-y-4">
@@ -157,24 +159,24 @@ export function ExpensePage() {
 
         {/* Desktop filters */}
         <div className="hidden md:flex gap-3">
-          <Select value={categoryFilter} onValueChange={(v) => setCategoryFilter(v as CategoryFilter)}>
-            <SelectTrigger className="w-40">
-              <SelectValue placeholder={t('expenses.allCategories')} />
+          <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as StatusFilter)}>
+            <SelectTrigger className="w-36">
+              <SelectValue placeholder={t('expenses.allStatuses')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="__all">{t('expenses.allCategories')}</SelectItem>
-              {CATEGORIES.map((c) => (
-                <SelectItem key={c} value={c}>{t(`expenseCategories.${c}`)}</SelectItem>
-              ))}
+              <SelectItem value="__all">{t('expenses.allStatuses')}</SelectItem>
+              <SelectItem value="PAID">{t('expenses.statusPaid')}</SelectItem>
+              <SelectItem value="UNPAID">{t('expenses.statusUnpaid')}</SelectItem>
+              <SelectItem value="VOIDED">{t('expenses.statusVoided')}</SelectItem>
             </SelectContent>
           </Select>
           <Select value={methodFilter} onValueChange={(v) => setMethodFilter(v as MethodFilter)}>
             <SelectTrigger className="w-40">
-              <SelectValue placeholder={t('expenses.allMethods')} />
+              <SelectValue placeholder={t('expenses.allPaymentMethods')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="__all">{t('expenses.allMethods')}</SelectItem>
-              {METHODS.map((m) => (
+              <SelectItem value="__all">{t('expenses.allPaymentMethods')}</SelectItem>
+              {PAYMENT_METHODS.map((m) => (
                 <SelectItem key={m} value={m}>{t(`paymentMethods.${m}`)}</SelectItem>
               ))}
             </SelectContent>
@@ -199,28 +201,28 @@ export function ExpensePage() {
             </SheetHeader>
             <div className="space-y-4 p-4">
               <div className="space-y-2">
-                <p className="text-sm font-medium">{t('expenses.category')}</p>
-                <Select value={pendingCategory} onValueChange={(v) => setPendingCategory(v as CategoryFilter)}>
+                <p className="text-sm font-medium">{t('expenses.expenseStatus')}</p>
+                <Select value={pendingStatus} onValueChange={(v) => setPendingStatus(v as StatusFilter)}>
                   <SelectTrigger>
-                    <SelectValue placeholder={t('expenses.allCategories')} />
+                    <SelectValue placeholder={t('expenses.allStatuses')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="__all">{t('expenses.allCategories')}</SelectItem>
-                    {CATEGORIES.map((c) => (
-                      <SelectItem key={c} value={c}>{t(`expenseCategories.${c}`)}</SelectItem>
-                    ))}
+                    <SelectItem value="__all">{t('expenses.allStatuses')}</SelectItem>
+                    <SelectItem value="PAID">{t('expenses.statusPaid')}</SelectItem>
+                    <SelectItem value="UNPAID">{t('expenses.statusUnpaid')}</SelectItem>
+                    <SelectItem value="VOIDED">{t('expenses.statusVoided')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
-                <p className="text-sm font-medium">{t('expenses.method')}</p>
+                <p className="text-sm font-medium">{t('expenses.paymentMethod')}</p>
                 <Select value={pendingMethod} onValueChange={(v) => setPendingMethod(v as MethodFilter)}>
                   <SelectTrigger>
-                    <SelectValue placeholder={t('expenses.allMethods')} />
+                    <SelectValue placeholder={t('expenses.allPaymentMethods')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="__all">{t('expenses.allMethods')}</SelectItem>
-                    {METHODS.map((m) => (
+                    <SelectItem value="__all">{t('expenses.allPaymentMethods')}</SelectItem>
+                    {PAYMENT_METHODS.map((m) => (
                       <SelectItem key={m} value={m}>{t(`paymentMethods.${m}`)}</SelectItem>
                     ))}
                   </SelectContent>
@@ -228,21 +230,21 @@ export function ExpensePage() {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">
-                  <p className="text-sm font-medium">{t('common.dateFrom') ?? 'From'}</p>
+                  <p className="text-sm font-medium">{t('common.dateFrom')}</p>
                   <input
                     type="date"
                     value={pendingDateFrom}
                     onChange={(e) => setPendingDateFrom(e.target.value)}
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    className={inputClass}
                   />
                 </div>
                 <div className="space-y-2">
-                  <p className="text-sm font-medium">{t('common.dateTo') ?? 'To'}</p>
+                  <p className="text-sm font-medium">{t('common.dateTo')}</p>
                   <input
                     type="date"
                     value={pendingDateTo}
                     onChange={(e) => setPendingDateTo(e.target.value)}
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    className={inputClass}
                   />
                 </div>
               </div>
@@ -267,7 +269,7 @@ export function ExpensePage() {
       {/* Desktop table */}
       {!isLoading && (
         <div className={`hidden md:block ${isFetching ? 'opacity-60' : ''}`}>
-          <ExpenseTable expenses={expenses} onDelete={openDelete} />
+          <ExpenseTable expenses={expenses} onVoid={openVoid} />
         </div>
       )}
 
@@ -282,11 +284,7 @@ export function ExpensePage() {
             />
           ) : (
             expenses.map((expense) => (
-              <ExpenseMobileCard
-                key={expense.id}
-                expense={expense}
-                onDelete={openDelete}
-              />
+              <ExpenseMobileCard key={expense.id} expense={expense} onVoid={openVoid} />
             ))
           )}
         </div>
@@ -333,12 +331,12 @@ export function ExpensePage() {
         </div>
       )}
 
-      <DeleteExpenseDialog
-        expense={deleteTarget}
-        open={deleteDialogOpen}
-        onOpenChange={setDeleteDialogOpen}
-        onConfirm={handleDeleteConfirm}
-        isLoading={isDeleting}
+      <VoidExpenseDialog
+        expense={voidTarget}
+        open={voidDialogOpen}
+        onOpenChange={setVoidDialogOpen}
+        onConfirm={handleVoidConfirm}
+        isLoading={isVoiding}
       />
     </div>
   );

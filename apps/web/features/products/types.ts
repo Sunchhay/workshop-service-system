@@ -1,63 +1,49 @@
 import type { ApiPaginatedResponse, ApiResponse } from '@/lib/api/types';
 
-export interface ProductLinkedRefBook {
-  id: string;
-  partName: string;
-  partCode: string | null;
-}
+export type RecordStatus = 'ACTIVE' | 'INACTIVE';
 
 export interface Product {
   id: string;
   code: string;
   name: string;
-  brand: string | null;
-  componentPartType: string | null;
-  size: string | null;
-  supplier: string | null;
-  description: string | null;
-  category: string | null;
-  unit: string;
-  costPrice: string; // Prisma Decimal → string
-  sellingPrice: string;
-  stockQuantity: number;
-  reorderLevel: number;
-  linkedReferenceBookId: string | null;
-  linkedReferenceBook: ProductLinkedRefBook | null;
-  isActive: boolean;
+  nameEn?: string | null;
+  category?: string | null;
+  unit?: string | null;
+  description?: string | null;
+  status: RecordStatus;
   createdAt: string;
   updatedAt: string;
 }
 
 export interface CreateProductRequest {
+  code: string;
   name: string;
-  brand?: string;
-  componentPartType?: string;
-  size?: string;
-  supplier?: string;
-  description?: string;
+  nameEn?: string;
   category?: string;
   unit?: string;
-  costPrice: number;
-  sellingPrice: number;
-  stockQuantity?: number;
-  reorderLevel?: number;
-  linkedReferenceBookId?: string;
+  description?: string;
+  status?: RecordStatus;
 }
 
-export type UpdateProductRequest = Partial<CreateProductRequest>;
+export interface UpdateProductRequest {
+  code?: string;
+  name?: string;
+  nameEn?: string;
+  category?: string;
+  unit?: string;
+  description?: string;
+  status?: RecordStatus;
+}
 
-export interface AdjustStockRequest {
-  quantityChange: number;
-  reason?: string;
-  note?: string;
+export interface UpdateProductStatusRequest {
+  status: RecordStatus;
 }
 
 export interface ProductQuery {
   search?: string;
+  status?: RecordStatus;
   category?: string;
-  componentPartType?: string;
-  isActive?: boolean;
-  lowStock?: boolean;
+  unit?: string;
   page?: number;
   limit?: number;
 }

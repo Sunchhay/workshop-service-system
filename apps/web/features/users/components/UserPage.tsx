@@ -26,16 +26,17 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useTranslation } from '@/lib/i18n/TranslationContext';
 
 import { useGetUsersQuery, useUpdateUserStatusMutation } from '../api';
-import type { User, UserRole } from '../types';
+import type { User, UserRole, UserStatus } from '../types';
 import { useAppSelector } from '@/lib/store/hooks';
 import { DisableUserDialog } from './dialogs/DisableUserDialog';
 import { UserMobileCard } from './UserMobileCard';
 import { UserTable } from './UserTable';
 
-const ROLES: UserRole[] = ['ADMIN', 'STAFF', 'TECHNICIAN', 'CASHIER'];
+const ROLES: UserRole[] = ['ADMIN', 'STAFF', 'VIEWER'];
 const LIMIT = 20;
 
 type RoleFilter = UserRole | '__all';
+type StatusFilter = UserStatus | '__all';
 
 export function UserPage() {
   const { t } = useTranslation();
@@ -44,7 +45,9 @@ export function UserPage() {
   const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState<RoleFilter>('__all');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('__all');
   const [pendingRole, setPendingRole] = useState<RoleFilter>('__all');
+  const [pendingStatus, setPendingStatus] = useState<StatusFilter>('__all');
   const [filterSheetOpen, setFilterSheetOpen] = useState(false);
   const [page, setPage] = useState(1);
 
@@ -64,32 +67,39 @@ export function UserPage() {
 
   useEffect(() => {
     setPage(1);
-  }, [roleFilter]);
+  }, [roleFilter, statusFilter]);
 
   const { data, isLoading, isFetching } = useGetUsersQuery({
     search: search || undefined,
     role: roleFilter === '__all' ? undefined : (roleFilter as UserRole),
+    status: statusFilter === '__all' ? undefined : (statusFilter as UserStatus),
     page,
     limit: LIMIT,
   });
 
   const users = (data?.data ?? []).filter((u) => u.id !== currentUserId);
   const meta = data?.meta;
-  const activeFilterCount = roleFilter !== '__all' ? 1 : 0;
+  const activeFilterCount = (roleFilter !== '__all' ? 1 : 0) + (statusFilter !== '__all' ? 1 : 0);
 
   const handleSheetOpen = (open: boolean) => {
-    if (open) setPendingRole(roleFilter);
+    if (open) {
+      setPendingRole(roleFilter);
+      setPendingStatus(statusFilter);
+    }
     setFilterSheetOpen(open);
   };
 
   const handleApplyFilters = () => {
     setRoleFilter(pendingRole);
+    setStatusFilter(pendingStatus);
     setFilterSheetOpen(false);
   };
 
   const handleResetFilters = () => {
     setPendingRole('__all');
+    setPendingStatus('__all');
     setRoleFilter('__all');
+    setStatusFilter('__all');
     setFilterSheetOpen(false);
   };
 
@@ -101,15 +111,12 @@ export function UserPage() {
   const handleStatusConfirm = async () => {
     if (!statusTarget) return;
     try {
+      const isActive = statusTarget.status === 'ACTIVE';
       await updateUserStatus({
         id: statusTarget.id,
-        isActive: !statusTarget.isActive,
+        status: isActive ? 'INACTIVE' : 'ACTIVE',
       }).unwrap();
-      toast.success(
-        statusTarget.isActive
-          ? t('users.disabledSuccess')
-          : t('users.enabledSuccess'),
-      );
+      toast.success(isActive ? t('users.disabledSuccess') : t('users.enabledSuccess'));
       setDialogOpen(false);
       setStatusTarget(null);
     } catch {
@@ -143,20 +150,25 @@ export function UserPage() {
 
         {/* Desktop filters */}
         <div className="hidden md:flex gap-3">
-          <Select
-            value={roleFilter}
-            onValueChange={(v) => setRoleFilter(v as RoleFilter)}
-          >
-            <SelectTrigger className="w-44">
+          <Select value={roleFilter} onValueChange={(v) => setRoleFilter(v as RoleFilter)}>
+            <SelectTrigger className="w-40">
               <SelectValue placeholder={t('users.allRoles')} />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="__all">{t('users.allRoles')}</SelectItem>
               {ROLES.map((role) => (
-                <SelectItem key={role} value={role}>
-                  {t(`roles.${role}`)}
-                </SelectItem>
+                <SelectItem key={role} value={role}>{t(`roles.${role}`)}</SelectItem>
               ))}
+            </SelectContent>
+          </Select>
+          <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as StatusFilter)}>
+            <SelectTrigger className="w-36">
+              <SelectValue placeholder={t('users.allStatuses')} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__all">{t('users.allStatuses')}</SelectItem>
+              <SelectItem value="ACTIVE">{t('common.active')}</SelectItem>
+              <SelectItem value="INACTIVE">{t('common.inactive')}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -184,20 +196,28 @@ export function UserPage() {
             <div className="space-y-4 p-4">
               <div className="space-y-2">
                 <p className="text-sm font-medium">{t('users.role')}</p>
-                <Select
-                  value={pendingRole}
-                  onValueChange={(v) => setPendingRole(v as RoleFilter)}
-                >
+                <Select value={pendingRole} onValueChange={(v) => setPendingRole(v as RoleFilter)}>
                   <SelectTrigger>
                     <SelectValue placeholder={t('users.allRoles')} />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="__all">{t('users.allRoles')}</SelectItem>
                     {ROLES.map((role) => (
-                      <SelectItem key={role} value={role}>
-                        {t(`roles.${role}`)}
-                      </SelectItem>
+                      <SelectItem key={role} value={role}>{t(`roles.${role}`)}</SelectItem>
                     ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <p className="text-sm font-medium">{t('users.statusLabel')}</p>
+                <Select value={pendingStatus} onValueChange={(v) => setPendingStatus(v as StatusFilter)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder={t('users.allStatuses')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__all">{t('users.allStatuses')}</SelectItem>
+                    <SelectItem value="ACTIVE">{t('common.active')}</SelectItem>
+                    <SelectItem value="INACTIVE">{t('common.inactive')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

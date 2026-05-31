@@ -1,15 +1,5 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Param,
-  Post,
-  Query,
-} from '@nestjs/common';
+import { Controller, Get, Param, Query } from '@nestjs/common';
 
-import { CurrentUser } from '../../common/decorators/current-user.decorator';
-import type { RequestUser } from '../../common/types/jwt-payload.type';
-import { CreatePaymentDto } from './dto/create-payment.dto';
 import { QueryPaymentDto } from './dto/query-payment.dto';
 import { PaymentsService } from './payments.service';
 
@@ -17,28 +7,16 @@ import { PaymentsService } from './payments.service';
 export class PaymentsController {
   constructor(private readonly paymentsService: PaymentsService) {}
 
-  // POST /api/payments
-  @Post()
-  create(@Body() dto: CreatePaymentDto, @CurrentUser() user: RequestUser) {
-    return this.paymentsService.create(dto, user.id);
-  }
-
-  // GET /api/payments
+  // GET /api/payments?search=&paymentMethod=CASH&saleId=&dateFrom=&dateTo=&page=1&limit=20
   @Get()
   findAll(@Query() query: QueryPaymentDto) {
     return this.paymentsService.findAll(query);
   }
 
-  // GET /api/payments/by-invoice/:invoiceId  — MUST be before /:id
-  @Get('by-invoice/:invoiceId')
-  findByInvoice(@Param('invoiceId') invoiceId: string) {
-    return this.paymentsService.findByInvoice(invoiceId);
-  }
-
-  // GET /api/payments/by-customer/:customerId — MUST be before /:id
-  @Get('by-customer/:customerId')
-  findByCustomer(@Param('customerId') customerId: string) {
-    return this.paymentsService.findByCustomer(customerId);
+  // GET /api/payments/by-sale/:saleId — MUST be before /:id
+  @Get('by-sale/:saleId')
+  findBySale(@Param('saleId') saleId: string) {
+    return this.paymentsService.findBySale(saleId);
   }
 
   // GET /api/payments/:id

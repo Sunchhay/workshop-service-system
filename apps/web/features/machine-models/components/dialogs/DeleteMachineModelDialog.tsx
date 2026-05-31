@@ -40,7 +40,7 @@ export function DeleteMachineModelDialog({
           <AlertDialogTitle>{t('machineModels.confirmDeleteTitle')}</AlertDialogTitle>
           <AlertDialogDescription>
             <span className="font-medium text-foreground">
-              {model.brand} {model.model}
+              {model.code} — {model.modelName}
             </span>{' '}
             — {t('machineModels.confirmDeleteDesc')}
           </AlertDialogDescription>
@@ -52,7 +52,7 @@ export function DeleteMachineModelDialog({
             disabled={isLoading}
             className="bg-destructive/10 text-destructive hover:bg-destructive/20"
           >
-            {t('common.delete')}
+            {t('machineModels.confirmDeleteTitle')}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 
+import { RecordStatus } from '../../generated/prisma/enums';
 import { PrismaService } from '../../prisma/prisma.service';
 import type { CreateMachineModelDto } from './dto/create-machine-model.dto';
 import type { QueryMachineModelDto } from './dto/query-machine-model.dto';
@@ -7,11 +8,14 @@ import type { UpdateMachineModelDto } from './dto/update-machine-model.dto';
 
 const MACHINE_MODEL_SELECT = {
   id: true,
+  code: true,
   brand: true,
-  model: true,
-  category: true,
+  modelName: true,
+  machineType: true,
+  year: true,
+  imageUrl: true,
   description: true,
-  isActive: true,
+  status: true,
   createdAt: true,
   updatedAt: true,
 } as const;
@@ -23,28 +27,32 @@ export class MachineModelsRepository {
   create(data: CreateMachineModelDto) {
     return this.prisma.machineModel.create({
       data: {
+        code: data.code,
+        modelName: data.modelName,
         brand: data.brand,
-        model: data.model,
-        category: data.category,
+        machineType: data.machineType,
+        year: data.year,
+        imageUrl: data.imageUrl,
         description: data.description,
+        status: data.status,
       },
       select: MACHINE_MODEL_SELECT,
     });
   }
 
   async findAll(dto: QueryMachineModelDto) {
-    const { search, category, isActive, page = 1, limit = 20 } = dto;
+    const { search, machineType, status, page = 1, limit = 20 } = dto;
     const skip = (page - 1) * limit;
 
     const where = {
-      deletedAt: null,
-      ...(category !== undefined && { category }),
-      ...(isActive !== undefined && { isActive }),
+      ...(machineType !== undefined && { machineType }),
+      ...(status !== undefined && { status }),
       ...(search !== undefined && {
         OR: [
+          { code: { contains: search, mode: 'insensitive' as const } },
           { brand: { contains: search, mode: 'insensitive' as const } },
-          { model: { contains: search, mode: 'insensitive' as const } },
-          { category: { contains: search, mode: 'insensitive' as const } },
+          { modelName: { contains: search, mode: 'insensitive' as const } },
+          { machineType: { contains: search, mode: 'insensitive' as const } },
           { description: { contains: search, mode: 'insensitive' as const } },
         ],
       }),
@@ -56,7 +64,7 @@ export class MachineModelsRepository {
         select: MACHINE_MODEL_SELECT,
         skip,
         take: limit,
-        orderBy: [{ brand: 'asc' }, { model: 'asc' }],
+        orderBy: [{ code: 'asc' }],
       }),
       this.prisma.machineModel.count({ where }),
     ]);
@@ -65,18 +73,16 @@ export class MachineModelsRepository {
   }
 
   findById(id: string) {
-    return this.prisma.machineModel.findFirst({
-      where: { id, deletedAt: null },
+    return this.prisma.machineModel.findUnique({
+      where: { id },
       select: MACHINE_MODEL_SELECT,
     });
   }
 
-  findByBrandAndModel(brand: string, model: string, excludeId?: string) {
+  findByCode(code: string, excludeId?: string) {
     return this.prisma.machineModel.findFirst({
       where: {
-        brand,
-        model,
-        deletedAt: null,
+        code,
         ...(excludeId && { NOT: { id: excludeId } }),
       },
       select: { id: true },
@@ -91,18 +97,18 @@ export class MachineModelsRepository {
     });
   }
 
-  updateStatus(id: string, isActive: boolean) {
+  updateStatus(id: string, status: RecordStatus) {
     return this.prisma.machineModel.update({
       where: { id },
-      data: { isActive },
+      data: { status },
       select: MACHINE_MODEL_SELECT,
     });
   }
 
-  softDelete(id: string) {
+  deactivate(id: string) {
     return this.prisma.machineModel.update({
       where: { id },
-      data: { deletedAt: new Date() },
+      data: { status: RecordStatus.INACTIVE },
       select: MACHINE_MODEL_SELECT,
     });
   }

@@ -1,18 +1,7 @@
 import { Transform } from 'class-transformer';
-import {
-  IsBoolean,
-  IsEnum,
-  IsInt,
-  IsOptional,
-  IsString,
-  Max,
-  Min,
-} from 'class-validator';
+import { IsEnum, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
 
-import {
-  ReferenceSourceType,
-  VerificationStatus,
-} from '../../../generated/prisma/enums';
+import { RecordStatus } from '../../../generated/prisma/enums';
 
 export class QueryReferenceBookDto {
   @IsString()
@@ -21,37 +10,26 @@ export class QueryReferenceBookDto {
 
   @IsString()
   @IsOptional()
-  machineModelId?: string;
+  category?: string;
 
   @IsString()
   @IsOptional()
-  componentType?: string;
+  machineModelId?: string;
 
-  @IsEnum(ReferenceSourceType)
+  @IsEnum(RecordStatus)
   @IsOptional()
-  sourceType?: ReferenceSourceType;
-
-  @IsEnum(VerificationStatus)
-  @IsOptional()
-  verificationStatus?: VerificationStatus;
-
-  @IsBoolean()
-  @IsOptional()
-  @Transform(({ value }) => {
-    if (value === 'true' || value === true) return true;
-    if (value === 'false' || value === false) return false;
-    return undefined;
-  })
-  isActive?: boolean;
+  status?: RecordStatus;
 
   @IsInt()
   @Min(1)
   @IsOptional()
-  page?: number = 1;
+  @Transform(({ value }) => Number(value))
+  page?: number;
 
   @IsInt()
   @Min(1)
-  @Max(100)
+  @Max(500)
   @IsOptional()
-  limit?: number = 20;
+  @Transform(({ value }) => Number(value))
+  limit?: number;
 }

@@ -58,9 +58,9 @@ export function UserMenu() {
           aria-label="Open user menu"
         >
           <Avatar className="h-7 w-7">
-            {user.avatarUrl && (
+            {user.imageUrl && (
               <img
-                src={user.avatarUrl}
+                src={user.imageUrl}
                 alt={user.name || 'User'}
                 className="h-full w-full rounded-full object-cover"
               />

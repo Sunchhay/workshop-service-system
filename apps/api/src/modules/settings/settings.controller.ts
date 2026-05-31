@@ -40,6 +40,12 @@ export class SettingsController {
     return this.settingsService.updateGroup(group, dto);
   }
 
+  // GET /api/settings/:key
+  @Get(':key')
+  getOne(@Param('key') key: string) {
+    return this.settingsService.findByKey(key);
+  }
+
   // PATCH /api/settings/:key  — ADMIN only
   @Roles(UserRole.ADMIN)
   @Patch(':key')

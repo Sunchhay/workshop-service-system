@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 
-import { CustomerType } from '../../generated/prisma/enums';
+import { CustomerType, RecordStatus } from '../../generated/prisma/enums';
 import { PrismaService } from '../../prisma/prisma.service';
 import type { CreateCustomerDto } from './dto/create-customer.dto';
 import type { QueryCustomerDto } from './dto/query-customer.dto';
@@ -8,14 +8,13 @@ import type { UpdateCustomerDto } from './dto/update-customer.dto';
 
 const CUSTOMER_SELECT = {
   id: true,
-  code: true,
   name: true,
   phone: true,
-  email: true,
-  address: true,
+  imageUrl: true,
+  note: true,
   customerType: true,
-  notes: true,
-  isActive: true,
+  lastPurchasedAt: true,
+  status: true,
   createdAt: true,
   updatedAt: true,
 } as const;
@@ -24,47 +23,36 @@ const CUSTOMER_SELECT = {
 export class CustomersRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async generateCode(): Promise<string> {
-    const last = await this.prisma.customer.findFirst({
-      orderBy: { createdAt: 'desc' },
-      select: { code: true },
-    });
-    if (!last) return 'C-0001';
-    const num = parseInt(last.code.slice(2), 10);
-    return `C-${String(num + 1).padStart(4, '0')}`;
-  }
-
-  create(data: CreateCustomerDto & { code: string }) {
+  create(data: CreateCustomerDto) {
     return this.prisma.customer.create({
       data: {
-        code: data.code,
         name: data.name,
         phone: data.phone,
-        email: data.email,
-        address: data.address,
-        customerType: data.customerType ?? CustomerType.NORMAL,
-        notes: data.notes,
+        imageUrl: data.imageUrl,
+        note: data.note,
+        customerType: data.customerType ?? CustomerType.OWNER,
+        status: data.status ?? RecordStatus.ACTIVE,
       },
       select: CUSTOMER_SELECT,
     });
   }
 
   async findAll(dto: QueryCustomerDto) {
-    const { search, customerType, isActive, page = 1, limit = 20 } = dto;
+    const { search, customerType, status, page = 1, limit = 20 } = dto;
+
     const skip = (page - 1) * limit;
 
     const where = {
-      deletedAt: null,
       ...(customerType !== undefined && { customerType }),
-      ...(isActive !== undefined && { isActive }),
-      ...(search !== undefined && {
-        OR: [
-          { name: { contains: search, mode: 'insensitive' as const } },
-          { phone: { contains: search, mode: 'insensitive' as const } },
-          { code: { contains: search, mode: 'insensitive' as const } },
-          { email: { contains: search, mode: 'insensitive' as const } },
-        ],
-      }),
+      ...(status !== undefined && { status }),
+      ...(search !== undefined &&
+        search.trim() !== '' && {
+          OR: [
+            { name: { contains: search, mode: 'insensitive' as const } },
+            { phone: { contains: search, mode: 'insensitive' as const } },
+            { note: { contains: search, mode: 'insensitive' as const } },
+          ],
+        }),
     };
 
     const [data, total] = await Promise.all([
@@ -82,8 +70,8 @@ export class CustomersRepository {
   }
 
   findById(id: string) {
-    return this.prisma.customer.findFirst({
-      where: { id, deletedAt: null },
+    return this.prisma.customer.findUnique({
+      where: { id },
       select: CUSTOMER_SELECT,
     });
   }
@@ -92,7 +80,6 @@ export class CustomersRepository {
     return this.prisma.customer.findFirst({
       where: {
         phone,
-        deletedAt: null,
         ...(excludeId && { NOT: { id: excludeId } }),
       },
       select: CUSTOMER_SELECT,
@@ -102,23 +89,30 @@ export class CustomersRepository {
   update(id: string, data: UpdateCustomerDto) {
     return this.prisma.customer.update({
       where: { id },
-      data,
+      data: {
+        name: data.name,
+        phone: data.phone,
+        imageUrl: data.imageUrl,
+        note: data.note,
+        customerType: data.customerType,
+        status: data.status,
+      },
       select: CUSTOMER_SELECT,
     });
   }
 
-  updateStatus(id: string, isActive: boolean) {
+  updateStatus(id: string, status: RecordStatus) {
     return this.prisma.customer.update({
       where: { id },
-      data: { isActive },
+      data: { status },
       select: CUSTOMER_SELECT,
     });
   }
 
-  softDelete(id: string) {
+  deactivate(id: string) {
     return this.prisma.customer.update({
       where: { id },
-      data: { deletedAt: new Date() },
+      data: { status: RecordStatus.INACTIVE },
       select: CUSTOMER_SELECT,
     });
   }

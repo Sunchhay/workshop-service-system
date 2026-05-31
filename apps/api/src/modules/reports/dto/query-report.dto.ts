@@ -1,15 +1,77 @@
 import { Transform } from 'class-transformer';
-import { IsBoolean, IsOptional, IsString } from 'class-validator';
+import {
+  IsDateString,
+  IsEnum,
+  IsInt,
+  IsOptional,
+  IsString,
+  Max,
+  Min,
+} from 'class-validator';
+
+import {
+  CommissionStatus,
+  ExpenseStatus,
+  PaymentMethod,
+  PaymentStatus,
+  SaleStatus,
+} from '../../../generated/prisma/enums';
 
 export class QueryReportDto {
-  @IsOptional() @IsString() fromDate?: string;
-  @IsOptional() @IsString() toDate?: string;
-  @IsOptional() @IsString() customerId?: string;
-  @IsOptional() @IsString() status?: string;
-  @IsOptional() @IsString() paymentMethod?: string;
-  @IsOptional() @IsString() category?: string;
-  @IsOptional() @IsString() priority?: string;
-  @IsOptional() @IsString() componentPartType?: string;
-  @IsOptional() @Transform(({ value }) => value === 'true') @IsBoolean() isActive?: boolean;
-  @IsOptional() @Transform(({ value }) => value === 'true') @IsBoolean() isLowStock?: boolean;
+  @IsDateString()
+  @IsOptional()
+  dateFrom?: string;
+
+  @IsDateString()
+  @IsOptional()
+  dateTo?: string;
+
+  @IsEnum(SaleStatus)
+  @IsOptional()
+  saleStatus?: SaleStatus;
+
+  @IsEnum(PaymentStatus)
+  @IsOptional()
+  paymentStatus?: PaymentStatus;
+
+  @IsEnum(PaymentMethod)
+  @IsOptional()
+  paymentMethod?: PaymentMethod;
+
+  @IsEnum(ExpenseStatus)
+  @IsOptional()
+  expenseStatus?: ExpenseStatus;
+
+  @IsEnum(CommissionStatus)
+  @IsOptional()
+  commissionStatus?: CommissionStatus;
+
+  @IsString()
+  @IsOptional()
+  customerId?: string;
+
+  @IsString()
+  @IsOptional()
+  mechanicId?: string;
+
+  @IsString()
+  @IsOptional()
+  supplierId?: string;
+
+  @IsString()
+  @IsOptional()
+  category?: string;
+
+  @IsInt()
+  @Min(1)
+  @IsOptional()
+  @Transform(({ value }) => Number(value))
+  page?: number;
+
+  @IsInt()
+  @Min(1)
+  @Max(500)
+  @IsOptional()
+  @Transform(({ value }) => Number(value))
+  limit?: number;
 }

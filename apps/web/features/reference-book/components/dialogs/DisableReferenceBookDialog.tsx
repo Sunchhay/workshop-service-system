@@ -33,7 +33,7 @@ export function DisableReferenceBookDialog({
 
   if (!record) return null;
 
-  const isDisabling = record.isActive;
+  const isDisabling = record.status === 'ACTIVE';
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
@@ -45,7 +45,7 @@ export function DisableReferenceBookDialog({
               : t('referenceBook.confirmEnableTitle')}
           </AlertDialogTitle>
           <AlertDialogDescription>
-            <span className="font-medium text-foreground">{record.partName}</span> —{' '}
+            <span className="font-medium text-foreground">{record.title}</span> —{' '}
             {isDisabling
               ? t('referenceBook.confirmDisableDesc')
               : t('referenceBook.confirmEnableDesc')}
@@ -57,9 +57,7 @@ export function DisableReferenceBookDialog({
             onClick={onConfirm}
             disabled={isLoading}
             className={
-              isDisabling
-                ? 'bg-destructive/10 text-destructive hover:bg-destructive/20'
-                : ''
+              isDisabling ? 'bg-destructive/10 text-destructive hover:bg-destructive/20' : ''
             }
           >
             {isDisabling

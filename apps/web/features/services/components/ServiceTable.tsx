@@ -23,34 +23,12 @@ import {
 } from '@/components/ui/table';
 import { useTranslation } from '@/lib/i18n/TranslationContext';
 
-import type { PriceType, Service } from '../types';
-
-const priceTypeClass: Record<PriceType, string> = {
-  FIXED: 'bg-blue-500/10 text-blue-600 border-blue-500/20 dark:text-blue-400',
-  CATALOG_BASED:
-    'bg-amber-500/10 text-amber-700 border-amber-500/20 dark:text-amber-400',
-  CUSTOM:
-    'bg-purple-500/10 text-purple-700 border-purple-500/20 dark:text-purple-400',
-};
+import type { Service } from '../types';
 
 interface ServiceTableProps {
   services: Service[];
   onToggleStatus: (service: Service) => void;
   onDelete: (service: Service) => void;
-}
-
-function formatPrice(price: string | null): string {
-  if (!price) return '—';
-  const num = parseFloat(price);
-  return isNaN(num) ? '—' : num.toFixed(2);
-}
-
-function formatDate(dateStr: string) {
-  return new Date(dateStr).toLocaleDateString(undefined, {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  });
 }
 
 export function ServiceTable({
@@ -66,12 +44,11 @@ export function ServiceTable({
       <Table>
         <TableHeader>
           <TableRow>
+            <TableHead>{t('services.code')}</TableHead>
+            <TableHead>{t('services.name')}</TableHead>
             <TableHead>{t('services.nameEn')}</TableHead>
             <TableHead>{t('services.category')}</TableHead>
-            <TableHead>{t('services.priceType')}</TableHead>
-            <TableHead>{t('services.defaultPrice')}</TableHead>
             <TableHead>{t('services.statusLabel')}</TableHead>
-            <TableHead>{t('services.createdAt')}</TableHead>
             <TableHead className="w-12" />
           </TableRow>
         </TableHeader>
@@ -79,7 +56,7 @@ export function ServiceTable({
           {services.length === 0 ? (
             <TableRow>
               <TableCell
-                colSpan={7}
+                colSpan={6}
                 className="text-center text-muted-foreground py-10"
               >
                 {t('services.noServices')}
@@ -92,68 +69,30 @@ export function ServiceTable({
                 className="cursor-pointer"
                 onClick={() => router.push(`/admin/services/${service.id}`)}
               >
-                {/* Name column */}
-                <TableCell>
-                  <div>
-                    <p className="font-medium">{service.nameEn}</p>
-                    {service.nameKh && (
-                      <p className="text-xs text-muted-foreground">
-                        {service.nameKh}
-                      </p>
-                    )}
-                    <p className="text-xs text-muted-foreground font-mono mt-0.5">
-                      {service.code}
-                    </p>
-                  </div>
+                <TableCell className="font-mono text-sm font-medium">
+                  {service.code}
                 </TableCell>
-                {/* Category */}
+                <TableCell className="font-medium">{service.name}</TableCell>
+                <TableCell className="text-muted-foreground">{service.nameEn}</TableCell>
                 <TableCell>
-                  <div>
-                    {service.category ? (
-                      <p className="text-sm">{service.category}</p>
-                    ) : (
-                      <p className="text-sm text-muted-foreground">—</p>
-                    )}
-                    {service.relatedComponent && (
-                      <p className="text-xs text-muted-foreground">
-                        {service.relatedComponent}
-                      </p>
-                    )}
-                  </div>
+                  {service.category ? (
+                    <span className="text-sm">{service.category}</span>
+                  ) : (
+                    <span className="text-sm text-muted-foreground">—</span>
+                  )}
                 </TableCell>
-                {/* Price type */}
                 <TableCell>
                   <Badge
-                    variant="outline"
-                    className={priceTypeClass[service.priceType]}
-                  >
-                    {t(`priceTypes.${service.priceType}`)}
-                  </Badge>
-                </TableCell>
-                {/* Default price */}
-                <TableCell className="text-sm font-mono">
-                  {service.priceType === 'FIXED'
-                    ? formatPrice(service.defaultPrice)
-                    : '—'}
-                </TableCell>
-                {/* Status */}
-                <TableCell>
-                  <Badge
-                    variant={service.isActive ? 'default' : 'outline'}
+                    variant={service.status === 'ACTIVE' ? 'default' : 'outline'}
                     className={
-                      service.isActive
+                      service.status === 'ACTIVE'
                         ? 'bg-green-500/10 text-green-700 border-green-500/20 dark:text-green-400'
                         : 'text-muted-foreground'
                     }
                   >
-                    {t(service.isActive ? 'common.active' : 'common.inactive')}
+                    {t(service.status === 'ACTIVE' ? 'common.active' : 'common.inactive')}
                   </Badge>
                 </TableCell>
-                {/* Created at */}
-                <TableCell className="text-muted-foreground text-sm">
-                  {formatDate(service.createdAt)}
-                </TableCell>
-                {/* Actions */}
                 <TableCell onClick={(e) => e.stopPropagation()}>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -176,12 +115,12 @@ export function ServiceTable({
                       <DropdownMenuItem
                         onClick={() => onToggleStatus(service)}
                         className={
-                          service.isActive
+                          service.status === 'ACTIVE'
                             ? 'text-destructive focus:text-destructive'
                             : 'text-green-600 focus:text-green-600'
                         }
                       >
-                        {service.isActive
+                        {service.status === 'ACTIVE'
                           ? t('services.confirmDisableTitle')
                           : t('services.confirmEnableTitle')}
                       </DropdownMenuItem>

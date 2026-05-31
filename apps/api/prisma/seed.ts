@@ -2,617 +2,837 @@ import 'dotenv/config';
 
 import { PrismaPg } from '@prisma/adapter-pg';
 import * as bcrypt from 'bcrypt';
-import { parse } from 'csv-parse/sync';
-import * as fs from 'fs';
-import * as path from 'path';
 import { Pool } from 'pg';
 
 import {
-  AuditAction,
+  CommissionStatus,
   CustomerType,
-  DifficultyLevel,
-  ExpenseCategory,
-  InvoiceStatus,
+  ExpenseStatus,
   ItemType,
-  JobStatus,
   PaymentMethod,
-  PriceType,
-  Priority,
-  PrismaClient,
-  ReferenceSourceType,
+  PaymentStatus, PrismaClient, RecordStatus,
   SaleStatus,
-  UserRole,
-  VerificationStatus,
+  UserRole
 } from '../src/generated/prisma/client';
-
-const BCRYPT_ROUNDS = 10;
-const SEED_DIR = path.join(process.cwd(), 'prisma', 'seed');
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
-type Row = Record<string, string>;
-
-function readCsv(name: string): Row[] {
-  const content = fs.readFileSync(path.join(SEED_DIR, `${name}.csv`), 'utf-8');
-  return parse(content, { columns: true, skip_empty_lines: true, trim: true }) as Row[];
-}
-
-const str = (v: string | undefined, def = ''): string => v?.trim() ?? def;
-const num = (v: string | undefined, def = 0): number => {
-  const n = parseFloat(v ?? '');
-  return isNaN(n) ? def : n;
-};
-const bool = (v: string | undefined, def = true): boolean => {
-  const s = v?.trim().toLowerCase();
-  if (s === 'false') return false;
-  if (s === 'true') return true;
-  return def;
-};
-const dt = (v: string | undefined): Date | undefined => {
-  if (!v?.trim()) return undefined;
-  const d = new Date(v.trim());
-  return isNaN(d.getTime()) ? undefined : d;
-};
-
 async function main() {
-  console.log('🌱 Starting seed...\n');
+  console.log('Start seeding...');
 
-  // 1. Users
-  console.log('Seeding users...');
-  const userMap: Record<string, string> = {};
-  for (const row of readCsv('users')) {
-    const hashed = await bcrypt.hash(row.password, BCRYPT_ROUNDS);
-    const user = await prisma.user.upsert({
-      where: { email: row.email },
-      update: { name: str(row.name), role: row.role as UserRole, isActive: bool(row.isActive) },
-      create: {
-        email: row.email,
-        password: hashed,
-        name: str(row.name),
-        role: row.role as UserRole,
-        isActive: bool(row.isActive),
+  const passwordHash = await bcrypt.hash('Admin@123', 10);
+
+  const admin = await prisma.user.upsert({
+    where: { email: 'admin@workshop.com' },
+    update: {
+      name: 'Admin',
+      passwordHash,
+      role: UserRole.ADMIN,
+      status: RecordStatus.ACTIVE,
+    },
+    create: {
+      name: 'Admin',
+      email: 'admin@workshop.com',
+      passwordHash,
+      role: UserRole.ADMIN,
+      status: RecordStatus.ACTIVE,
+    },
+  });
+
+  const staff = await prisma.user.upsert({
+    where: { email: 'staff@workshop.com' },
+    update: {
+      name: 'Staff',
+      passwordHash,
+      role: UserRole.STAFF,
+      status: RecordStatus.ACTIVE,
+    },
+    create: {
+      name: 'Staff',
+      email: 'staff@workshop.com',
+      passwordHash,
+      role: UserRole.STAFF,
+      status: RecordStatus.ACTIVE,
+    },
+  });
+
+  console.log('Seed users done.');
+
+  const customerOwner = await prisma.customer.create({
+    data: {
+      name: 'សុខា',
+      phone: '012345678',
+      customerType: CustomerType.OWNER,
+      note: 'ម្ចាស់ម៉ាស៊ីន Ford 6600',
+      status: RecordStatus.ACTIVE,
+    },
+  });
+
+  const customerOwner2 = await prisma.customer.create({
+    data: {
+      name: 'វិសាល',
+      phone: '098765432',
+      customerType: CustomerType.OWNER,
+      note: 'អតិថិជនទិញគ្រឿងបន្លាស់ញឹកញាប់',
+      status: RecordStatus.ACTIVE,
+    },
+  });
+
+  const mechanic = await prisma.customer.create({
+    data: {
+      name: 'ជាង ដារ៉ា',
+      phone: '011222333',
+      customerType: CustomerType.MECHANIC,
+      note: 'ជាងដែលយកការងារមកហាង',
+      status: RecordStatus.ACTIVE,
+    },
+  });
+
+  const mechanic2 = await prisma.customer.create({
+    data: {
+      name: 'ជាង វណ្ណា',
+      phone: '010888999',
+      customerType: CustomerType.MECHANIC,
+      note: 'ជាងជួសជុលម៉ាស៊ីនត្រាក់ទ័រ',
+      status: RecordStatus.ACTIVE,
+    },
+  });
+
+  console.log('Seed customers done.');
+
+  const ford6600 = await prisma.machineModel.upsert({
+    where: { code: 'MDL-001' },
+    update: {},
+    create: {
+      code: 'MDL-001',
+      brand: 'Ford',
+      modelName: 'Ford 6600',
+      machineType: 'Tractor',
+      year: '1975-1981',
+      description: 'ម៉ូដែលត្រាក់ទ័រ Ford 6600',
+      status: RecordStatus.ACTIVE,
+    },
+  });
+
+  const ford7600 = await prisma.machineModel.upsert({
+    where: { code: 'MDL-002' },
+    update: {},
+    create: {
+      code: 'MDL-002',
+      brand: 'Ford',
+      modelName: 'Ford 7600',
+      machineType: 'Tractor',
+      year: '1975-1981',
+      description: 'ម៉ូដែលត្រាក់ទ័រ Ford 7600',
+      status: RecordStatus.ACTIVE,
+    },
+  });
+
+  const kubota = await prisma.machineModel.upsert({
+    where: { code: 'MDL-003' },
+    update: {},
+    create: {
+      code: 'MDL-003',
+      brand: 'Kubota',
+      modelName: 'Kubota L4508',
+      machineType: 'Tractor',
+      year: 'General',
+      description: 'ម៉ូដែល Kubota សម្រាប់ការងារស្រែ',
+      status: RecordStatus.ACTIVE,
+    },
+  });
+
+  console.log('Seed machine models done.');
+
+  const service1 = await prisma.service.upsert({
+    where: { code: 'SRV-001' },
+    update: {},
+    create: {
+      code: 'SRV-001',
+      name: 'ម៉ាបក្បាលកន្លះ',
+      nameEn: 'Cylinder Head Resurfacing',
+      category: 'ក្បាលកន្លះ',
+      description: 'សេវាកម្មម៉ាបក្បាលកន្លះឲ្យស្មើ',
+      status: RecordStatus.ACTIVE,
+    },
+  });
+
+  const service2 = await prisma.service.upsert({
+    where: { code: 'SRV-002' },
+    update: {},
+    create: {
+      code: 'SRV-002',
+      name: 'ស៊ីសូប៉ាប់',
+      nameEn: 'Valve Seat Cutting / Valve Grinding',
+      category: 'សូប៉ាប់',
+      description: 'សេវាកម្មស៊ីសូប៉ាប់ប្រេង និងសូប៉ាប់ភ្លើង',
+      status: RecordStatus.ACTIVE,
+    },
+  });
+
+  const service3 = await prisma.service.upsert({
+    where: { code: 'SRV-003' },
+    update: {},
+    create: {
+      code: 'SRV-003',
+      name: 'សំលាងវីលីគាំង',
+      nameEn: 'Crankshaft Cleaning',
+      category: 'វីលីគាំង',
+      description: 'សេវាកម្មសំលាង និងពិនិត្យវីលីគាំង',
+      status: RecordStatus.ACTIVE,
+    },
+  });
+
+  const service4 = await prisma.service.upsert({
+    where: { code: 'SRV-004' },
+    update: {},
+    create: {
+      code: 'SRV-004',
+      name: 'ប្តូរកូសាណេ',
+      nameEn: 'Bearing Replacement',
+      category: 'កូសាណេ',
+      description: 'សេវាកម្មប្តូរកូសាណេ',
+      status: RecordStatus.ACTIVE,
+    },
+  });
+
+  console.log('Seed services done.');
+
+  await prisma.servicePrice.upsert({
+    where: {
+      serviceId_machineModelId: {
+        serviceId: service1.id,
+        machineModelId: ford6600.id,
       },
+    },
+    update: {
+      ownerPrice: 15,
+      mechanicPrice: 12,
+    },
+    create: {
+      serviceId: service1.id,
+      machineModelId: ford6600.id,
+      ownerPrice: 15,
+      mechanicPrice: 12,
+      note: 'តម្លៃសម្រាប់ Ford 6600',
+      status: RecordStatus.ACTIVE,
+    },
+  });
+
+  await prisma.servicePrice.upsert({
+    where: {
+      serviceId_machineModelId: {
+        serviceId: service2.id,
+        machineModelId: ford6600.id,
+      },
+    },
+    update: {
+      ownerPrice: 10,
+      mechanicPrice: 8,
+    },
+    create: {
+      serviceId: service2.id,
+      machineModelId: ford6600.id,
+      ownerPrice: 10,
+      mechanicPrice: 8,
+      note: 'ស៊ីសូប៉ាប់ Ford 6600',
+      status: RecordStatus.ACTIVE,
+    },
+  });
+
+  await prisma.servicePrice.upsert({
+    where: {
+      serviceId_machineModelId: {
+        serviceId: service1.id,
+        machineModelId: ford7600.id,
+      },
+    },
+    update: {
+      ownerPrice: 18,
+      mechanicPrice: 15,
+    },
+    create: {
+      serviceId: service1.id,
+      machineModelId: ford7600.id,
+      ownerPrice: 18,
+      mechanicPrice: 15,
+      note: 'តម្លៃសម្រាប់ Ford 7600',
+      status: RecordStatus.ACTIVE,
+    },
+  });
+
+  await prisma.servicePrice.upsert({
+    where: {
+      serviceId_machineModelId: {
+        serviceId: service3.id,
+        machineModelId: ford6600.id,
+      },
+    },
+    update: {
+      ownerPrice: 12,
+      mechanicPrice: 10,
+    },
+    create: {
+      serviceId: service3.id,
+      machineModelId: ford6600.id,
+      ownerPrice: 12,
+      mechanicPrice: 10,
+      note: 'សំលាងវីលីគាំង Ford 6600',
+      status: RecordStatus.ACTIVE,
+    },
+  });
+
+  console.log('Seed service prices done.');
+
+  const product1 = await prisma.product.upsert({
+    where: { code: 'PRD-001' },
+    update: {},
+    create: {
+      code: 'PRD-001',
+      name: 'ក្រវ៉ាត់ពិស្តុង',
+      nameEn: 'Piston Ring',
+      category: 'គ្រឿងម៉ាស៊ីន',
+      unit: 'set',
+      description: 'ក្រវ៉ាត់ពិស្តុងសម្រាប់ម៉ាស៊ីន',
+      status: RecordStatus.ACTIVE,
+    },
+  });
+
+  const product2 = await prisma.product.upsert({
+    where: { code: 'PRD-002' },
+    update: {},
+    create: {
+      code: 'PRD-002',
+      name: 'ពិស្តុង',
+      nameEn: 'Piston',
+      category: 'គ្រឿងម៉ាស៊ីន',
+      unit: 'pcs',
+      description: 'ពិស្តុងសម្រាប់ម៉ាស៊ីន',
+      status: RecordStatus.ACTIVE,
+    },
+  });
+
+  const product3 = await prisma.product.upsert({
+    where: { code: 'PRD-003' },
+    update: {},
+    create: {
+      code: 'PRD-003',
+      name: 'រ៉ងក្បាលកន្លះ',
+      nameEn: 'Cylinder Head Gasket',
+      category: 'រ៉ង',
+      unit: 'pcs',
+      description: 'រ៉ងសម្រាប់ក្បាលកន្លះ',
+      status: RecordStatus.ACTIVE,
+    },
+  });
+
+  const product4 = await prisma.product.upsert({
+    where: { code: 'PRD-004' },
+    update: {},
+    create: {
+      code: 'PRD-004',
+      name: 'កូសាណេ',
+      nameEn: 'Bearing',
+      category: 'កូសាណេ',
+      unit: 'set',
+      description: 'កូសាណេសម្រាប់ម៉ាស៊ីន',
+      status: RecordStatus.ACTIVE,
+    },
+  });
+
+  console.log('Seed products done.');
+
+  await prisma.productPrice.upsert({
+    where: {
+      productId_machineModelId: {
+        productId: product1.id,
+        machineModelId: ford6600.id,
+      },
+    },
+    update: {
+      ownerPrice: 10,
+      mechanicPrice: 9,
+    },
+    create: {
+      productId: product1.id,
+      machineModelId: ford6600.id,
+      ownerPrice: 10,
+      mechanicPrice: 9,
+      note: 'ក្រវ៉ាត់ពិស្តុង Ford 6600',
+      status: RecordStatus.ACTIVE,
+    },
+  });
+
+  await prisma.productPrice.upsert({
+    where: {
+      productId_machineModelId: {
+        productId: product1.id,
+        machineModelId: ford7600.id,
+      },
+    },
+    update: {
+      ownerPrice: 13,
+      mechanicPrice: 11,
+    },
+    create: {
+      productId: product1.id,
+      machineModelId: ford7600.id,
+      ownerPrice: 13,
+      mechanicPrice: 11,
+      note: 'ក្រវ៉ាត់ពិស្តុង Ford 7600',
+      status: RecordStatus.ACTIVE,
+    },
+  });
+
+  await prisma.productPrice.upsert({
+    where: {
+      productId_machineModelId: {
+        productId: product2.id,
+        machineModelId: ford6600.id,
+      },
+    },
+    update: {
+      ownerPrice: 25,
+      mechanicPrice: 22,
+    },
+    create: {
+      productId: product2.id,
+      machineModelId: ford6600.id,
+      ownerPrice: 25,
+      mechanicPrice: 22,
+      note: 'ពិស្តុង Ford 6600',
+      status: RecordStatus.ACTIVE,
+    },
+  });
+
+  await prisma.productPrice.upsert({
+    where: {
+      productId_machineModelId: {
+        productId: product3.id,
+        machineModelId: ford6600.id,
+      },
+    },
+    update: {
+      ownerPrice: 5,
+      mechanicPrice: 4,
+    },
+    create: {
+      productId: product3.id,
+      machineModelId: ford6600.id,
+      ownerPrice: 5,
+      mechanicPrice: 4,
+      note: 'រ៉ងក្បាលកន្លះ Ford 6600',
+      status: RecordStatus.ACTIVE,
+    },
+  });
+
+  console.log('Seed product prices done.');
+
+  const supplier1 = await prisma.supplier.create({
+    data: {
+      name: 'ហាងគ្រឿងបន្លាស់ សុវណ្ណ',
+      phone: '015111222',
+      note: 'ផ្គត់ផ្គង់គ្រឿងម៉ាស៊ីន Ford',
+      status: RecordStatus.ACTIVE,
+    },
+  });
+
+  const supplier2 = await prisma.supplier.create({
+    data: {
+      name: 'ហាងគ្រឿងបន្លាស់ រតនា',
+      phone: '016333444',
+      note: 'តម្លៃសមរម្យសម្រាប់គ្រឿងបន្លាស់ទូទៅ',
+      status: RecordStatus.ACTIVE,
+    },
+  });
+
+  await prisma.productSupplierPrice.createMany({
+    data: [
+      {
+        productId: product1.id,
+        supplierId: supplier1.id,
+        buyingPrice: 7.5,
+        currency: 'USD',
+        lastUpdatedAt: new Date(),
+        note: 'តម្លៃទិញពី supplier សុវណ្ណ',
+      },
+      {
+        productId: product1.id,
+        supplierId: supplier2.id,
+        buyingPrice: 7.2,
+        currency: 'USD',
+        lastUpdatedAt: new Date(),
+        note: 'តម្លៃទិញពី supplier រតនា',
+      },
+      {
+        productId: product2.id,
+        supplierId: supplier1.id,
+        buyingPrice: 18,
+        currency: 'USD',
+        lastUpdatedAt: new Date(),
+        note: 'ពិស្តុង Ford 6600',
+      },
+    ],
+  });
+
+  console.log('Seed suppliers and supplier prices done.');
+
+  const cart = await prisma.cart.create({
+    data: {
+      customerId: customerOwner.id,
+      mechanicId: mechanic.id,
+      createdById: staff.id,
+      commissionAmount: 2,
+      commissionNote: 'កម្រៃជើងសារជាង ដារ៉ា',
+      note: 'ការងារ Ford 6600',
+      status: 'ACTIVE',
+      items: {
+        create: [
+          {
+            itemType: ItemType.SERVICE,
+            serviceId: service1.id,
+            machineModelId: ford6600.id,
+            nameSnapshot: 'Ford 6600 - ម៉ាបក្បាលកន្លះ',
+            unitPrice: 15,
+            quantity: 1,
+            total: 15,
+            note: 'ម៉ាបក្បាលកន្លះ',
+          },
+          {
+            itemType: ItemType.PRODUCT,
+            productId: product3.id,
+            machineModelId: ford6600.id,
+            nameSnapshot: 'Ford 6600 - រ៉ងក្បាលកន្លះ',
+            unitPrice: 5,
+            quantity: 1,
+            total: 5,
+            note: 'រ៉ងថ្មី',
+          },
+        ],
+      },
+    },
+  });
+
+  console.log(`Seed sample cart done: ${cart.id}`);
+
+  const sale = await prisma.sale.create({
+    data: {
+      invoiceNo: 'INV-000001',
+      customerId: customerOwner2.id,
+      mechanicId: mechanic2.id,
+      createdById: admin.id,
+      subtotal: 30,
+      grandTotal: 30,
+      paidAmount: 20,
+      balanceAmount: 10,
+      commissionAmount: 3,
+      commissionNote: 'ជាង វណ្ណា ណែនាំអតិថិជន',
+      commissionStatus: CommissionStatus.UNPAID,
+      paymentStatus: PaymentStatus.PARTIAL,
+      saleStatus: SaleStatus.COMPLETED,
+      note: 'អតិថិជនបង់មុន 20$ នៅសល់ 10$',
+      items: {
+        create: [
+          {
+            itemType: ItemType.SERVICE,
+            serviceId: service2.id,
+            machineModelId: ford6600.id,
+            nameSnapshot: 'Ford 6600 - ស៊ីសូប៉ាប់',
+            unitPrice: 10,
+            quantity: 1,
+            total: 10,
+          },
+          {
+            itemType: ItemType.PRODUCT,
+            productId: product1.id,
+            machineModelId: ford6600.id,
+            nameSnapshot: 'Ford 6600 - ក្រវ៉ាត់ពិស្តុង',
+            unitPrice: 10,
+            quantity: 2,
+            total: 20,
+          },
+        ],
+      },
+      payments: {
+        create: [
+          {
+            paymentMethod: PaymentMethod.CASH,
+            amount: 20,
+            paidAt: new Date(),
+            note: 'បង់សាច់ប្រាក់',
+          },
+        ],
+      },
+    },
+  });
+
+  await prisma.customer.update({
+    where: { id: customerOwner2.id },
+    data: { lastPurchasedAt: new Date() },
+  });
+
+  console.log(`Seed sample sale done: ${sale.invoiceNo}`);
+
+  await prisma.expense.create({
+    data: {
+      expenseNo: 'EXP-000001',
+      title: 'ទិញគ្រឿងបន្លាស់ពី supplier',
+      category: 'Parts Purchase',
+      amount: 50,
+      paymentMethod: PaymentMethod.CASH,
+      expenseStatus: ExpenseStatus.PAID,
+      supplierId: supplier1.id,
+      referenceNo: 'SUP-001',
+      note: 'ទិញក្រវ៉ាត់ពិស្តុង និងរ៉ង',
+      expenseDate: new Date(),
+      createdById: admin.id,
+    },
+  });
+
+  await prisma.expense.create({
+    data: {
+      expenseNo: 'EXP-000002',
+      title: 'បង់កម្រៃជើងសារជាង',
+      category: 'Mechanic Commission',
+      amount: 3,
+      paymentMethod: PaymentMethod.CASH,
+      expenseStatus: ExpenseStatus.PAID,
+      mechanicId: mechanic2.id,
+      referenceNo: sale.invoiceNo,
+      note: 'បង់កម្រៃជើងសារជាង វណ្ណា',
+      expenseDate: new Date(),
+      createdById: admin.id,
+    },
+  });
+
+  console.log('Seed expenses done.');
+
+  const existingReference = await prisma.referenceBook.findFirst({
+    where: {
+      title: 'Ford 6600 - ឯកសារយោងបច្ចេកទេសម៉ាស៊ីន',
+    },
+  });
+
+  if (existingReference) {
+    await prisma.referenceBook.delete({
+      where: { id: existingReference.id },
     });
-    userMap[row.email] = user.id;
-    console.log(`  user: ${row.email} [${row.role}]`);
   }
 
-  // 2. Customers
-  console.log('\nSeeding customers...');
-  const customerMap: Record<string, string> = {};
-  for (const row of readCsv('customers')) {
-    const customer = await prisma.customer.upsert({
-      where: { code: row.code },
-      update: {
-        name: str(row.name),
-        phone: str(row.phone),
-        email: str(row.email) || null,
-        address: str(row.address) || null,
-        customerType: row.customerType as CustomerType,
-        notes: str(row.notes) || null,
-        isActive: bool(row.isActive),
+  await prisma.referenceBook.create({
+    data: {
+      title: 'Ford 6600 - ឯកសារយោងបច្ចេកទេសម៉ាស៊ីន',
+      category: 'Engine Specification',
+      machineModelId: ford6600.id,
+      summary:
+        'ឯកសារយោងសម្រាប់ពិនិត្យទំហំ និងគម្លាតពេលជួសជុលម៉ាស៊ីន Ford 6600។',
+      createdById: admin.id,
+      status: RecordStatus.ACTIVE,
+      sections: {
+        create: [
+          {
+            name: 'Cylinder',
+            description: 'ទំហំស៊ីឡាំង ពិស្តុង ក្រវ៉ាត់ពិស្តុង និងគម្លាត',
+            sortOrder: 1,
+            items: {
+              create: [
+                {
+                  label: 'Piston Size',
+                  value: '111.76',
+                  unit: 'mm',
+                  note: 'ទំហំស្តង់ដារ',
+                  sortOrder: 1,
+                },
+                {
+                  label: 'Piston Wrist Pin Size',
+                  value: '35',
+                  unit: 'mm',
+                  note: 'វាស់មុនពេលដោះដូរ',
+                  sortOrder: 2,
+                },
+                {
+                  label: 'Piston Ring Size',
+                  value: '112',
+                  unit: 'mm',
+                  note: 'ត្រូវផ្គូផ្គងជាមួយស៊ីឡាំង',
+                  sortOrder: 3,
+                },
+                {
+                  label: 'Cylinder Size',
+                  value: '112',
+                  unit: 'mm',
+                  note: 'ទំហំស៊ីឡាំង',
+                  sortOrder: 4,
+                },
+                {
+                  label: 'Cylinder Height',
+                  value: '250',
+                  unit: 'mm',
+                  note: 'វាស់ពីបាតដល់លើ',
+                  sortOrder: 5,
+                },
+                {
+                  label: 'សីធូ',
+                  value: '0.05',
+                  unit: 'mm',
+                  note: 'គម្លាតស្តង់ដារ',
+                  sortOrder: 6,
+                },
+                {
+                  label: 'សំលាងធូរ',
+                  value: '0.1',
+                  unit: 'mm',
+                  note: 'គម្លាតក្រោយសំលាង ឬធូរ',
+                  sortOrder: 7,
+                },
+              ],
+            },
+          },
+          {
+            name: 'Cylinder Head',
+            description: 'ទំហំសូប៉ាប់ មុំសូប៉ាប់ និងក្បាលកន្លះ',
+            sortOrder: 2,
+            items: {
+              create: [
+                {
+                  label: 'ទំហំសូប៉ាប់ភ្លើង',
+                  value: '38',
+                  unit: 'mm',
+                  note: 'Exhaust valve size',
+                  sortOrder: 1,
+                },
+                {
+                  label: 'មុំសូប៉ាប់ភ្លើង',
+                  value: '45',
+                  unit: 'degree',
+                  note: 'Exhaust valve angle',
+                  sortOrder: 2,
+                },
+                {
+                  label: 'ទំហំសូប៉ាប់ប្រេង',
+                  value: '42',
+                  unit: 'mm',
+                  note: 'Intake valve size',
+                  sortOrder: 3,
+                },
+                {
+                  label: 'មុំសូប៉ាប់ប្រេង',
+                  value: '60',
+                  unit: 'degree',
+                  note: 'Intake valve angle',
+                  sortOrder: 4,
+                },
+                {
+                  label: 'កម្រាស់រ៉ង',
+                  value: '1.5',
+                  unit: 'mm',
+                  note: 'កម្រាស់រ៉ងក្បាលកន្លះ',
+                  sortOrder: 5,
+                },
+              ],
+            },
+          },
+        ],
       },
-      create: {
-        code: row.code,
-        name: str(row.name),
-        phone: str(row.phone),
-        email: str(row.email) || null,
-        address: str(row.address) || null,
-        customerType: row.customerType as CustomerType,
-        notes: str(row.notes) || null,
-        isActive: bool(row.isActive),
-      },
-    });
-    customerMap[row.code] = customer.id;
-    console.log(`  customer: ${row.code} – ${row.name}`);
-  }
+    },
+  });
 
-  // 3. Services
-  console.log('\nSeeding services...');
-  const serviceMap: Record<string, string> = {};
-  for (const row of readCsv('services')) {
-    const service = await prisma.service.upsert({
-      where: { code: row.code },
-      update: {
-        nameEn: str(row.nameEn),
-        nameKh: str(row.nameKh) || null,
-        category: str(row.category) || null,
-        relatedComponent: str(row.relatedComponent) || null,
-        defaultPrice: str(row.defaultPrice) ? num(row.defaultPrice) : null,
-        priceType: row.priceType as PriceType,
-        description: str(row.description) || null,
-        isActive: bool(row.isActive),
-      },
-      create: {
-        code: row.code,
-        nameEn: str(row.nameEn),
-        nameKh: str(row.nameKh) || null,
-        category: str(row.category) || null,
-        relatedComponent: str(row.relatedComponent) || null,
-        defaultPrice: str(row.defaultPrice) ? num(row.defaultPrice) : null,
-        priceType: row.priceType as PriceType,
-        description: str(row.description) || null,
-        isActive: bool(row.isActive),
-      },
-    });
-    serviceMap[row.code] = service.id;
-    console.log(`  service: ${row.code} – ${row.nameEn}`);
-  }
+  console.log('Seed reference book done.');
 
-  // 4. Price Catalog
-  console.log('\nSeeding price catalogs...');
-  const priceCatalogMap: Record<string, string> = {};
-  for (const row of readCsv('price-catalog')) {
-    const serviceId = serviceMap[row.serviceCode];
-    if (!serviceId) {
-      console.warn(`  skip catalog: no service ${row.serviceCode}`);
-      continue;
-    }
-    const existing = await prisma.priceCatalog.findFirst({
-      where: { serviceId, label: row.label },
-    });
-    const data = {
-      serviceId,
-      label: str(row.label),
-      sizeFrom: str(row.sizeFrom) ? num(row.sizeFrom) : null,
-      sizeTo: str(row.sizeTo) ? num(row.sizeTo) : null,
-      unit: str(row.unit) || null,
-      difficultyLevel: row.difficultyLevel as DifficultyLevel,
-      customerType: str(row.customerType) ? (row.customerType as CustomerType) : null,
-      unitPrice: num(row.unitPrice),
-      currency: str(row.currency, 'USD'),
-      notes: str(row.notes) || null,
-      isActive: bool(row.isActive),
-    };
-    const catalog = existing
-      ? await prisma.priceCatalog.update({ where: { id: existing.id }, data })
-      : await prisma.priceCatalog.create({ data });
-    priceCatalogMap[`${row.serviceCode}|${row.label}`] = catalog.id;
-    console.log(`  catalog: [${row.serviceCode}] ${row.label} = $${row.unitPrice}`);
-  }
+  const settings = [
+    {
+      key: 'business_name',
+      value: 'សាន់ឆាយ ជាងម៉ាស៊ីន',
+      type: 'text',
+      group: 'business',
+      description: 'ឈ្មោះហាង',
+      isPublic: true,
+    },
+    {
+      key: 'business_phone',
+      value: '012345678',
+      type: 'text',
+      group: 'business',
+      description: 'លេខទូរស័ព្ទហាង',
+      isPublic: true,
+    },
+    {
+      key: 'business_address',
+      value: 'ភ្នំពេញ កម្ពុជា',
+      type: 'text',
+      group: 'business',
+      description: 'អាសយដ្ឋានហាង',
+      isPublic: true,
+    },
+    {
+      key: 'invoice_prefix',
+      value: 'INV',
+      type: 'text',
+      group: 'invoice',
+      description: 'លេខកូដដើមសម្រាប់វិក្កយបត្រ',
+      isPublic: false,
+    },
+    {
+      key: 'invoice_footer',
+      value: 'អរគុណសម្រាប់ការគាំទ្រ',
+      type: 'text',
+      group: 'invoice',
+      description: 'សារបង្ហាញខាងក្រោមវិក្កយបត្រ',
+      isPublic: true,
+    },
+    {
+      key: 'default_currency',
+      value: 'USD',
+      type: 'text',
+      group: 'system',
+      description: 'រូបិយប័ណ្ណលំនាំដើម',
+      isPublic: true,
+    },
+    {
+      key: 'customer_required_checkout',
+      value: 'true',
+      type: 'boolean',
+      group: 'cart',
+      description: 'តម្រូវឲ្យជ្រើសអតិថិជនមុន checkout',
+      isPublic: false,
+    },
+    {
+      key: 'allow_edit_service_price',
+      value: 'true',
+      type: 'boolean',
+      group: 'cart',
+      description: 'អនុញ្ញាតឲ្យកែតម្លៃសេវាកម្មក្នុងកន្ត្រក',
+      isPublic: false,
+    },
+    {
+      key: 'allow_edit_product_price',
+      value: 'true',
+      type: 'boolean',
+      group: 'cart',
+      description: 'អនុញ្ញាតឲ្យកែតម្លៃផលិតផលក្នុងកន្ត្រក',
+      isPublic: false,
+    },
+  ];
 
-  // 5. Machine Models
-  console.log('\nSeeding machine models...');
-  const machineModelMap: Record<string, string> = {};
-  for (const row of readCsv('machine-models')) {
-    const machineModel = await prisma.machineModel.upsert({
-      where: { brand_model: { brand: str(row.brand), model: str(row.model) } },
-      update: {
-        category: str(row.category) || null,
-        description: str(row.description) || null,
-        isActive: bool(row.isActive),
-      },
-      create: {
-        brand: str(row.brand),
-        model: str(row.model),
-        category: str(row.category) || null,
-        description: str(row.description) || null,
-        isActive: bool(row.isActive),
-      },
-    });
-    machineModelMap[`${row.brand}|${row.model}`] = machineModel.id;
-    console.log(`  machineModel: ${row.brand} ${row.model}`);
-  }
-
-  // 6. Reference Book
-  console.log('\nSeeding reference books...');
-  const referenceBookMap: Record<string, string> = {};
-  for (const row of readCsv('reference-book')) {
-    const partCode = str(row.partCode) || null;
-    if (!partCode) continue;
-    const machineModelId =
-      str(row.machineModelBrand) && str(row.machineModelModel)
-        ? (machineModelMap[`${row.machineModelBrand}|${row.machineModelModel}`] ?? null)
-        : null;
-    const existing = await prisma.referenceBook.findFirst({ where: { partCode } });
-    const data = {
-      machineModelId,
-      componentType: str(row.componentType) || null,
-      partName: str(row.partName),
-      partCode,
-      standardSize: str(row.standardSize) ? num(row.standardSize) : null,
-      wearLimit: str(row.wearLimit) ? num(row.wearLimit) : null,
-      serviceLimit: str(row.serviceLimit) ? num(row.serviceLimit) : null,
-      unit: str(row.unit, 'mm'),
-      sourceType: row.sourceType as ReferenceSourceType,
-      verificationStatus: row.verificationStatus as VerificationStatus,
-      notes: str(row.notes) || null,
-      isActive: bool(row.isActive),
-    };
-    const ref = existing
-      ? await prisma.referenceBook.update({ where: { id: existing.id }, data })
-      : await prisma.referenceBook.create({ data });
-    referenceBookMap[partCode] = ref.id;
-    console.log(`  referenceBook: ${partCode} – ${row.partName}`);
-  }
-
-  // 7. Products
-  console.log('\nSeeding products...');
-  const productMap: Record<string, string> = {};
-  for (const row of readCsv('products')) {
-    const linkedReferenceBookId = str(row.linkedReferenceBookPartCode)
-      ? (referenceBookMap[row.linkedReferenceBookPartCode] ?? null)
-      : null;
-    const product = await prisma.product.upsert({
-      where: { code: row.code },
-      update: {
-        name: str(row.name),
-        brand: str(row.brand) || null,
-        componentPartType: str(row.componentPartType) || null,
-        size: str(row.size) || null,
-        supplier: str(row.supplier) || null,
-        description: str(row.description) || null,
-        category: str(row.category) || null,
-        unit: str(row.unit, 'piece'),
-        costPrice: num(row.costPrice),
-        sellingPrice: num(row.sellingPrice),
-        stockQuantity: Math.round(num(row.stockQuantity)),
-        reorderLevel: Math.round(num(row.reorderLevel)),
-        linkedReferenceBookId,
-        isActive: bool(row.isActive),
-      },
-      create: {
-        code: row.code,
-        name: str(row.name),
-        brand: str(row.brand) || null,
-        componentPartType: str(row.componentPartType) || null,
-        size: str(row.size) || null,
-        supplier: str(row.supplier) || null,
-        description: str(row.description) || null,
-        category: str(row.category) || null,
-        unit: str(row.unit, 'piece'),
-        costPrice: num(row.costPrice),
-        sellingPrice: num(row.sellingPrice),
-        stockQuantity: Math.round(num(row.stockQuantity)),
-        reorderLevel: Math.round(num(row.reorderLevel)),
-        linkedReferenceBookId,
-        isActive: bool(row.isActive),
-      },
-    });
-    productMap[row.code] = product.id;
-    console.log(`  product: ${row.code} – ${row.name}`);
-  }
-
-  // 8. Service Jobs
-  console.log('\nSeeding service jobs...');
-  const serviceJobMap: Record<string, string> = {};
-  for (const row of readCsv('service-jobs')) {
-    const customerId = customerMap[row.customerCode];
-    if (!customerId) { console.warn(`  skip job: no customer ${row.customerCode}`); continue; }
-    const createdById = userMap[row.createdByEmail];
-    if (!createdById) { console.warn(`  skip job: no user ${row.createdByEmail}`); continue; }
-    const machineModelId =
-      str(row.machineModelBrand) && str(row.machineModelModel)
-        ? (machineModelMap[`${row.machineModelBrand}|${row.machineModelModel}`] ?? null)
-        : null;
-    const assignedToId = str(row.assignedToEmail)
-      ? (userMap[row.assignedToEmail] ?? null)
-      : null;
-    const job = await prisma.serviceJob.upsert({
-      where: { jobCode: row.jobCode },
-      update: {
-        machineModelId,
-        partDescription: str(row.partDescription),
-        status: row.status as JobStatus,
-        priority: row.priority as Priority,
-        estimatedCompletionDate: dt(row.estimatedCompletionDate) ?? null,
-        notes: str(row.notes) || null,
-        technicianNotes: str(row.technicianNotes) || null,
-        assignedToId,
-      },
-      create: {
-        jobCode: row.jobCode,
-        customerId,
-        machineModelId,
-        partDescription: str(row.partDescription),
-        status: row.status as JobStatus,
-        priority: row.priority as Priority,
-        estimatedCompletionDate: dt(row.estimatedCompletionDate) ?? null,
-        notes: str(row.notes) || null,
-        technicianNotes: str(row.technicianNotes) || null,
-        createdById,
-        assignedToId,
-      },
-    });
-    serviceJobMap[row.jobCode] = job.id;
-    console.log(`  serviceJob: ${row.jobCode} [${row.status}]`);
-  }
-
-  // 9. Service Job Items (delete + recreate per job)
-  console.log('\nSeeding service job items...');
-  const jobItemsByJob: Record<string, Row[]> = {};
-  for (const row of readCsv('service-job-items')) {
-    (jobItemsByJob[row.jobCode] ??= []).push(row);
-  }
-  for (const [jobCode, items] of Object.entries(jobItemsByJob)) {
-    const serviceJobId = serviceJobMap[jobCode];
-    if (!serviceJobId) { console.warn(`  skip items: no job ${jobCode}`); continue; }
-    await prisma.serviceJobItem.deleteMany({ where: { serviceJobId } });
-    for (const item of items) {
-      const serviceId = str(item.serviceCode) ? (serviceMap[item.serviceCode] ?? null) : null;
-      const priceCatalogId =
-        str(item.priceCatalogLabel) && str(item.serviceCode)
-          ? (priceCatalogMap[`${item.serviceCode}|${item.priceCatalogLabel}`] ?? null)
-          : null;
-      const productId = str(item.productCode) ? (productMap[item.productCode] ?? null) : null;
-      const qty = num(item.quantity, 1);
-      const price = num(item.unitPrice);
-      await prisma.serviceJobItem.create({
-        data: {
-          serviceJobId,
-          type: item.type as ItemType,
-          serviceId,
-          priceCatalogId,
-          productId,
-          description: str(item.description),
-          quantity: qty,
-          unitPrice: price,
-          totalPrice: qty * price,
-          measurement: str(item.measurement) || null,
-          notes: str(item.notes) || null,
-        },
-      });
-    }
-    console.log(`  serviceJobItems: ${jobCode} (${items.length} items)`);
-  }
-
-  // 10. Sales
-  console.log('\nSeeding sales...');
-  const saleMap: Record<string, string> = {};
-  for (const row of readCsv('sales')) {
-    const customerId = str(row.customerCode) ? (customerMap[row.customerCode] ?? null) : null;
-    const createdById = userMap[row.createdByEmail];
-    if (!createdById) { console.warn(`  skip sale: no user ${row.createdByEmail}`); continue; }
-    const sale = await prisma.sale.upsert({
-      where: { saleNumber: row.saleNumber },
-      update: {
-        customerId,
-        status: row.status as SaleStatus,
-        subtotal: num(row.subtotal),
-        discountAmount: num(row.discountAmount),
-        totalAmount: num(row.totalAmount),
-        notes: str(row.notes) || null,
-        soldAt: dt(row.soldAt) ?? new Date(),
-      },
-      create: {
-        saleNumber: row.saleNumber,
-        customerId,
-        status: row.status as SaleStatus,
-        subtotal: num(row.subtotal),
-        discountAmount: num(row.discountAmount),
-        totalAmount: num(row.totalAmount),
-        notes: str(row.notes) || null,
-        soldAt: dt(row.soldAt) ?? new Date(),
-        createdById,
-      },
-    });
-    saleMap[row.saleNumber] = sale.id;
-    console.log(`  sale: ${row.saleNumber} [${row.status}] $${row.totalAmount}`);
-  }
-
-  // 11. Sale Items (delete + recreate per sale)
-  console.log('\nSeeding sale items...');
-  const saleItemsBySale: Record<string, Row[]> = {};
-  for (const row of readCsv('sale-items')) {
-    (saleItemsBySale[row.saleNumber] ??= []).push(row);
-  }
-  for (const [saleNumber, items] of Object.entries(saleItemsBySale)) {
-    const saleId = saleMap[saleNumber];
-    if (!saleId) { console.warn(`  skip saleItems: no sale ${saleNumber}`); continue; }
-    await prisma.saleItem.deleteMany({ where: { saleId } });
-    for (const item of items) {
-      const productId = productMap[item.productCode];
-      if (!productId) { console.warn(`  skip saleItem: no product ${item.productCode}`); continue; }
-      await prisma.saleItem.create({
-        data: {
-          saleId,
-          productId,
-          description: str(item.description) || null,
-          quantity: num(item.quantity, 1),
-          unitPrice: num(item.unitPrice),
-          discountAmount: num(item.discountAmount),
-          totalPrice: num(item.totalPrice),
-        },
-      });
-    }
-    console.log(`  saleItems: ${saleNumber} (${items.length} items)`);
-  }
-
-  // 12. Invoices
-  console.log('\nSeeding invoices...');
-  const invoiceMap: Record<string, string> = {};
-  for (const row of readCsv('invoices')) {
-    const customerId = customerMap[row.customerCode];
-    if (!customerId) { console.warn(`  skip invoice: no customer ${row.customerCode}`); continue; }
-    const createdById = userMap[row.createdByEmail];
-    if (!createdById) { console.warn(`  skip invoice: no user ${row.createdByEmail}`); continue; }
-    const serviceJobId = str(row.serviceJobCode) ? (serviceJobMap[row.serviceJobCode] ?? null) : null;
-    const saleId = str(row.saleNumber) ? (saleMap[row.saleNumber] ?? null) : null;
-    const invoice = await prisma.invoice.upsert({
-      where: { invoiceNumber: row.invoiceNumber },
-      update: {
-        status: row.status as InvoiceStatus,
-        subtotal: num(row.subtotal),
-        discountAmount: num(row.discountAmount),
-        taxAmount: num(row.taxAmount),
-        totalAmount: num(row.totalAmount),
-        paidAmount: num(row.paidAmount),
-        dueAmount: num(row.dueAmount),
-        notes: str(row.notes) || null,
-        issuedAt: dt(row.issuedAt) ?? new Date(),
-        dueDate: dt(row.dueDate) ?? null,
-      },
-      create: {
-        invoiceNumber: row.invoiceNumber,
-        customerId,
-        serviceJobId,
-        saleId,
-        status: row.status as InvoiceStatus,
-        subtotal: num(row.subtotal),
-        discountAmount: num(row.discountAmount),
-        taxAmount: num(row.taxAmount),
-        totalAmount: num(row.totalAmount),
-        paidAmount: num(row.paidAmount),
-        dueAmount: num(row.dueAmount),
-        notes: str(row.notes) || null,
-        issuedAt: dt(row.issuedAt) ?? new Date(),
-        dueDate: dt(row.dueDate) ?? null,
-        createdById,
-      },
-    });
-    invoiceMap[row.invoiceNumber] = invoice.id;
-    console.log(`  invoice: ${row.invoiceNumber} [${row.status}] $${row.totalAmount}`);
-  }
-
-  // 13. Invoice Items (delete + recreate per invoice)
-  console.log('\nSeeding invoice items...');
-  const invoiceItemsByInvoice: Record<string, Row[]> = {};
-  for (const row of readCsv('invoice-items')) {
-    (invoiceItemsByInvoice[row.invoiceNumber] ??= []).push(row);
-  }
-  for (const [invoiceNumber, items] of Object.entries(invoiceItemsByInvoice)) {
-    const invoiceId = invoiceMap[invoiceNumber];
-    if (!invoiceId) { console.warn(`  skip invoiceItems: no invoice ${invoiceNumber}`); continue; }
-    await prisma.invoiceItem.deleteMany({ where: { invoiceId } });
-    for (const item of items) {
-      const serviceId = str(item.serviceCode) ? (serviceMap[item.serviceCode] ?? null) : null;
-      const productId = str(item.productCode) ? (productMap[item.productCode] ?? null) : null;
-      await prisma.invoiceItem.create({
-        data: {
-          invoiceId,
-          type: item.type as ItemType,
-          serviceId,
-          productId,
-          description: str(item.description),
-          quantity: num(item.quantity, 1),
-          unitPrice: num(item.unitPrice),
-          discountAmount: num(item.discountAmount),
-          totalPrice: num(item.totalPrice),
-        },
-      });
-    }
-    console.log(`  invoiceItems: ${invoiceNumber} (${items.length} items)`);
-  }
-
-  // 14. Payments
-  console.log('\nSeeding payments...');
-  for (const row of readCsv('payments')) {
-    const invoiceId = invoiceMap[row.invoiceNumber];
-    if (!invoiceId) { console.warn(`  skip payment: no invoice ${row.invoiceNumber}`); continue; }
-    const customerId = customerMap[row.customerCode];
-    if (!customerId) { console.warn(`  skip payment: no customer ${row.customerCode}`); continue; }
-    const createdById = userMap[row.createdByEmail];
-    if (!createdById) { console.warn(`  skip payment: no user ${row.createdByEmail}`); continue; }
-    await prisma.payment.upsert({
-      where: { paymentNumber: row.paymentNumber },
-      update: {
-        amount: num(row.amount),
-        method: row.method as PaymentMethod,
-        referenceNo: str(row.referenceNo) || null,
-        notes: str(row.notes) || null,
-        paidAt: dt(row.paidAt) ?? new Date(),
-      },
-      create: {
-        paymentNumber: row.paymentNumber,
-        invoiceId,
-        customerId,
-        amount: num(row.amount),
-        method: row.method as PaymentMethod,
-        referenceNo: str(row.referenceNo) || null,
-        notes: str(row.notes) || null,
-        paidAt: dt(row.paidAt) ?? new Date(),
-        createdById,
-      },
-    });
-    console.log(`  payment: ${row.paymentNumber} $${row.amount} [${row.method}]`);
-  }
-
-  // 15. Expenses
-  console.log('\nSeeding expenses...');
-  for (const row of readCsv('expenses')) {
-    const createdById = userMap[row.createdByEmail];
-    if (!createdById) { console.warn(`  skip expense: no user ${row.createdByEmail}`); continue; }
-    await prisma.expense.upsert({
-      where: { expenseNumber: row.expenseNumber },
-      update: {
-        category: row.category as ExpenseCategory,
-        description: str(row.description),
-        amount: num(row.amount),
-        method: row.method as PaymentMethod,
-        referenceNo: str(row.referenceNo) || null,
-        notes: str(row.notes) || null,
-        expenseDate: dt(row.expenseDate) ?? new Date(),
-      },
-      create: {
-        expenseNumber: row.expenseNumber,
-        category: row.category as ExpenseCategory,
-        description: str(row.description),
-        amount: num(row.amount),
-        method: row.method as PaymentMethod,
-        referenceNo: str(row.referenceNo) || null,
-        notes: str(row.notes) || null,
-        expenseDate: dt(row.expenseDate) ?? new Date(),
-        createdById,
-      },
-    });
-    console.log(`  expense: ${row.expenseNumber} [${row.category}] $${row.amount}`);
-  }
-
-  // 16. Audit Logs (skip if any already exist)
-  console.log('\nSeeding audit logs...');
-  const auditCount = await prisma.auditLog.count();
-  if (auditCount === 0) {
-    for (const row of readCsv('audit-logs')) {
-      const userId = str(row.userEmail) ? (userMap[row.userEmail] ?? null) : null;
-      await prisma.auditLog.create({
-        data: {
-          userId,
-          action: row.action as AuditAction,
-          entityType: str(row.entityType),
-          entityId: str(row.entityId) || null,
-          ipAddress: str(row.ipAddress) || null,
-        },
-      });
-      console.log(`  auditLog: ${row.action} ${row.entityType}`);
-    }
-  } else {
-    console.log(`  skip – ${auditCount} logs already exist`);
-  }
-
-  // 17. Settings
-  console.log('\nSeeding settings...');
-  for (const row of readCsv('settings')) {
+  for (const setting of settings) {
     await prisma.setting.upsert({
-      where: { key: row.key },
-      update: {
-        type: str(row.type, 'text'),
-        group: str(row.group, 'general'),
-        description: str(row.description) || null,
-        isPublic: bool(row.isPublic, false),
-      },
-      create: {
-        key: str(row.key),
-        value: str(row.value) || null,
-        type: str(row.type, 'text'),
-        group: str(row.group, 'general'),
-        description: str(row.description) || null,
-        isPublic: bool(row.isPublic, false),
-      },
+      where: { key: setting.key },
+      update: setting,
+      create: setting,
     });
-    console.log(`  setting: ${row.key} = ${row.value || '(empty)'}`);
   }
 
-  console.log('\n✅ Seed complete!');
+  console.log('Seed settings done.');
+  console.log('Seeding completed.');
 }
 
 main()
-  .catch((err) => {
-    console.error('Seed failed:', err);
+  .catch((error) => {
+    console.error('Seed failed:', error);
     process.exit(1);
   })
   .finally(async () => {
     await prisma.$disconnect();
-    await pool.end();
   });

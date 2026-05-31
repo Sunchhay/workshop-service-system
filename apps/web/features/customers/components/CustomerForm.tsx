@@ -28,18 +28,19 @@ import { useTranslation } from '@/lib/i18n/TranslationContext';
 import type {
   CreateCustomerRequest,
   CustomerType,
+  RecordStatus,
   UpdateCustomerRequest,
 } from '../types';
 
-const CUSTOMER_TYPES: CustomerType[] = ['NORMAL', 'VIP', 'WHOLESALE', 'PARTNER'];
+const CUSTOMER_TYPES: CustomerType[] = ['OWNER', 'MECHANIC'];
 
 const customerSchema = z.object({
   name: z.string().min(1),
   phone: z.string().min(1),
-  email: z.union([z.string().email(), z.literal('')]),
-  address: z.string(),
-  customerType: z.enum(['NORMAL', 'VIP', 'WHOLESALE', 'PARTNER']),
-  notes: z.string(),
+  imageUrl: z.string().optional(),
+  customerType: z.enum(['OWNER', 'MECHANIC']),
+  note: z.string().optional(),
+  status: z.enum(['ACTIVE', 'INACTIVE']),
 });
 
 type FormValues = z.infer<typeof customerSchema>;
@@ -64,10 +65,10 @@ export function CustomerForm({
     defaultValues: {
       name: defaultValues?.name ?? '',
       phone: defaultValues?.phone ?? '',
-      email: defaultValues?.email ?? '',
-      address: defaultValues?.address ?? '',
-      customerType: defaultValues?.customerType ?? 'NORMAL',
-      notes: defaultValues?.notes ?? '',
+      imageUrl: defaultValues?.imageUrl ?? '',
+      customerType: defaultValues?.customerType ?? 'OWNER',
+      note: defaultValues?.note ?? '',
+      status: defaultValues?.status ?? 'ACTIVE',
     },
   });
 
@@ -75,10 +76,10 @@ export function CustomerForm({
     const payload: CreateCustomerRequest | UpdateCustomerRequest = {
       name: data.name,
       phone: data.phone,
-      email: data.email || undefined,
-      address: data.address || undefined,
+      imageUrl: data.imageUrl || undefined,
       customerType: data.customerType,
-      notes: data.notes || undefined,
+      note: data.note || undefined,
+      status: data.status as RecordStatus,
     };
     await onSubmit(payload);
   };
@@ -130,15 +131,13 @@ export function CustomerForm({
 
           <FormField
             control={form.control}
-            name="email"
+            name="imageUrl"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>{t('customers.email')}</FormLabel>
+                <FormLabel>{t('customers.imageUrl')}</FormLabel>
                 <FormControl>
                   <Input
-                    type="email"
-                    autoComplete="off"
-                    placeholder={t('customers.emailPlaceholder')}
+                    placeholder={t('customers.imageUrlPlaceholder')}
                     {...field}
                   />
                 </FormControl>
@@ -171,35 +170,39 @@ export function CustomerForm({
               </FormItem>
             )}
           />
+
+          <FormField
+            control={form.control}
+            name="status"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('customers.statusLabel')}</FormLabel>
+                <FormControl>
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ACTIVE">{t('common.active')}</SelectItem>
+                      <SelectItem value="INACTIVE">{t('common.inactive')}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
         </div>
 
         <FormField
           control={form.control}
-          name="address"
+          name="note"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>{t('customers.address')}</FormLabel>
+              <FormLabel>{t('customers.note')}</FormLabel>
               <FormControl>
                 <Textarea
-                  placeholder={t('customers.addressPlaceholder')}
-                  className="min-h-[80px] resize-none"
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="notes"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t('customers.notes')}</FormLabel>
-              <FormControl>
-                <Textarea
-                  placeholder={t('customers.notesPlaceholder')}
+                  placeholder={t('customers.notePlaceholder')}
                   className="min-h-[80px] resize-none"
                   {...field}
                 />

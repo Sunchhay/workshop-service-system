@@ -1,17 +1,17 @@
 import type { ApiPaginatedResponse, ApiResponse } from '@/lib/api/types';
 
-export type CustomerType = 'NORMAL' | 'VIP' | 'WHOLESALE' | 'PARTNER';
+export type CustomerType = 'OWNER' | 'MECHANIC';
+export type RecordStatus = 'ACTIVE' | 'INACTIVE';
 
 export interface Customer {
   id: string;
-  code: string;
   name: string;
   phone: string;
-  email: string | null;
-  address: string | null;
+  imageUrl?: string | null;
+  note?: string | null;
   customerType: CustomerType;
-  notes: string | null;
-  isActive: boolean;
+  lastPurchasedAt?: string | null;
+  status: RecordStatus;
   createdAt: string;
   updatedAt: string;
 }
@@ -19,25 +19,29 @@ export interface Customer {
 export interface CreateCustomerRequest {
   name: string;
   phone: string;
-  email?: string;
-  address?: string;
+  imageUrl?: string;
+  note?: string;
   customerType?: CustomerType;
-  notes?: string;
+  status?: RecordStatus;
 }
 
 export interface UpdateCustomerRequest {
   name?: string;
   phone?: string;
-  email?: string;
-  address?: string;
+  imageUrl?: string;
+  note?: string;
   customerType?: CustomerType;
-  notes?: string;
+  status?: RecordStatus;
+}
+
+export interface UpdateCustomerStatusRequest {
+  status: RecordStatus;
 }
 
 export interface CustomerQuery {
   search?: string;
   customerType?: CustomerType;
-  isActive?: boolean;
+  status?: RecordStatus;
   page?: number;
   limit?: number;
 }

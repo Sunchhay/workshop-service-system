@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+
 import { createResponse } from '../../common/types/api-response.type';
 import { QueryReportDto } from './dto/query-report.dto';
 import { ReportsRepository } from './reports.repository';
@@ -7,18 +8,8 @@ import { ReportsRepository } from './reports.repository';
 export class ReportsService {
   constructor(private readonly reportsRepository: ReportsRepository) {}
 
-  async getSummary(dto: QueryReportDto) {
-    const data = await this.reportsRepository.getSummary(dto.fromDate, dto.toDate);
-    return createResponse(data);
-  }
-
-  async getServiceJobs(dto: QueryReportDto) {
-    const data = await this.reportsRepository.getServiceJobs(dto);
-    return createResponse(data);
-  }
-
-  async getInvoices(dto: QueryReportDto) {
-    const data = await this.reportsRepository.getInvoices(dto);
+  async getSales(dto: QueryReportDto) {
+    const data = await this.reportsRepository.getSales(dto);
     return createResponse(data);
   }
 
@@ -27,33 +18,33 @@ export class ReportsService {
     return createResponse(data);
   }
 
-  async getSales(dto: QueryReportDto) {
-    const data = await this.reportsRepository.getSales(dto);
-    return createResponse(data);
-  }
-
   async getExpenses(dto: QueryReportDto) {
     const data = await this.reportsRepository.getExpenses(dto);
     return createResponse(data);
   }
 
-  async getProfit(dto: QueryReportDto) {
-    const data = await this.reportsRepository.getProfit(dto.fromDate, dto.toDate);
+  async getProfitSummary(dto: QueryReportDto) {
+    const data = await this.reportsRepository.getProfitSummary(dto);
     return createResponse(data);
   }
 
-  async getUnpaidBalances(dto: QueryReportDto) {
-    const data = await this.reportsRepository.getUnpaidBalances(dto);
+  async getMechanicCommissions(dto: QueryReportDto) {
+    const data = await this.reportsRepository.getMechanicCommissions(dto);
     return createResponse(data);
   }
 
-  async getProducts(dto: QueryReportDto) {
-    const data = await this.reportsRepository.getProducts(dto);
+  async getCustomerDebts(dto: QueryReportDto) {
+    const data = await this.reportsRepository.getCustomerDebts(dto);
     return createResponse(data);
   }
 
-  async getLowStock() {
-    const data = await this.reportsRepository.getLowStock();
+  async getServiceUsage(dto: QueryReportDto) {
+    const data = await this.reportsRepository.getServiceUsage(dto);
+    return createResponse(data);
+  }
+
+  async getProductSales(dto: QueryReportDto) {
+    const data = await this.reportsRepository.getProductSales(dto);
     return createResponse(data);
   }
 }

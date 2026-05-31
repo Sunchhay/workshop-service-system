@@ -1,35 +1,29 @@
-import {
-  IsEmail,
-  IsEnum,
-  IsNotEmpty,
-  IsOptional,
-  IsString,
-} from 'class-validator';
+import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
-import { CustomerType } from '../../../generated/prisma/enums';
+import { CustomerType, RecordStatus } from '../../../generated/prisma/enums';
 
 export class CreateCustomerDto {
   @IsString()
   @IsNotEmpty()
-  name: string;
+  name!: string;
 
   @IsString()
   @IsNotEmpty()
-  phone: string;
-
-  @IsEmail()
-  @IsOptional()
-  email?: string;
+  phone!: string;
 
   @IsString()
   @IsOptional()
-  address?: string;
+  imageUrl?: string;
+
+  @IsString()
+  @IsOptional()
+  note?: string;
 
   @IsEnum(CustomerType)
   @IsOptional()
   customerType?: CustomerType;
 
-  @IsString()
+  @IsEnum(RecordStatus)
   @IsOptional()
-  notes?: string;
+  status?: RecordStatus;
 }

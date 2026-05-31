@@ -29,7 +29,7 @@ import { useCreatePaymentMutation } from '../../api';
 import type { Invoice } from '@/features/invoices/types';
 import type { PaymentMethod } from '../../types';
 
-const METHODS: PaymentMethod[] = ['CASH', 'ABA', 'BANK_TRANSFER', 'CARD', 'OTHER'];
+const METHODS: PaymentMethod[] = ['CASH', 'ACLEDA', 'ABA', 'BAKONG', 'OTHER'];
 
 interface RecordPaymentDialogProps {
   invoice: Invoice;

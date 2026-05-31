@@ -1,4 +1,4 @@
-import { Type } from 'class-transformer';
+import { Transform } from 'class-transformer';
 import {
   IsEnum,
   IsInt,
@@ -8,43 +8,51 @@ import {
   Min,
 } from 'class-validator';
 
-import { ExpenseCategory, PaymentMethod } from '../../../generated/prisma/enums';
+import { ExpenseStatus, PaymentMethod } from '../../../generated/prisma/enums';
 
 export class QueryExpenseDto {
-  @IsOptional()
   @IsString()
+  @IsOptional()
   search?: string;
 
+  @IsEnum(ExpenseStatus)
   @IsOptional()
-  @IsEnum(ExpenseCategory)
-  category?: ExpenseCategory;
+  expenseStatus?: ExpenseStatus;
 
-  @IsOptional()
   @IsEnum(PaymentMethod)
-  method?: PaymentMethod;
-
   @IsOptional()
-  @IsString()
-  createdById?: string;
+  paymentMethod?: PaymentMethod;
 
-  @IsOptional()
   @IsString()
+  @IsOptional()
+  supplierId?: string;
+
+  @IsString()
+  @IsOptional()
+  mechanicId?: string;
+
+  @IsString()
+  @IsOptional()
+  category?: string;
+
+  @IsString()
+  @IsOptional()
   dateFrom?: string;
 
-  @IsOptional()
   @IsString()
+  @IsOptional()
   dateTo?: string;
 
-  @IsOptional()
-  @Type(() => Number)
   @IsInt()
   @Min(1)
+  @IsOptional()
+  @Transform(({ value }) => Number(value))
   page?: number;
 
-  @IsOptional()
-  @Type(() => Number)
   @IsInt()
   @Min(1)
-  @Max(100)
+  @Max(500)
+  @IsOptional()
+  @Transform(({ value }) => Number(value))
   limit?: number;
 }

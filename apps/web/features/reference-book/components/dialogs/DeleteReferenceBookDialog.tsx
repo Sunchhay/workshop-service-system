@@ -39,7 +39,7 @@ export function DeleteReferenceBookDialog({
         <AlertDialogHeader>
           <AlertDialogTitle>{t('referenceBook.confirmDeleteTitle')}</AlertDialogTitle>
           <AlertDialogDescription>
-            <span className="font-medium text-foreground">{record.partName}</span> —{' '}
+            <span className="font-medium text-foreground">{record.title}</span> —{' '}
             {t('referenceBook.confirmDeleteDesc')}
           </AlertDialogDescription>
         </AlertDialogHeader>

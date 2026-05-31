@@ -1,42 +1,31 @@
 import { Transform } from 'class-transformer';
-import {
-  IsBoolean,
-  IsEnum,
-  IsInt,
-  IsOptional,
-  IsString,
-  Max,
-  Min,
-} from 'class-validator';
+import { IsEnum, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
 
-import { PriceType } from '../../../generated/prisma/enums';
+import { RecordStatus } from '../../../generated/prisma/enums';
 
 export class QueryServiceDto {
   @IsString()
   @IsOptional()
   search?: string;
 
-  @IsEnum(PriceType)
+  @IsEnum(RecordStatus)
   @IsOptional()
-  priceType?: PriceType;
+  status?: RecordStatus;
 
-  @IsBoolean()
+  @IsString()
   @IsOptional()
-  @Transform(({ value }) => {
-    if (value === 'true' || value === true) return true;
-    if (value === 'false' || value === false) return false;
-    return undefined;
-  })
-  isActive?: boolean;
+  category?: string;
 
   @IsInt()
   @Min(1)
   @IsOptional()
-  page?: number = 1;
+  @Transform(({ value }) => Number(value))
+  page?: number;
 
   @IsInt()
   @Min(1)
   @Max(100)
   @IsOptional()
-  limit?: number = 20;
+  @Transform(({ value }) => Number(value))
+  limit?: number;
 }

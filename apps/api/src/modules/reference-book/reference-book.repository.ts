@@ -1,34 +1,66 @@
 import { Injectable } from '@nestjs/common';
 
+import { RecordStatus } from '../../generated/prisma/enums';
 import { PrismaService } from '../../prisma/prisma.service';
 import type { CreateReferenceBookDto } from './dto/create-reference-book.dto';
+import type { CreateReferenceBookItemDto } from './dto/create-reference-book-item.dto';
+import type { CreateReferenceBookSectionDto } from './dto/create-reference-book-section.dto';
 import type { QueryReferenceBookDto } from './dto/query-reference-book.dto';
 import type { UpdateReferenceBookDto } from './dto/update-reference-book.dto';
+import type { UpdateReferenceBookItemDto } from './dto/update-reference-book-item.dto';
+import type { UpdateReferenceBookSectionDto } from './dto/update-reference-book-section.dto';
+
+const ITEM_SELECT = {
+  id: true,
+  referenceBookSectionId: true,
+  label: true,
+  value: true,
+  unit: true,
+  note: true,
+  sortOrder: true,
+  createdAt: true,
+  updatedAt: true,
+} as const;
+
+const SECTION_SELECT = {
+  id: true,
+  referenceBookId: true,
+  name: true,
+  description: true,
+  sortOrder: true,
+  createdAt: true,
+  updatedAt: true,
+  items: {
+    select: ITEM_SELECT,
+    orderBy: { sortOrder: 'asc' as const },
+  },
+} as const;
 
 const REFERENCE_BOOK_SELECT = {
   id: true,
+  title: true,
+  category: true,
   machineModelId: true,
-  componentType: true,
-  partName: true,
-  partCode: true,
-  standardSize: true,
-  wearLimit: true,
-  serviceLimit: true,
-  unit: true,
-  measurementDetails: true,
-  sourceType: true,
-  verificationStatus: true,
-  notes: true,
-  isActive: true,
+  summary: true,
+  imageUrl: true,
+  fileUrl: true,
+  status: true,
+  createdById: true,
   createdAt: true,
   updatedAt: true,
   machineModel: {
     select: {
       id: true,
+      code: true,
       brand: true,
-      model: true,
-      category: true,
+      modelName: true,
+      machineType: true,
     },
+  },
+  createdBy: { select: { id: true, name: true } },
+  sections: {
+    select: SECTION_SELECT,
+    orderBy: { sortOrder: 'asc' as const },
   },
 } as const;
 
@@ -36,62 +68,63 @@ const REFERENCE_BOOK_SELECT = {
 export class ReferenceBookRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  create(data: CreateReferenceBookDto) {
+  machineModelExists(id: string) {
+    return this.prisma.machineModel.findUnique({ where: { id }, select: { id: true } });
+  }
+
+  create(dto: CreateReferenceBookDto, createdById: string) {
     return this.prisma.referenceBook.create({
       data: {
-        machineModelId: data.machineModelId ?? null,
-        componentType: data.componentType,
-        partName: data.partName,
-        partCode: data.partCode,
-        standardSize: data.standardSize,
-        wearLimit: data.wearLimit,
-        serviceLimit: data.serviceLimit,
-        unit: data.unit ?? 'mm',
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        measurementDetails: data.measurementDetails as any,
-        sourceType: data.sourceType,
-        verificationStatus: data.verificationStatus,
-        notes: data.notes,
+        title: dto.title,
+        category: dto.category,
+        machineModelId: dto.machineModelId,
+        summary: dto.summary,
+        imageUrl: dto.imageUrl,
+        fileUrl: dto.fileUrl,
+        status: dto.status ?? RecordStatus.ACTIVE,
+        createdById,
       },
       select: REFERENCE_BOOK_SELECT,
     });
   }
 
   async findAll(dto: QueryReferenceBookDto) {
-    const {
-      search,
-      machineModelId,
-      componentType,
-      sourceType,
-      verificationStatus,
-      isActive,
-      page = 1,
-      limit = 20,
-    } = dto;
+    const { search, category, machineModelId, status, page = 1, limit = 20 } = dto;
     const skip = (page - 1) * limit;
 
     const where = {
+      ...(status !== undefined && { status }),
       ...(machineModelId !== undefined && { machineModelId }),
-      ...(componentType !== undefined && {
-        componentType: { contains: componentType, mode: 'insensitive' as const },
+      ...(category !== undefined && {
+        category: { contains: category, mode: 'insensitive' as const },
       }),
-      ...(sourceType !== undefined && { sourceType }),
-      ...(verificationStatus !== undefined && { verificationStatus }),
-      ...(isActive !== undefined && { isActive }),
       ...(search !== undefined && {
         OR: [
-          { partName: { contains: search, mode: 'insensitive' as const } },
-          { partCode: { contains: search, mode: 'insensitive' as const } },
-          { componentType: { contains: search, mode: 'insensitive' as const } },
-          { notes: { contains: search, mode: 'insensitive' as const } },
+          { title: { contains: search, mode: 'insensitive' as const } },
+          { category: { contains: search, mode: 'insensitive' as const } },
+          { summary: { contains: search, mode: 'insensitive' as const } },
+          { machineModel: { code: { contains: search, mode: 'insensitive' as const } } },
+          { machineModel: { modelName: { contains: search, mode: 'insensitive' as const } } },
+          { sections: { some: { name: { contains: search, mode: 'insensitive' as const } } } },
           {
-            machineModel: {
-              brand: { contains: search, mode: 'insensitive' as const },
+            sections: {
+              some: {
+                items: { some: { label: { contains: search, mode: 'insensitive' as const } } },
+              },
             },
           },
           {
-            machineModel: {
-              model: { contains: search, mode: 'insensitive' as const },
+            sections: {
+              some: {
+                items: { some: { value: { contains: search, mode: 'insensitive' as const } } },
+              },
+            },
+          },
+          {
+            sections: {
+              some: {
+                items: { some: { note: { contains: search, mode: 'insensitive' as const } } },
+              },
             },
           },
         ],
@@ -104,7 +137,7 @@ export class ReferenceBookRepository {
         select: REFERENCE_BOOK_SELECT,
         skip,
         take: limit,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { updatedAt: 'desc' },
       }),
       this.prisma.referenceBook.count({ where }),
     ]);
@@ -119,47 +152,111 @@ export class ReferenceBookRepository {
     });
   }
 
-  update(id: string, data: UpdateReferenceBookDto) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const updateData: any = {
-      ...(data.partName !== undefined && { partName: data.partName }),
-      ...(data.partCode !== undefined && { partCode: data.partCode }),
-      ...(data.componentType !== undefined && { componentType: data.componentType }),
-      ...('machineModelId' in data && { machineModelId: data.machineModelId }),
-      ...(data.standardSize !== undefined && { standardSize: data.standardSize }),
-      ...(data.wearLimit !== undefined && { wearLimit: data.wearLimit }),
-      ...(data.serviceLimit !== undefined && { serviceLimit: data.serviceLimit }),
-      ...(data.unit !== undefined && { unit: data.unit }),
-      ...(data.sourceType !== undefined && { sourceType: data.sourceType }),
-      ...(data.notes !== undefined && { notes: data.notes }),
-      ...(data.measurementDetails !== undefined && {
-        measurementDetails: data.measurementDetails,
-      }),
-    };
+  update(id: string, dto: UpdateReferenceBookDto) {
     return this.prisma.referenceBook.update({
       where: { id },
-      data: updateData,
+      data: {
+        ...(dto.title !== undefined && { title: dto.title }),
+        ...(dto.category !== undefined && { category: dto.category }),
+        ...(dto.machineModelId !== undefined && { machineModelId: dto.machineModelId }),
+        ...(dto.summary !== undefined && { summary: dto.summary }),
+        ...(dto.imageUrl !== undefined && { imageUrl: dto.imageUrl }),
+        ...(dto.fileUrl !== undefined && { fileUrl: dto.fileUrl }),
+        ...(dto.status !== undefined && { status: dto.status }),
+      },
       select: REFERENCE_BOOK_SELECT,
     });
   }
 
-  updateStatus(id: string, isActive: boolean) {
+  updateStatus(id: string, status: RecordStatus) {
     return this.prisma.referenceBook.update({
       where: { id },
-      data: { isActive },
+      data: { status },
       select: REFERENCE_BOOK_SELECT,
     });
   }
 
-  updateVerificationStatus(id: string, verificationStatus: string) {
+  deactivate(id: string) {
     return this.prisma.referenceBook.update({
       where: { id },
-      data: { verificationStatus: verificationStatus as import('../../generated/prisma/enums').VerificationStatus },
+      data: { status: RecordStatus.INACTIVE },
       select: REFERENCE_BOOK_SELECT,
     });
   }
 
-  hardDelete(id: string) {
-    return this.prisma.referenceBook.delete({ where: { id } });
+  // Sections
+  createSection(referenceBookId: string, dto: CreateReferenceBookSectionDto) {
+    return this.prisma.referenceBookSection.create({
+      data: {
+        referenceBookId,
+        name: dto.name,
+        description: dto.description,
+        sortOrder: dto.sortOrder ?? 0,
+      },
+      select: SECTION_SELECT,
+    });
+  }
+
+  findSectionById(id: string) {
+    return this.prisma.referenceBookSection.findUnique({
+      where: { id },
+      select: { id: true, referenceBookId: true },
+    });
+  }
+
+  updateSection(id: string, dto: UpdateReferenceBookSectionDto) {
+    return this.prisma.referenceBookSection.update({
+      where: { id },
+      data: {
+        ...(dto.name !== undefined && { name: dto.name }),
+        ...(dto.description !== undefined && { description: dto.description }),
+        ...(dto.sortOrder !== undefined && { sortOrder: dto.sortOrder }),
+      },
+      select: SECTION_SELECT,
+    });
+  }
+
+  deleteSection(id: string) {
+    return this.prisma.referenceBookSection.delete({ where: { id } });
+  }
+
+  // Items
+  createItem(referenceBookSectionId: string, dto: CreateReferenceBookItemDto) {
+    return this.prisma.referenceBookItem.create({
+      data: {
+        referenceBookSectionId,
+        label: dto.label,
+        value: dto.value,
+        unit: dto.unit,
+        note: dto.note,
+        sortOrder: dto.sortOrder ?? 0,
+      },
+      select: ITEM_SELECT,
+    });
+  }
+
+  findItemById(id: string) {
+    return this.prisma.referenceBookItem.findUnique({
+      where: { id },
+      select: { id: true, referenceBookSectionId: true },
+    });
+  }
+
+  updateItem(id: string, dto: UpdateReferenceBookItemDto) {
+    return this.prisma.referenceBookItem.update({
+      where: { id },
+      data: {
+        ...(dto.label !== undefined && { label: dto.label }),
+        ...(dto.value !== undefined && { value: dto.value }),
+        ...(dto.unit !== undefined && { unit: dto.unit }),
+        ...(dto.note !== undefined && { note: dto.note }),
+        ...(dto.sortOrder !== undefined && { sortOrder: dto.sortOrder }),
+      },
+      select: ITEM_SELECT,
+    });
+  }
+
+  deleteItem(id: string) {
+    return this.prisma.referenceBookItem.delete({ where: { id } });
   }
 }

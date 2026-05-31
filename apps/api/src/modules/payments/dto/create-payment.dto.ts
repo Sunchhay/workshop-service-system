@@ -1,4 +1,3 @@
-import { Type } from 'class-transformer';
 import {
   IsDateString,
   IsEnum,
@@ -12,31 +11,26 @@ import {
 import { PaymentMethod } from '../../../generated/prisma/enums';
 
 export class CreatePaymentDto {
-  @IsString()
+  @IsEnum(PaymentMethod)
   @IsNotEmpty()
-  invoiceId: string;
+  paymentMethod: PaymentMethod;
 
-  @IsString()
-  @IsNotEmpty()
-  customerId: string;
-
-  @Type(() => Number)
   @IsNumber()
   @Min(0.01)
   amount: number;
 
-  @IsEnum(PaymentMethod)
-  method: PaymentMethod;
-
-  @IsOptional()
   @IsString()
+  @IsOptional()
   referenceNo?: string;
 
-  @IsOptional()
   @IsString()
-  notes?: string;
-
   @IsOptional()
+  note?: string;
+
   @IsDateString()
+  @IsOptional()
   paidAt?: string;
+
+  // set by service, not from client body
+  saleId?: string;
 }

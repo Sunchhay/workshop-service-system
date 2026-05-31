@@ -1,13 +1,15 @@
 import type { ApiPaginatedResponse, ApiResponse } from '@/lib/api/types';
 
-export type UserRole = 'ADMIN' | 'STAFF' | 'TECHNICIAN' | 'CASHIER';
+export type UserRole = 'ADMIN' | 'STAFF' | 'VIEWER';
+export type UserStatus = 'ACTIVE' | 'INACTIVE';
 
 export interface User {
   id: string;
   name: string;
   email: string;
+  imageUrl?: string | null;
   role: UserRole;
-  isActive: boolean;
+  status: UserStatus;
   createdAt: string;
   updatedAt: string;
 }
@@ -16,19 +18,27 @@ export interface CreateUserRequest {
   name: string;
   email: string;
   password: string;
-  role: UserRole;
+  imageUrl?: string;
+  role?: UserRole;
+  status?: UserStatus;
 }
 
 export interface UpdateUserRequest {
   name?: string;
   email?: string;
-  password?: string;
+  imageUrl?: string | null;
   role?: UserRole;
+  status?: UserStatus;
+}
+
+export interface UpdateUserStatusRequest {
+  status: UserStatus;
 }
 
 export interface UserQuery {
-  role?: UserRole;
   search?: string;
+  role?: UserRole;
+  status?: UserStatus;
   page?: number;
   limit?: number;
 }

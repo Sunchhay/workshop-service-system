@@ -10,14 +10,10 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useTranslation } from '@/lib/i18n/TranslationContext';
 
 import { useGetReferenceBookQuery, useUpdateReferenceBookMutation } from '../api';
-import type { CreateReferenceBookRequest, MeasurementDetail, UpdateReferenceBookRequest } from '../types';
+import type { CreateReferenceBookRequest, UpdateReferenceBookRequest } from '../types';
 import { ReferenceBookForm } from './ReferenceBookForm';
 
-interface ReferenceBookEditPageProps {
-  id: string;
-}
-
-export function ReferenceBookEditPage({ id }: ReferenceBookEditPageProps) {
+export function ReferenceBookEditPage({ id }: { id: string }) {
   const { t } = useTranslation();
   const router = useRouter();
   const { data, isLoading: isFetching } = useGetReferenceBookQuery(id);
@@ -32,8 +28,7 @@ export function ReferenceBookEditPage({ id }: ReferenceBookEditPageProps) {
       router.replace(`/admin/reference-book/${id}`);
     } catch (err: unknown) {
       const message =
-        (err as { data?: { message?: string } })?.data?.message ??
-        t('common.error');
+        (err as { data?: { message?: string } })?.data?.message ?? t('common.error');
       toast.error(message);
     }
   };
@@ -56,30 +51,27 @@ export function ReferenceBookEditPage({ id }: ReferenceBookEditPageProps) {
         <CardContent>
           {isFetching ? (
             <div className="space-y-5">
+              <Skeleton className="h-11 w-full" />
               <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                 <Skeleton className="h-11 w-full" />
                 <Skeleton className="h-11 w-full" />
               </div>
-              <Skeleton className="h-11 w-full" />
-              <Skeleton className="h-11 w-full" />
               <Skeleton className="h-20 w-full" />
+              <Skeleton className="h-11 w-full" />
+              <Skeleton className="h-11 w-full" />
+              <Skeleton className="h-11 w-full" />
             </div>
           ) : entry ? (
             <ReferenceBookForm
               mode="edit"
               defaultValues={{
+                title: entry.title,
+                category: entry.category ?? '',
                 machineModelId: entry.machineModelId ?? '__none',
-                componentType: entry.componentType ?? '',
-                partName: entry.partName,
-                partCode: entry.partCode ?? '',
-                standardSize: entry.standardSize ?? '',
-                wearLimit: entry.wearLimit ?? '',
-                serviceLimit: entry.serviceLimit ?? '',
-                unit: entry.unit ?? 'mm',
-                measurementDetails: (entry.measurementDetails as MeasurementDetail[]) ?? [],
-                sourceType: entry.sourceType,
-                verificationStatus: entry.verificationStatus,
-                notes: entry.notes ?? '',
+                summary: entry.summary ?? '',
+                imageUrl: entry.imageUrl ?? '',
+                fileUrl: entry.fileUrl ?? '',
+                status: entry.status,
               }}
               onSubmit={handleSubmit}
               isLoading={isUpdating}

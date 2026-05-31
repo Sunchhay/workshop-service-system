@@ -28,33 +28,22 @@ import type { PaymentMethod } from '../types';
 import { PaymentMobileCard } from './PaymentMobileCard';
 import { PaymentTable } from './PaymentTable';
 
-const METHODS: PaymentMethod[] = ['CASH', 'ABA', 'BANK_TRANSFER', 'CARD', 'OTHER'];
+const METHODS: PaymentMethod[] = ['CASH', 'ACLEDA', 'ABA', 'BAKONG', 'OTHER'];
 const LIMIT = 20;
 type MethodFilter = PaymentMethod | '__all';
 
 export function PaymentPage() {
   const { t } = useTranslation();
 
-  const [searchInput, setSearchInput] = useState('');
-  const [search, setSearch] = useState('');
   const [methodFilter, setMethodFilter] = useState<MethodFilter>('__all');
   const [pendingMethod, setPendingMethod] = useState<MethodFilter>('__all');
   const [filterSheetOpen, setFilterSheetOpen] = useState(false);
   const [page, setPage] = useState(1);
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setSearch(searchInput);
-      setPage(1);
-    }, 400);
-    return () => clearTimeout(timer);
-  }, [searchInput]);
-
   useEffect(() => { setPage(1); }, [methodFilter]);
 
   const { data, isLoading, isFetching } = useGetPaymentsQuery({
-    search: search || undefined,
-    method: methodFilter === '__all' ? undefined : methodFilter,
+    paymentMethod: methodFilter === '__all' ? undefined : methodFilter,
     page,
     limit: LIMIT,
   });
@@ -81,21 +70,19 @@ export function PaymentPage() {
 
   return (
     <div className="space-y-4">
-      {/* Header */}
       <div className="flex items-center justify-end md:justify-between gap-3">
         <h2 className="hidden md:block text-xl font-semibold">{t('payments.title')}</h2>
       </div>
 
-      {/* Search + Filters */}
       <div className="flex gap-3 items-center">
         <AppSearchInput
           placeholder={t('payments.searchPlaceholder')}
-          value={searchInput}
-          onChange={(e) => setSearchInput(e.target.value)}
-          onClear={() => setSearchInput('')}
+          value=""
+          onChange={() => {}}
+          onClear={() => {}}
+          disabled
         />
 
-        {/* Desktop filter */}
         <div className="hidden md:flex gap-3">
           <Select value={methodFilter} onValueChange={(v) => setMethodFilter(v as MethodFilter)}>
             <SelectTrigger className="w-44">
@@ -110,7 +97,6 @@ export function PaymentPage() {
           </Select>
         </div>
 
-        {/* Mobile filter sheet */}
         <Sheet open={filterSheetOpen} onOpenChange={handleSheetOpen}>
           <SheetTrigger asChild>
             <Button variant="outline" size="icon" className="flex md:hidden relative shrink-0">
@@ -128,7 +114,7 @@ export function PaymentPage() {
             </SheetHeader>
             <div className="space-y-4 p-4">
               <div className="space-y-2">
-                <p className="text-sm font-medium">{t('payments.method')}</p>
+                <p className="text-sm font-medium">{t('payments.paymentMethod')}</p>
                 <Select value={pendingMethod} onValueChange={(v) => setPendingMethod(v as MethodFilter)}>
                   <SelectTrigger>
                     <SelectValue placeholder={t('payments.allMethods')} />
@@ -150,7 +136,6 @@ export function PaymentPage() {
         </Sheet>
       </div>
 
-      {/* Loading */}
       {isLoading && (
         <div className="space-y-3">
           {Array.from({ length: 5 }).map((_, i) => (
@@ -159,14 +144,12 @@ export function PaymentPage() {
         </div>
       )}
 
-      {/* Desktop table */}
       {!isLoading && (
         <div className={`hidden md:block ${isFetching ? 'opacity-60' : ''}`}>
           <PaymentTable payments={payments} />
         </div>
       )}
 
-      {/* Mobile cards */}
       {!isLoading && (
         <div className={`md:hidden space-y-3 ${isFetching ? 'opacity-60' : ''}`}>
           {payments.length === 0 ? (
@@ -183,27 +166,16 @@ export function PaymentPage() {
         </div>
       )}
 
-      {/* Pagination */}
       {meta && meta.totalPages > 1 && (
         <div className="flex items-center justify-between gap-3 pt-2">
           <p className="text-sm text-muted-foreground">
             {(page - 1) * LIMIT + 1}–{Math.min(page * LIMIT, meta.total)} / {meta.total}
           </p>
           <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={page <= 1 || isFetching}
-            >
+            <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page <= 1 || isFetching}>
               {t('common.back')}
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setPage((p) => Math.min(meta.totalPages, p + 1))}
-              disabled={page >= meta.totalPages || isFetching}
-            >
+            <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.min(meta.totalPages, p + 1))} disabled={page >= meta.totalPages || isFetching}>
               {t('common.next')}
             </Button>
           </div>

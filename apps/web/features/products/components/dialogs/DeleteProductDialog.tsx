@@ -54,10 +54,10 @@ export function DeleteProductDialog({
           <AlertDialogAction
             onClick={onConfirm}
             disabled={isLoading}
-            className="bg-destructive hover:bg-destructive/90"
+            className="bg-destructive/10 text-destructive hover:bg-destructive/20"
           >
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {t('common.delete')}
+            {t('products.confirmDeleteTitle')}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

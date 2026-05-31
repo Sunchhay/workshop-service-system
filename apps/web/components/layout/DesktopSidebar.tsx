@@ -18,6 +18,8 @@ import {
   isActiveRoute,
   MAIN_NAV,
   MANAGEMENT_NAV,
+  OPERATIONS_NAV,
+  SYSTEM_NAV,
   type NavItem,
 } from '@/lib/nav/navConfig';
 import { cn } from '@/lib/utils';
@@ -142,7 +144,7 @@ export function DesktopSidebar() {
             ))}
           </div>
 
-          <div className="px-2 pb-4">
+          <div className="px-2 pb-2">
             <Separator className="mb-4" />
 
             {!collapsed && (
@@ -153,6 +155,48 @@ export function DesktopSidebar() {
 
             <div className="space-y-1">
               {MANAGEMENT_NAV.map((item) => (
+                <SidebarNavItem
+                  key={item.href}
+                  item={item}
+                  pathname={pathname}
+                  collapsed={collapsed}
+                />
+              ))}
+            </div>
+          </div>
+
+          <div className="px-2 pb-2">
+            <Separator className="mb-4" />
+
+            {!collapsed && (
+              <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                {t('nav.operations')}
+              </p>
+            )}
+
+            <div className="space-y-1">
+              {OPERATIONS_NAV.map((item) => (
+                <SidebarNavItem
+                  key={item.href}
+                  item={item}
+                  pathname={pathname}
+                  collapsed={collapsed}
+                />
+              ))}
+            </div>
+          </div>
+
+          <div className="px-2 pb-4">
+            <Separator className="mb-4" />
+
+            {!collapsed && (
+              <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                {t('nav.system')}
+              </p>
+            )}
+
+            <div className="space-y-1">
+              {SYSTEM_NAV.map((item) => (
                 <SidebarNavItem
                   key={item.href}
                   item={item}

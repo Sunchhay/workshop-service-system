@@ -56,9 +56,8 @@ export function ServiceEditPage({ id }: ServiceEditPageProps) {
         <CardContent>
           {isFetching ? (
             <div className="space-y-5">
+              <Skeleton className="h-11 w-full" />
               <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-                <Skeleton className="h-11 w-full" />
-                <Skeleton className="h-11 w-full" />
                 <Skeleton className="h-11 w-full" />
                 <Skeleton className="h-11 w-full" />
               </div>
@@ -72,13 +71,12 @@ export function ServiceEditPage({ id }: ServiceEditPageProps) {
             <ServiceForm
               mode="edit"
               defaultValues={{
+                code: data.data.code,
+                name: data.data.name,
                 nameEn: data.data.nameEn,
-                nameKh: data.data.nameKh ?? '',
                 category: data.data.category ?? '',
-                relatedComponent: data.data.relatedComponent ?? '',
-                priceType: data.data.priceType,
-                defaultPrice: data.data.defaultPrice ?? '',
                 description: data.data.description ?? '',
+                status: data.data.status,
               }}
               onSubmit={handleSubmit}
               isLoading={isUpdating}

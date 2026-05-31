@@ -15,21 +15,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useTranslation } from '@/lib/i18n/TranslationContext';
 
-import type { PriceType, Service } from '../types';
-
-const priceTypeClass: Record<PriceType, string> = {
-  FIXED: 'bg-blue-500/10 text-blue-600 border-blue-500/20 dark:text-blue-400',
-  CATALOG_BASED:
-    'bg-amber-500/10 text-amber-700 border-amber-500/20 dark:text-amber-400',
-  CUSTOM:
-    'bg-purple-500/10 text-purple-700 border-purple-500/20 dark:text-purple-400',
-};
-
-function formatPrice(price: string | null): string {
-  if (!price) return '—';
-  const num = parseFloat(price);
-  return isNaN(num) ? '—' : num.toFixed(2);
-}
+import type { Service } from '../types';
 
 interface ServiceMobileCardProps {
   service: Service;
@@ -47,7 +33,7 @@ export function ServiceMobileCard({
 
   return (
     <div
-      className="flex items-start gap-3 rounded-xl border bg-card p-4  cursor-pointer hover:bg-accent/50 transition-colors"
+      className="flex items-start gap-3 rounded-xl border bg-card p-4 cursor-pointer hover:bg-accent/50 transition-colors"
       onClick={() => router.push(`/admin/services/${service.id}`)}
       role="button"
       tabIndex={0}
@@ -59,42 +45,27 @@ export function ServiceMobileCard({
       {/* Main info */}
       <div className="min-w-0 flex-1">
         <div className="flex items-start gap-2 flex-wrap">
-          <span className="font-medium text-sm">{service.nameEn}</span>
+          <span className="font-medium text-sm">{service.name}</span>
           <Badge variant="outline" className="font-mono text-xs px-1.5">
             {service.code}
           </Badge>
         </div>
-        {service.nameKh && (
-          <p className="text-xs text-muted-foreground mt-0.5">{service.nameKh}</p>
+        {service.nameEn && (
+          <p className="text-xs text-muted-foreground mt-0.5">{service.nameEn}</p>
         )}
-        {(service.category || service.relatedComponent) && (
-          <p className="text-xs text-muted-foreground mt-0.5">
-            {[service.category, service.relatedComponent]
-              .filter(Boolean)
-              .join(' · ')}
-          </p>
-        )}
-        {service.priceType === 'FIXED' && service.defaultPrice && (
-          <p className="text-xs font-mono text-foreground mt-0.5">
-            {formatPrice(service.defaultPrice)}
-          </p>
+        {service.category && (
+          <p className="text-xs text-muted-foreground mt-0.5">{service.category}</p>
         )}
         <div className="mt-2 flex flex-wrap gap-1.5">
           <Badge
-            variant="outline"
-            className={priceTypeClass[service.priceType]}
-          >
-            {t(`priceTypes.${service.priceType}`)}
-          </Badge>
-          <Badge
-            variant={service.isActive ? 'default' : 'outline'}
+            variant={service.status === 'ACTIVE' ? 'default' : 'outline'}
             className={
-              service.isActive
+              service.status === 'ACTIVE'
                 ? 'bg-green-500/10 text-green-700 border-green-500/20 dark:text-green-400'
                 : 'text-muted-foreground'
             }
           >
-            {t(service.isActive ? 'common.active' : 'common.inactive')}
+            {t(service.status === 'ACTIVE' ? 'common.active' : 'common.inactive')}
           </Badge>
         </div>
       </div>
@@ -122,12 +93,12 @@ export function ServiceMobileCard({
             <DropdownMenuItem
               onClick={() => onToggleStatus(service)}
               className={
-                service.isActive
+                service.status === 'ACTIVE'
                   ? 'text-destructive focus:text-destructive'
                   : 'text-green-600 focus:text-green-600'
               }
             >
-              {service.isActive
+              {service.status === 'ACTIVE'
                 ? t('services.confirmDisableTitle')
                 : t('services.confirmEnableTitle')}
             </DropdownMenuItem>

@@ -1,14 +1,6 @@
-import {
-  IsBoolean,
-  IsEmail,
-  IsEnum,
-  IsNotEmpty,
-  IsOptional,
-  IsString,
-  MinLength,
-} from 'class-validator';
+import { IsEmail, IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
-import { UserRole } from '../../../generated/prisma/enums';
+import { RecordStatus, UserRole } from '../../../generated/prisma/enums';
 
 export class UpdateUserDto {
   @IsString()
@@ -21,16 +13,19 @@ export class UpdateUserDto {
   email?: string;
 
   @IsString()
-  @MinLength(8)
   @IsOptional()
-  password?: string;
+  imageUrl?: string;
 
   @IsEnum(UserRole)
   @IsOptional()
   role?: UserRole;
+
+  @IsEnum(RecordStatus)
+  @IsOptional()
+  status?: RecordStatus;
 }
 
 export class UpdateUserStatusDto {
-  @IsBoolean()
-  isActive: boolean;
+  @IsEnum(RecordStatus)
+  status: RecordStatus;
 }

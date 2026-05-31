@@ -27,7 +27,7 @@ export class MachineModelsController {
     return this.machineModelsService.create(dto);
   }
 
-  // GET /api/machine-models?search=honda&category=Engine&isActive=true&page=1&limit=20
+  // GET /api/machine-models?search=honda&machineType=Engine&status=ACTIVE&page=1&limit=20
   @Get()
   findAll(@Query() query: QueryMachineModelDto) {
     return this.machineModelsService.findAll(query);

@@ -14,6 +14,6 @@ export const baseApi = createApi({
       return headers;
     },
   }),
-  tagTypes: ['User', 'Customer', 'Service', 'PriceCatalog', 'MachineModel', 'ReferenceBook', 'ServiceJob', 'Product', 'Invoice', 'Payment', 'Sale', 'Expense', 'Setting', 'ReportSummary', 'ReportServiceJob', 'ReportInvoice', 'ReportPayment', 'ReportSale', 'ReportExpense', 'ReportProfit', 'ReportUnpaidBalance', 'ReportProduct', 'ReportLowStock'],
+  tagTypes: ['User', 'Customer', 'Supplier', 'Service', 'PriceCatalog', 'ServicePrice', 'MachineModel', 'ReferenceBook', 'ServiceJob', 'Product', 'ProductPrice', 'ProductSupplierPrice', 'Invoice', 'Payment', 'Sale', 'Cart', 'Expense', 'Setting', 'ReportSummary', 'ReportServiceJob', 'ReportInvoice', 'ReportPayment', 'ReportSale', 'ReportExpense', 'ReportProfit', 'ReportUnpaidBalance', 'ReportProduct', 'ReportLowStock'],
   endpoints: () => ({}),
 });
