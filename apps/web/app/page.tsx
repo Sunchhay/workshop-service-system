@@ -1,8 +1,7 @@
 import {
   Clock,
   MapPin,
-  Navigation,
-  PhoneCall
+  Navigation
 } from 'lucide-react';
 import Image from 'next/image';
 
@@ -90,7 +89,6 @@ export default function Page() {
     <main className="landing-page min-h-screen overflow-x-hidden overflow-y-auto bg-slate-950 text-white">
       <Header />
       <HeroSection />
-      {/* <ServicesSection /> */}
       <ContactSection />
       <Footer />
     </main>
@@ -109,18 +107,6 @@ function Header() {
             ជាងក្រឡឹង
           </div>
         </a>
-
-        {/* <nav className="hidden items-center gap-8 font-koulen text-sm text-slate-100 md:flex">
-          <a href="#home" className="hover:text-yellow-300">
-            ទំព័រដើម
-          </a>
-          <a href="#services" className="hover:text-yellow-300">
-            សេវាកម្ម
-          </a>
-          <a href="#contact" className="hover:text-yellow-300">
-            ទំនាក់ទំនង
-          </a>
-        </nav> */}
 
         <div className="flex flex-wrap items-center justify-center gap-3">
           {socials.map((link) => (
@@ -142,13 +128,6 @@ function Header() {
             </a>
           ))}
         </div>
-        {/* <a
-          href="tel:0719597168"
-          className="inline-flex items-center gap-2 rounded-full bg-yellow-300 px-3 py-2 font-koulen text-xs text-slate-950 shadow-lg transition hover:bg-yellow-200 sm:px-4 sm:text-sm"
-        >
-          <PhoneCall className="h-4 w-4" />
-          ទំនាក់ទំនងឥឡូវនេះ
-        </a> */}
       </div>
     </header>
   );
@@ -211,13 +190,6 @@ function HeroSection() {
         </div>
 
         <div className="mt-36 md:mt-8 flex w-full max-w-md flex-col gap-3 sm:max-w-none sm:flex-row sm:justify-center">
-          {/* <a
-            href="tel:0719597168"
-            className="inline-flex items-center justify-center gap-2 rounded-full bg-yellow-300 px-5 py-3 font-koulen text-sm text-slate-950 shadow-xl transition hover:-translate-y-0.5 hover:bg-yellow-200 sm:px-7 sm:text-base"
-          >
-            <PhoneCall className="h-5 w-5" />
-            ទំនាក់ទំនងឥឡូវនេះ
-          </a> */}
           <a
             href={googleMapUrl}
             rel="noopener noreferrer"
@@ -227,98 +199,13 @@ function HeroSection() {
             មើលទីតាំង
           </a>
 
-          {/* <a
-            href={googleMapUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center justify-center gap-2 rounded-full border-2 border-white bg-black/20 px-5 py-3 font-koulen text-sm text-white transition hover:-translate-y-0.5 hover:bg-white hover:text-slate-950 sm:px-7 sm:text-base"
-          >
-            <MapPin className="h-5 w-5" />
-            មើលទីតាំង
-          </a> */}
         </div>
-
-        {/* <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
-          {socials.map((link) => (
-            <a
-              key={link.label}
-              href={link.href}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label={link.label}
-              className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/30 bg-black/25 transition hover:border-yellow-300 hover:bg-yellow-300"
-            >
-              <Image
-                src={link.icon}
-                alt={`${link.label} icon`}
-                width={32}
-                height={32}
-                className="h-8 w-8 object-contain"
-              />
-            </a>
-          ))}
-        </div> */}
 
         <p className="mt-5 max-w-5xl font-battambang text-[16px] font-bold leading-7 text-white drop-shadow-[2px_2px_0_rgba(0,0,0,0.9)] sm:text-base sm:leading-8 md:text-lg">
           អាសយដ្ឋាន៖ ក្រុមទី៤ ភូមិដំណាក់ហ្លូង សង្កាត់វត្តគរ ក្រុង/ខេត្តបាត់ដំបង
           <br />
           ខាងកើតរង្វង់មូលនាងរំសាយសក់ ២០០ម៉ែត្រ ផ្លូវក្រវ៉ាត់ក្រុង
         </p>
-      </div>
-    </section>
-  );
-}
-
-function ServicesSection() {
-  return (
-    <section
-      id="services"
-      className="bg-slate-50 px-4 py-16 text-slate-950 sm:px-5 md:px-8 md:py-20"
-    >
-      <div className="mx-auto max-w-7xl">
-        <div className="mx-auto max-w-3xl text-center">
-          <p className="font-[Arial] text-xs font-black uppercase tracking-[0.25em] text-yellow-600 md:text-sm">
-            Services
-          </p>
-
-          <h2 className="mt-3 font-koulen text-4xl text-slate-950 md:text-5xl">
-            សេវាកម្មរបស់យើង
-          </h2>
-
-          <p className="mt-4 font-battambang text-base leading-8 text-slate-600 md:text-lg">
-            ទទួលសេវាកម្មជាងក្រឡឹង និងការងារគ្រឿងម៉ាស៊ីនគ្រប់ប្រភេទ
-            ដោយផ្តោតលើគុណភាពល្អ តម្លៃល្អ និងទំនុកចិត្ត
-          </p>
-        </div>
-
-        <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {services.map((service) => (
-            <article
-              key={service.name}
-              className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-xl md:p-6"
-            >
-              <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-yellow-300 text-slate-950">
-                <Navigation className="h-7 w-7" />
-              </div>
-
-              <h3 className="font-koulen text-2xl text-slate-950 md:text-3xl">
-                {service.name}
-              </h3>
-
-              <p className="mt-4 font-battambang text-base leading-8 text-slate-600">
-                {service.description}
-              </p>
-
-              <a
-                href="tel:0719597168"
-                className="mt-6 inline-flex items-center gap-2 rounded-full bg-slate-950 px-5 py-3 font-koulen text-base text-white transition hover:bg-yellow-300 hover:text-slate-950"
-              >
-                <PhoneCall className="h-4 w-4" />
-                សួរព័ត៌មានបន្ថែម
-              </a>
-            </article>
-          ))}
-        </div>
       </div>
     </section>
   );
@@ -368,37 +255,9 @@ function ContactSection() {
                     />
                     {phone.label}
                   </span>
-
-                  {/* <span className="font-[Arial] text-[24px] font-black sm:text-[28px] md:text-[30px]">
-                    {phone.label}
-                  </span> */}
                 </a>
               ))}
             </div>
-
-            {/* <div className="mt-6 space-y-3">
-              {phoneNumbers.map((phone) => (
-                <a
-                  key={phone.href}
-                  href={phone.href}
-                  className="flex flex-col gap-2 rounded-2xl bg-white/10 px-5 py-4 text-white transition hover:bg-yellow-300 hover:text-slate-950 sm:flex-row sm:items-center sm:justify-between"
-                >
-                  <span className="flex items-center gap-2 font-battambang font-bold">
-                    <Image
-                      src="/icons/call.png"
-                      alt="Call icon"
-                      width={28}
-                      height={28}
-                      className="h-7 w-7 object-contain"
-                    />
-                    ទូរស័ព្ទ
-                  </span>
-                  <span className="font-[Arial] text-2xl font-black">
-                    {phone.label}
-                  </span>
-                </a>
-              ))}
-            </div> */}
 
             <div className="mt-8">
               <h4 className="font-koulen font-black text-white">
@@ -498,7 +357,7 @@ function Footer() {
         </div>
 
         <p className="font-[Arial] text-sm text-slate-400">
-          © {new Date().getFullYear()} Deng Reaksmey. All rights reserved.
+          © {new Date().getFullYear()} Deng Raksmey. All rights reserved.
         </p>
       </div>
     </footer>
