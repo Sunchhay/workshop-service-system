@@ -1,11 +1,8 @@
 import {
   Clock,
   MapPin,
-  MessageCircle,
-  Music2,
   Navigation,
-  PhoneCall,
-  Send,
+  PhoneCall
 } from 'lucide-react';
 import Image from 'next/image';
 
@@ -113,7 +110,7 @@ function Header() {
           </div>
         </a>
 
-        <nav className="hidden items-center gap-8 font-koulen text-sm text-slate-100 md:flex">
+        {/* <nav className="hidden items-center gap-8 font-koulen text-sm text-slate-100 md:flex">
           <a href="#home" className="hover:text-yellow-300">
             ទំព័រដើម
           </a>
@@ -123,7 +120,7 @@ function Header() {
           <a href="#contact" className="hover:text-yellow-300">
             ទំនាក់ទំនង
           </a>
-        </nav>
+        </nav> */}
 
         <div className="flex flex-wrap items-center justify-center gap-3">
           {socials.map((link) => (
@@ -206,7 +203,7 @@ function HeroSection() {
                 alt={`${phone.operator} icon`}
                 width={34}
                 height={24}
-                className="h-6 w-auto object-contain"
+                className="h-6 w-8.5 object-contain"
               />
               {phone.label}
             </a>
@@ -367,7 +364,7 @@ function ContactSection() {
                       alt={`${phone.operator} icon`}
                       width={42}
                       height={28}
-                      className="h-7 w-auto object-contain"
+                      className="h-7 w-10.5 object-contain"
                     />
                     {phone.label}
                   </span>
