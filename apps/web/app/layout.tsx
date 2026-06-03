@@ -1,5 +1,12 @@
 import type { Metadata, Viewport } from 'next';
-import { Geist, Geist_Mono, Noto_Sans_Khmer } from 'next/font/google';
+import {
+  Battambang,
+  Geist,
+  Geist_Mono,
+  Koulen,
+  Moul,
+  Noto_Sans_Khmer,
+} from 'next/font/google';
 
 import { StoreProvider } from '@/components/providers/StoreProvider';
 import { ThemeProvider } from '@/components/providers/ThemeProvider';
@@ -24,9 +31,27 @@ const notoSansKhmer = Noto_Sans_Khmer({
   weight: ['400', '500', '600', '700'],
 });
 
+const moul = Moul({
+  variable: '--font-moul',
+  subsets: ['khmer'],
+  weight: ['400'],
+});
+
+const koulen = Koulen({
+  variable: '--font-koulen',
+  subsets: ['khmer'],
+  weight: ['400'],
+});
+
+const battambang = Battambang({
+  variable: '--font-battambang',
+  subsets: ['khmer'],
+  weight: ['400', '700'],
+});
+
 export const metadata: Metadata = {
-  title: 'Workshop System',
-  description: 'Workshop service management system',
+  title: 'ជាងក្រឡឹង ដែង រស្មី',
+  description: 'មានទទួល សំលៀងវីលីគាំង សីសូមុី ម៉ាបក្បាលកន្លះ ធ្វើប៉ូម ទាក់បូ និងក្រឡឹងគ្រឿងម៉ាស៊ីនគ្រប់ប្រភេទ',
   icons: {
     icon: [
       {
@@ -60,9 +85,17 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html
-      lang="en"
+      lang="km"
       suppressHydrationWarning
-      className={`${geistSans.variable} ${geistMono.variable} ${notoSansKhmer.variable} h-full antialiased`}
+      className={`
+        ${geistSans.variable}
+        ${geistMono.variable}
+        ${notoSansKhmer.variable}
+        ${moul.variable}
+        ${koulen.variable}
+        ${battambang.variable}
+        h-full antialiased
+      `}
     >
       <body className="min-h-full flex flex-col">
         <StoreProvider>
